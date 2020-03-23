@@ -3,10 +3,12 @@ import { BoxOptions } from "./models/boxOptions";
 import p5 from "p5";
 import { World } from "matter-js";
 import deps from "./Deps";
+import { BaseHTMLAttributes } from "react";
 
 export class ShapesFactory {
     boxes: Box[];
     ground: Box | undefined
+
     constructor() {
         this.boxes = []
     }
@@ -21,8 +23,5 @@ export class ShapesFactory {
             x: 0, y: height - groundHeight, w: width, h: groundHeight, options: { isStatic: true }
         }
         this.ground = new Box(groundBox)
-    }
-    returnAllRefs = (): Matter.Body[] => {
-        return this.boxes.map(box => box.body)
     }
 }

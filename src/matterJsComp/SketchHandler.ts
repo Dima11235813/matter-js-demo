@@ -23,5 +23,8 @@ export class SketchHandler {
         p!.mouseDragged = (event: any) => {
             this.customWorld?.addShape(p!.mouseX, p!.mouseY)
         }
+        p!.mouseClicked = (event: any) => {
+            this.customWorld?.addShape(p!.mouseX, p!.mouseY)
+        }
     }
 }
