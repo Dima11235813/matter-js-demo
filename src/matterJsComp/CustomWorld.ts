@@ -6,9 +6,11 @@ import deps from "./Deps";
 import { doesNotReject } from "assert";
 import shapeOptions from "./Shapes/shapeOptions";
 import { Box } from "./Shapes/Box";
+import { TypographyDisplay } from "./TypographyDisplay";
 
 export class CustomWorld {
     shapesFac: ShapesFactory;
+    typographyDisplay: TypographyDisplay;
     constructor() {
         let Engine = Matter.Engine
 
@@ -24,6 +26,9 @@ export class CustomWorld {
 
         // create a shapes factory
         this.shapesFac = new ShapesFactory()
+
+        //create a class that applies text to the canvas
+        this.typographyDisplay = new TypographyDisplay(this.shapesFac)
 
         //create the world's ground
         this.shapesFac.createGround()
@@ -48,5 +53,6 @@ export class CustomWorld {
         this.shapesFac.boxes.forEach((box: Box, index: number) => {
             box && box.outOfBounds ? delete this.shapesFac.boxes[index] : box.show()
         })
+        this.typographyDisplay.show()
     }
 }
