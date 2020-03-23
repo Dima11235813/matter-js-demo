@@ -3,7 +3,7 @@ import { BoxOptions } from '../models/boxOptions';
 import deps from '../Deps';
 
 export class Box {
-    body: Matter.Body;
+    body: Matter.Body | null
     outOfBounds: boolean = false
     constructor(
         public boxOptions: BoxOptions
@@ -19,7 +19,8 @@ export class Box {
 
     }
     show = () => {
-        const { position, angle } = this.body
+        const helpGc = false
+        const { position, angle } = this.body!
         const { x, y } = position
         const { width, height } = deps.browserInfo
         if (x > width || x < 0 || y > height || y < 0) {
@@ -27,9 +28,10 @@ export class Box {
             const { world } = deps
             //TODO Triggers the before remove and after remove composite hooks
             //See if this can help garbage clean up on this body
-            if (world) {
+            if (helpGc && world && this.body) {
                 // console.log(`Removing out of bounds item from world. Number of items in world: ${world.bodies.length}`)
                 Matter.World.remove(world, this.body);
+                this.body = null
                 // console.log(`After remove: ${world.bodies.length}`)
             }
         }

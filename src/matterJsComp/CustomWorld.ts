@@ -48,9 +48,10 @@ export class CustomWorld {
         // console.log(`Boxes length before filter ${this.shapesFac.boxes.length}`)
         this.shapesFac.boxes = this.shapesFac.boxes.filter((box: Box) => box.body)
         // console.log(`Boxes length after filter ${this.shapesFac.boxes.length}`)
-        this.shapesFac.boxes.forEach((box: Box, index: number) => {
-            box && box.outOfBounds ? delete this.shapesFac.boxes[index] : box.show()
-        })
+        // this.shapesFac.boxes.forEach((box: Box, index: number) => {
+        //     box && box.outOfBounds ? delete this.shapesFac.boxes[index] : box.show()
+        // })
+        this.shapesFac.boxes.forEach(box => box.show())
         this.typographyDisplay.show()
     }
 }
