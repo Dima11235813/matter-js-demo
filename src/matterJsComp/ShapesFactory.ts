@@ -8,19 +8,22 @@ import { BaseHTMLAttributes } from "react";
 export class ShapesFactory {
     boxes: Box[];
     ground: Box | undefined
+    totalCount: number = 0
 
     constructor() {
         this.boxes = []
     }
     createBox = (boxOptions: BoxOptions) => {
         this.boxes.push(new Box(boxOptions))
+        this.totalCount += 1
     }
     createGround = () => {
         const { width, height } = deps.browserInfo
         const groundHeight = 50
+        const leftAndRightPadding = 100
         //create the ground
         let groundBox: BoxOptions = {
-            x: 0, y: height - groundHeight, w: width, h: groundHeight, options: { isStatic: true }
+            x: leftAndRightPadding, y: height - groundHeight, w: (width * 2) - leftAndRightPadding, h: groundHeight, options: { isStatic: true }
         }
         this.ground = new Box(groundBox)
     }

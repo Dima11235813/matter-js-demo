@@ -3,8 +3,6 @@ import p5 from 'p5';
 import deps from './Deps';
 
 export class WorldContainer {
-    // renderer: Matter.Render;
-    canvas: any;
     sketch: any;
     sketchHandler: SketchHandler | undefined;
     constructor(

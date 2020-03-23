@@ -41,6 +41,7 @@ export class Box {
             //https://p5js.org/reference/#/p5/rectMode
             p.strokeWeight(4)
             p.fill(0, 45, 45)
+            // p.rectMode(p.CORNERS)
             p.rectMode(p.CENTER)
 
             //Create rect

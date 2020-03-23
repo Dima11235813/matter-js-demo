@@ -1,9 +1,7 @@
 import Matter from "matter-js";
 import { ShapesFactory } from "./ShapesFactory";
 import { BoxOptions } from "./models/boxOptions";
-import p5 from "p5";
 import deps from "./Deps";
-import { doesNotReject } from "assert";
 import shapeOptions from "./Shapes/shapeOptions";
 import { Box } from "./Shapes/Box";
 import { TypographyDisplay } from "./TypographyDisplay";
@@ -39,7 +37,7 @@ export class CustomWorld {
     }
     addShape = (mx: number, my: number) => {
         // console.log(`Adding shape at x:${mx} y:${my}`)
-        const { rectWidth, rectHeight } = shapeOptions
+        const { rectWidth, rectHeight } = shapeOptions.getNewShapeOptions()
         let newBoxOptions: BoxOptions = { x: mx, y: my, w: rectWidth, h: rectHeight, options: {} }
         this.shapesFac.createBox(newBoxOptions)
     }
