@@ -22,11 +22,12 @@ export class ShapesFactory {
     createGround = () => {
         const { width, height } = deps.browserInfo
         const groundHeight = 50
-        const leftAndRightPadding = 400
+        const leftAndRightPadding = width / 5
         //create the ground
         let groundBox: BoxOptions = {
             x: width / 2, 
-            y: height - groundHeight, w: width  - leftAndRightPadding, h: groundHeight, options: { isStatic: true }
+            y: height - groundHeight, 
+            w: width  - leftAndRightPadding, h: groundHeight, options: { isStatic: true }
         }
         this.ground = new Box(groundBox)
     }
