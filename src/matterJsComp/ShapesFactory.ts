@@ -20,10 +20,11 @@ export class ShapesFactory {
     createGround = () => {
         const { width, height } = deps.browserInfo
         const groundHeight = 50
-        const leftAndRightPadding = 100
+        const leftAndRightPadding = 400
         //create the ground
         let groundBox: BoxOptions = {
-            x: leftAndRightPadding, y: height - groundHeight, w: (width * 2) - leftAndRightPadding, h: groundHeight, options: { isStatic: true }
+            x: width / 2, 
+            y: height - groundHeight, w: width  - leftAndRightPadding, h: groundHeight, options: { isStatic: true }
         }
         this.ground = new Box(groundBox)
     }

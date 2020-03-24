@@ -19,9 +19,10 @@ export class Box {
 
     }
     show = () => {
-        const helpGc = false
+        if (!this.body) return
+        const helpGc = true
         const { position, angle } = this.body!
-        const { x, y } = position
+        const { x, y } = position!
         const { width, height } = deps.browserInfo
         if (x > width || x < 0 || y > height || y < 0) {
             this.outOfBounds = true
@@ -32,6 +33,7 @@ export class Box {
                 // console.log(`Removing out of bounds item from world. Number of items in world: ${world.bodies.length}`)
                 Matter.World.remove(world, this.body);
                 this.body = null
+                return
                 // console.log(`After remove: ${world.bodies.length}`)
             }
         }
@@ -43,7 +45,6 @@ export class Box {
             //https://p5js.org/reference/#/p5/rectMode
             p.strokeWeight(4)
             p.fill(0, 45, 45)
-            // p.rectMode(p.CORNERS)
             p.rectMode(p.CENTER)
 
             //Create rect
