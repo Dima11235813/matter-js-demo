@@ -1,10 +1,12 @@
 import Matter from 'matter-js'
 import { BoxOptions } from '../models/boxOptions';
 import deps from '../Deps';
+import { getRandomColor } from '../../utils/colorUtils';
 
 export class Box {
     body: Matter.Body | null
     outOfBounds: boolean = false
+    color: string = getRandomColor()
     constructor(
         public boxOptions: BoxOptions
     ) {
@@ -44,7 +46,7 @@ export class Box {
             //Rect options
             //https://p5js.org/reference/#/p5/rectMode
             p.strokeWeight(4)
-            p.fill(0, 45, 45)
+            p.fill(this.color)
             p.rectMode(p.CENTER)
 
             //Create rect

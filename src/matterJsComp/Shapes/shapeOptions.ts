@@ -4,8 +4,8 @@ class ShapeOptions {
         public rectHeight: number = Math.floor(Math.random() * 100)
     ) { }
     getNewShapeOptions = () => {
-        const maxSize = 50
-        const minSize = 2
+        const maxSize = 40
+        const minSize = 20
         let size = Math.floor(Math.random() * maxSize) + minSize
         return {
             rectWidth: size,

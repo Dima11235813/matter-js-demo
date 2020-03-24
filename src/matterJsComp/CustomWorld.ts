@@ -28,9 +28,6 @@ export class CustomWorld {
         //create a class that applies text to the canvas
         this.typographyDisplay = new TypographyDisplay(this.shapesFac)
 
-        //create the world's ground
-        this.shapesFac.createGround()
-
         // run the engine
         Engine.run(deps.engine);
 

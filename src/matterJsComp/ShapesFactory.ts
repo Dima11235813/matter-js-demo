@@ -12,6 +12,8 @@ export class ShapesFactory {
 
     constructor() {
         this.boxes = []
+        //create the world's ground
+        this.createGround()
     }
     createBox = (boxOptions: BoxOptions) => {
         this.boxes.push(new Box(boxOptions))
