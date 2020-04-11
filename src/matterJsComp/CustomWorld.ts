@@ -1,6 +1,6 @@
 import Matter from "matter-js";
 import { ShapesFactory } from "./ShapesFactory";
-import { BoxOptions } from "./models/boxOptions";
+import { BoxOptions, ShapeTypes } from "./models/boxOptions";
 import deps from "./Deps";
 import shapeOptions from "./Shapes/shapeOptions";
 import { Box } from "./Shapes/Box";
@@ -35,7 +35,14 @@ export class CustomWorld {
     addShape = (mx: number, my: number) => {
         // console.log(`Adding shape at x:${mx} y:${my}`)
         const { rectWidth, rectHeight } = shapeOptions.getNewShapeOptions()
-        let newBoxOptions: BoxOptions = { x: mx, y: my, w: rectWidth, h: rectHeight, options: {} }
+        const textBuffer = 10
+        let newBoxOptions: BoxOptions = { 
+            x: mx, y: my, w: rectWidth, h: rectHeight, options: {} ,
+            textWidth: rectWidth - textBuffer, 
+            textHeight: rectHeight - textBuffer,
+            textSize: (rectWidth + rectHeight) / 3,
+            type: ShapeTypes.BOX
+        }
         this.shapesFac.createBox(newBoxOptions)
     }
     draw = () => {

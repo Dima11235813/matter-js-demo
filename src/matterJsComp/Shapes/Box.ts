@@ -1,17 +1,24 @@
 import Matter from 'matter-js'
-import { BoxOptions } from '../models/boxOptions';
+import { BoxOptions, FloorOptions, ShapeTypes } from '../models/boxOptions';
 import deps from '../Deps';
 import { getRandomColor } from '../../utils/colorUtils';
+import { getRandomLetterOrSpace } from '../../utils/textUtils';
 
 export class Box {
     body: Matter.Body | null
     outOfBounds: boolean = false
     color: string = getRandomColor()
+    text: string = getRandomLetterOrSpace()
     constructor(
-        public boxOptions: BoxOptions
+        public boxOptions: any// BoxOptions | FloorOptions
     ) {
         const { x, y, w, h, options = {} } = boxOptions
         this.body = Matter.Bodies.rectangle(x, y, w, h, options);
+        console.log(`Box with 
+        width of ${w}
+        height of ${h}
+        `)
+
 
         // add all of the bodies to the world
         const { world } = deps
@@ -42,6 +49,7 @@ export class Box {
         const { p } = deps
         if (p) {
             p.push()
+            const { w, h } = this.boxOptions
 
             //Rect options
             //https://p5js.org/reference/#/p5/rectMode
@@ -51,9 +59,19 @@ export class Box {
 
             //Create rect
             p.translate(position.x, position.y)
-            const { x, y, w, h } = this.boxOptions
             p.rect(0, 0, w, h)
             p.rotate(p.radians(angle))
+
+            //Add text on top
+            p.fill(256)
+
+            //if hard body don't do text
+            if (this.boxOptions.type === ShapeTypes.BOX) {
+                const { textWidth, textHeight, textSize } = this.boxOptions
+                p.textAlign(p.CENTER);
+                p.textSize(textSize)
+                p.text(this.text, 5, 5, textWidth, textHeight)
+            }
 
             p.pop()
         }

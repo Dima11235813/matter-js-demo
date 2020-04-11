@@ -1,5 +1,5 @@
 import { Box } from "./Shapes/Box";
-import { BoxOptions } from "./models/boxOptions";
+import { BoxOptions, FloorOptions, ShapeTypes } from "./models/boxOptions";
 import p5 from "p5";
 import { World } from "matter-js";
 import deps from "./Deps";
@@ -24,11 +24,14 @@ export class ShapesFactory {
         const groundHeight = 50
         const leftAndRightPadding = width / 5
         //create the ground
-        let groundBox: BoxOptions = {
-            x: width / 2, 
-            y: height - groundHeight, 
-            w: width  - leftAndRightPadding, h: groundHeight, options: { isStatic: true }
+        let floor: FloorOptions = {
+            x: width / 2,
+            y: height - groundHeight,
+            w: width - leftAndRightPadding,
+            h: groundHeight,
+            options: { isStatic: true },
+            type: ShapeTypes.FLOOR
         }
-        this.ground = new Box(groundBox)
+        this.ground = new Box(floor)
     }
 }
