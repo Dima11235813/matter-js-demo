@@ -35,11 +35,10 @@ export class CustomWorld {
     addShape = (mx: number, my: number) => {
         // console.log(`Adding shape at x:${mx} y:${my}`)
         const { rectWidth, rectHeight } = shapeOptions.getNewShapeOptions()
-        const textBuffer = 10
         let newBoxOptions: BoxOptions = { 
             x: mx, y: my, w: rectWidth, h: rectHeight, options: {} ,
-            textWidth: rectWidth - textBuffer, 
-            textHeight: rectHeight - textBuffer,
+            textWidth: rectWidth / 10, 
+            textHeight: rectHeight / 10,
             textSize: (rectWidth + rectHeight) / 3,
             type: ShapeTypes.BOX
         }

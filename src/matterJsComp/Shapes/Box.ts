@@ -14,10 +14,10 @@ export class Box {
     ) {
         const { x, y, w, h, options = {} } = boxOptions
         this.body = Matter.Bodies.rectangle(x, y, w, h, options);
-        console.log(`Box with 
-        width of ${w}
-        height of ${h}
-        `)
+        // console.log(`Box with 
+        // width of ${w}
+        // height of ${h}
+        // `)
 
 
         // add all of the bodies to the world
@@ -63,14 +63,14 @@ export class Box {
             p.rotate(p.radians(angle))
 
             //Add text on top
-            p.fill(256)
+            p.fill(255)
 
             //if hard body don't do text
             if (this.boxOptions.type === ShapeTypes.BOX) {
                 const { textWidth, textHeight, textSize } = this.boxOptions
                 p.textAlign(p.CENTER);
                 p.textSize(textSize)
-                p.text(this.text, 5, 5, textWidth, textHeight)
+                p.text(this.text,  textWidth, textHeight) //Adding fourth and fifth param slows everything down
             }
 
             p.pop()
