@@ -1,20 +1,30 @@
-import Matter from 'matter-js'
+import Matter, { IEventCollision, Engine } from 'matter-js'
 import { BoxOptions, FloorOptions, ShapeTypes } from '../models/boxOptions';
 import deps from '../Deps';
 import { getRandomColor } from '../../utils/colorUtils';
 import { getRandomLetterOrSpace } from '../../utils/textUtils';
 
 export class Box {
+    static border = 4
+    static mass = 1
+    static friction = 1
     body: Matter.Body | null
     outOfBounds: boolean = false
     color: string = getRandomColor()
     text: string = getRandomLetterOrSpace()
+    public matterId: number
     constructor(
         public boxOptions: any// BoxOptions | FloorOptions
     ) {
         const { x, y, w, h, options = {} } = boxOptions
         this.body = Matter.Bodies.rectangle(x, y, w, h, options);
+        this.body.mass = Box.mass
+        this.body.friction = Box.friction
         // console.log(`Box with 
+
+        // this.body.collisionFilter.group = this.boxOptions.w
+        // Matter
+        // console.log()
         // width of ${w}
         // height of ${h}
         // `)
@@ -25,6 +35,7 @@ export class Box {
         if (world) {
             Matter.World.add(world, this.body);
         }
+        this.matterId = this.body.id
 
     }
     show = () => {
@@ -53,13 +64,14 @@ export class Box {
 
             //Rect options
             //https://p5js.org/reference/#/p5/rectMode
-            p.strokeWeight(4)
+            p.strokeWeight(Box.border)
             p.fill(this.color)
             p.rectMode(p.CENTER)
 
             //Create rect
             p.translate(position.x, position.y)
-            p.rect(0, 0, w, h)
+            p.rect(0, 0, w - Box.border, h - Box.border)
+            // p.rect(0, 0, w - Box.border * 2, h - Box.border * 2)
             p.rotate(p.radians(angle))
 
             //Add text on top
@@ -70,7 +82,7 @@ export class Box {
                 const { textWidth, textHeight, textSize } = this.boxOptions
                 p.textAlign(p.CENTER);
                 p.textSize(textSize)
-                p.text(this.text,  textWidth, textHeight) //Adding fourth and fifth param slows everything down
+                p.text(this.text, textWidth, textHeight) //Adding fourth and fifth param slows everything down
             }
 
             p.pop()

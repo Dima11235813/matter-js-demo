@@ -6,6 +6,7 @@ export class TypographyDisplay {
         public shapesFac: ShapesFactory
     ) {
 
+
     }
     show = () => {
         const { p, world } = deps
@@ -19,7 +20,7 @@ export class TypographyDisplay {
             Total Created ${this.shapesFac.totalCount}
             `
             //https://p5js.org/reference/#/p5/text
-            p.text(textToDisplay, 20, 20)
+            // p.text(textToDisplay, 20, 20)
         }
     }
 }

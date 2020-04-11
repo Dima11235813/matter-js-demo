@@ -9,15 +9,22 @@ export class ShapesFactory {
     boxes: Box[];
     ground: Box | undefined
     totalCount: number = 0
-
+    public boxIdToLeterIdLookup: any = {}
+    public boxIdToType: any = {}
     constructor() {
         this.boxes = []
         //create the world's ground
         this.createGround()
     }
     createBox = (boxOptions: BoxOptions) => {
-        this.boxes.push(new Box(boxOptions))
+        let newBox = new Box(boxOptions)
+        this.boxes.push(newBox)
+        this.boxIdToLeterIdLookup[newBox.matterId] = newBox.text
+        this.boxIdToType[newBox.matterId] = newBox.boxOptions.type
         this.totalCount += 1
+    }
+    removeBody = (id: number) => {
+        this.boxes = this.boxes.filter(box => box.matterId !== id)
     }
     createGround = () => {
         const { width, height } = deps.browserInfo
@@ -33,5 +40,7 @@ export class ShapesFactory {
             type: ShapeTypes.FLOOR
         }
         this.ground = new Box(floor)
+        this.boxIdToLeterIdLookup[this.ground.matterId] = this.ground.text
+        this.boxIdToType[this.ground.matterId] = this.ground.boxOptions.type
     }
 }
