@@ -17,19 +17,18 @@ const checkIfLetterNotValid = (letter: string): boolean => {
     }
     return valid
 }
-//whatever this is plus 2
-const sizeOfLargestWord = 6
+//whatever this is plus 1
+const sizeOfLargestWord = 4
+
 const checkIfDynamicKeysCharsNotValid = (index: number, array: string[]): boolean => {
     let longestKeyIsNotValid = false
-    let longestPossibleKey = array.slice(index, index + sizeOfLargestWord + 2).join('')
-    let count = 0
-    do {
-        if (longestPossibleKey.indexOf(notValidList[count]) > -1) {
+    let endOfIndexForLongestWord = Math.min(index + sizeOfLargestWord + 2, array.length - 1)
+    let longestPossibleKey = array.slice(index, endOfIndexForLongestWord)
+    longestPossibleKey.forEach(char => {
+        if (notValidList.indexOf(char) > -1) {
             longestKeyIsNotValid = true
         }
-        count += 1
-    } while (count < notValidList.length || !longestKeyIsNotValid)
-    console.log(`Returning ${longestKeyIsNotValid} for longest key validity`)
+    })
     return longestKeyIsNotValid
 }
 
@@ -39,30 +38,40 @@ export class DictionaryTools {
     letterPairs: any[] = []
     letterPairsWithFreq: any[] = []
     letterPairToFreqLookup: any = {}
+
     arrayOfLetterComboLookUps: any = []
+    letterCombos:any = []
+    letterComboWithFreq: any = []
+    letterComboToFreqLookup: any = []
+
+    arrayOfKeys: any = []
     constructor() {
         this.dict = source
         // this.dict.sort((entry1: string, entry 2: string))
         Object.keys(this.dict).join(' ').split('').forEach((letter: string, index: number, array: string[]) => {
             //if on last letter don't do anything with it
-            if (index === array.length ||
-                checkIfLetterNotValid(letter) ||
-                checkIfLetterNotValid(array[index + 1]) //||
-                // checkIfDynamicKeysCharsNotValid(index, array)
+            if (index === array.length) return
+            //check to make sure that the current letter and the next letter aren't invalid letters
+
+            if (checkIfLetterNotValid(letter) ||
+                checkIfLetterNotValid(array[index + 1])
             ) return
+
             //key the letter pair for current letter and next letter
             let key = `${letter}${array[index + 1]}`.toLocaleLowerCase()
-            //TODO WIP
-            // let arrayOfKeys = this.getArrayOfKeys(letter, index, array)
-            // arrayOfKeys.forEach(key => {
-            //     //if this is the first key for this length then create the array
-            //     if (!this.arrayOfLetterComboLookUps[key.length]) {
-            //         this.arrayOfLetterComboLookUps[key.length] = []
-            //     }
-            //     if (!this.arrayOfLetterComboLookUps[key.length][key]) {
-            //         this.arrayOfLetterComboLookUps[key.length].push(key)
-            //     }
-            // })
+
+            this.arrayOfKeys = this.getArrayOfKeys(letter, index, array)
+            this.arrayOfKeys.forEach((key: any) => {
+                //if this is the first key for this length then create the array
+                if (!this.arrayOfLetterComboLookUps[key.length]) {
+                    this.arrayOfLetterComboLookUps[key.length] = []
+                }
+                if (!this.arrayOfLetterComboLookUps[key.length][key]) {
+                    this.arrayOfLetterComboLookUps[key.length][key] = 1
+                } else {
+                    this.arrayOfLetterComboLookUps[key.length][key] += 1
+                }
+            })
             //Two letter keys
             let result = this.commonLetterPairs[key]
             if (result) {
@@ -85,20 +94,70 @@ export class DictionaryTools {
             this.letterPairToFreqLookup[item[0]] = item[1]
             return item
         })
+        //Sort each array by key length
+        this.arrayOfLetterComboLookUps = this.arrayOfLetterComboLookUps.map((keys: string[]) => {
+            return Object.entries(keys).sort((item1: any[], item2: any[]) => {
+                if (item1[1] > item2[1]) {
+                    return -1
+                } else if (item1[1] < item2[1]) {
+                    return 1
+                } else {
+                    return 0
+                }
+            })
+        })
+        this.arrayOfLetterComboLookUps.map((sortedArray: any[]) => {
+            sortedArray.map((letterComboArray: any[], index: number, array: any) => {
+                let letterCombo: string = letterComboArray[0]
+                let numberOfInstances: number = letterComboArray[1]
+                let lenghtOfLetterCombo: number = letterCombo.length
+                if (!this.letterComboWithFreq[lenghtOfLetterCombo]) {
+                    this.letterComboWithFreq[lenghtOfLetterCombo] = []
+                }
+                if (!this.letterComboWithFreq[lenghtOfLetterCombo][letterCombo]) {
+
+                    this.letterComboWithFreq[lenghtOfLetterCombo][letterCombo] = numberOfInstances
+                }
+                if (!this.letterCombos[lenghtOfLetterCombo]) {
+                    this.letterCombos[lenghtOfLetterCombo] = {}
+                }
+                if (!this.letterCombos[lenghtOfLetterCombo][letterCombo]) {
+
+                    this.letterCombos[lenghtOfLetterCombo][letterCombo] = numberOfInstances
+                }
+            })
+        })
         const shouldLog = true
         if (shouldLog) {
-            console.log("array of dynamic key creation")
+            console.log("letterCombos")
+            console.log(this.letterCombos)
+            console.log("letterComboWithFreq")
+            console.log(this.letterComboWithFreq)
+            console.log("this.arrayOfLetterComboLookUps")
             console.log(this.arrayOfLetterComboLookUps)
+            console.log("this.letterPairsWithFreq")
+            console.log(this.letterPairsWithFreq)
         }
     }
     getArrayOfKeys = (letter: string, index: number, array: any[]): any[] => {
-        let keyArray = new Array(sizeOfLargestWord).fill("").map((nonusedItem: string, indexForKey: number) => {
-            let lengthOfKey = indexForKey + 3
-            let key = array.slice(index, index + lengthOfKey)
+        let arrayOfKeys = new Array(sizeOfLargestWord).fill("").map((nonusedItem: string, indexForKey: number) => {
+            let lengthOfKey = indexForKey + 2
+            //check new key for not allowed chars
+            let key = array.slice(index, index + lengthOfKey).join('').toLowerCase()
+            notValidList.forEach((notValidChar: string) => {
+                if (key.indexOf(notValidChar) > -1) {
+                    key = ""
+                }
+            })
             return key
+            //don't return keys that are one letter or empty strings
         })
-        let keysToUse = keyArray.map(array => array.join(''))
-        return keysToUse
+        arrayOfKeys = arrayOfKeys.filter(key => {
+            let keyIsntBlankString = key !== ""
+            let keyIsntOneLetter = key.length !== 1
+            return keyIsntOneLetter && keyIsntBlankString
+        })
+        return arrayOfKeys
     }
 
 }

@@ -7,6 +7,7 @@ import { BaseHTMLAttributes } from "react";
 import { BaseOptions } from "vm";
 
 export class ShapesFactory {
+    nextUpBox: Box;
     boxes: Box[];
     ground: Box | undefined
     totalCount: number = 0
@@ -16,6 +17,21 @@ export class ShapesFactory {
         this.boxes = []
         //create the world's ground
         this.createGround()
+        this.nextUpBox = this.createTheNextBoxPreview()
+    }
+    createTheNextBoxPreview = (): Box => {
+        let previewBox = new Box({
+            boxOptions: {
+                x: 0,
+                y: 0,
+                w: 50,
+                h: 50
+            },
+            noMatter: true
+        })
+        this.boxes.push(previewBox)
+        this.totalCount += 1
+        return previewBox
     }
     createBoxFromTwoBodies = (bodyA: Matter.Body, bodyB: Matter.Body, newText: string) => {
         let boxA_Ref = this.boxes.find(box => box.matterId === bodyA.id)
@@ -25,7 +41,7 @@ export class ShapesFactory {
             // Not creating two letter box 
             // ${newText} 
             // because one was removed`)
-            return 
+            return
         }
         // let newWidth,
         // newHeight,

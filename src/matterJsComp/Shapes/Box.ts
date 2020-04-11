@@ -8,38 +8,41 @@ export class Box {
     static border = 4
     static mass = 1
     static friction = 1
-    body: Matter.Body | null
+    body: Matter.Body | null = null
     outOfBounds: boolean = false
     color: string = getRandomColor()
-    public matterId: number
+    public matterId: number = -1
     constructor(
-        public boxOptions: any,// BoxOptions | FloorOptions
-        public text: string = getRandomLetterOrSpace()
+        public boxOptions: any,//BoxOptions | FloorOptions,
+        public text: string = getRandomLetterOrSpace(),
+        public noMatter: boolean = false
     ) {
-        const { x, y, w, h, options = {} } = boxOptions
-        this.body = Matter.Bodies.rectangle(x, y, w, h, options);
-        // this.body.mass = Box.mass
-        // this.body.friction = Box.friction
-        // console.log(`Box with 
+        if (!noMatter) {
+            const { x, y, w, h, options = {} } = boxOptions
+            this.body = Matter.Bodies.rectangle(x, y, w, h, options);
+            // this.body.mass = Box.mass
+            // this.body.friction = Box.friction
+            // console.log(`Box with 
 
-        // this.body.collisionFilter.group = this.boxOptions.w
-        // Matter
-        // console.log()
-        // width of ${w}
-        // height of ${h}
-        // `)
+            // this.body.collisionFilter.group = this.boxOptions.w
+            // Matter
+            // console.log()
+            // width of ${w}
+            // height of ${h}
+            // `)
 
 
-        // add all of the bodies to the world
-        const { world } = deps
-        if (world) {
-            Matter.World.add(world, this.body);
+            // add all of the bodies to the world
+            const { world } = deps
+            if (world) {
+                Matter.World.add(world, this.body);
+            }
+            this.matterId = this.body.id
         }
-        this.matterId = this.body.id
 
     }
     show = () => {
-        if (!this.body) return
+        if (!this.noMatter && !this.body) return
         const helpGc = true
         const { position, angle } = this.body!
         const { x, y } = position!

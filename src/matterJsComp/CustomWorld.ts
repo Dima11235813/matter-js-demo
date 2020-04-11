@@ -52,7 +52,7 @@ export class CustomWorld {
     }
 
     pairExistenceValidityChecker = (pair: Matter.IPair) => {
-        let seperationThreshold = 1
+        let seperationThreshold = 5 //set to 1 for most control over collision intensity
         if (pair.separation > seperationThreshold) return
         const { bodyA, bodyB } = pair
 
@@ -67,16 +67,56 @@ export class CustomWorld {
             firstBoxType === ShapeTypes.TWO_LETTER_BOX
         let secondBoxIsntRemovable = secondBoxType === ShapeTypes.FLOOR ||
             secondBoxType === ShapeTypes.TWO_LETTER_BOX
-        if (firstBoxIsntRemovable || secondBoxIsntRemovable) {
+        if (firstBoxIsntRemovable && secondBoxIsntRemovable) {
             return
         }
         let firstBoxLetter = this.shapesFac.boxIdToLeterIdLookup[firstBoxId]
         let secondBoxLetter = this.shapesFac.boxIdToLeterIdLookup[secondBoxId]
 
+        //If one of the boxes has one letter and the other has two
+        if ((firstBoxType === ShapeTypes.BOX && secondBoxType === ShapeTypes.TWO_LETTER_BOX) ||
+            (firstBoxType === ShapeTypes.TWO_LETTER_BOX && secondBoxType === ShapeTypes.BOX)
+        ) {
+            let shouldLog = false
+            let letterAndTwoLetterCombo = `${firstBoxLetter}${secondBoxLetter}`.toLowerCase()
+            let twoLetterComboAndLetter = `${secondBoxLetter}${firstBoxLetter}`.toLowerCase()
+            let letterAndTwoLetterComboExistsInLookup = this.tools.letterCombos[3][letterAndTwoLetterCombo]
+            let twoLetterComboAndLetterExistsInLookup = this.tools.letterCombos[3][twoLetterComboAndLetter]
+            //If both variations exist, use the one with higher frequency
+            if (letterAndTwoLetterComboExistsInLookup && twoLetterComboAndLetterExistsInLookup) {
+                let textToUse: string
+                if (twoLetterComboAndLetterExistsInLookup > letterAndTwoLetterComboExistsInLookup) {
+                    textToUse = twoLetterComboAndLetter
+                } else if (twoLetterComboAndLetterExistsInLookup < letterAndTwoLetterComboExistsInLookup) {
+                    textToUse = letterAndTwoLetterCombo
+                } else {
+                    //if they're the same, then just use the first one
+                    textToUse = letterAndTwoLetterCombo
+                }
+                //add the new body
+                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, textToUse)
+            }
+            else if (letterAndTwoLetterComboExistsInLookup) {
+                //add the new body
+                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, letterAndTwoLetterCombo)
+                //remove the two old bodies
+                this.shapesFac.removeBody(firstBoxId)
+                this.shapesFac.removeBody(secondBoxId)
+            } else if (twoLetterComboAndLetterExistsInLookup) {
+                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterComboAndLetter)
+                this.shapesFac.removeBody(firstBoxId)
+                this.shapesFac.removeBody(secondBoxId)
+            }
+
+
+        }
+
         //If a box has been kept in a collision check it can't be deleted anymore
         // if (this.lettersChecked[firstBoxLetter] || this.lettersChecked[secondBoxLetter]) return
         let twoLetterCombo = `${firstBoxLetter}${secondBoxLetter}`
+        let twoLetterComboInverse = `${secondBoxLetter}${firstBoxLetter}`
         let indexOfTwoLetterCombo = this.tools.letterPairs.indexOf(twoLetterCombo)
+        let indexOfTwoLetterComboInverse = this.tools.letterPairs.indexOf(twoLetterComboInverse)
         const removeBodies = (bodyA: Matter.Body, bodyB: Matter.Body) => {
             const { world } = deps
             if (world) {
@@ -90,7 +130,7 @@ export class CustomWorld {
                 }
             }
         }
-        if (indexOfTwoLetterCombo === -1) {
+        if (indexOfTwoLetterCombo === -1 || indexOfTwoLetterComboInverse === -1) {
             removeBodies(bodyA, bodyB)
         } else {
             this.lettersChecked[firstBoxLetter] = 1
@@ -100,7 +140,12 @@ export class CustomWorld {
             // are part of two letter combo
             // this two letter combo occurs ${this.tools.letterPairToFreqLookup[twoLetterCombo]} times
             // `)
-            this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterCombo)
+            if (indexOfTwoLetterCombo !== -1) {
+                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterCombo)
+            } else if (indexOfTwoLetterComboInverse !== -1) {
+                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterComboInverse)
+            }
+            //todo Save off details of bodies to remove bodies before adding the new one
             removeBodies(bodyA, bodyB)
         }
     }
@@ -122,7 +167,7 @@ export class CustomWorld {
         this.shapesFac.boxes.forEach((box: Box, index: number) => {
             box && box.outOfBounds ? delete this.shapesFac.boxes[index] : box.show()
         })
-        this.shapesFac.boxes.forEach(box => box.show())
+        // this.shapesFac.boxes.forEach(box => box.show())
         this.typographyDisplay.show()
     }
 }

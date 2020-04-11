@@ -17,7 +17,7 @@ export interface FloorOptions extends ShapeBase {
 }
 
 export enum ShapeTypes {
-    BOX, FLOOR, TWO_LETTER_BOX
+    FLOOR, BOX, TWO_LETTER_BOX, THREE_LETTER_BOX, FOUR_LETTER_BOX, FIVE_LETTER_BOX, SIX_LETTER_BOX
 }
 export const decordateWithTextProps = (baseObj: ShapeBase): BoxOptions => {
     const { x, y, w, h } = baseObj
