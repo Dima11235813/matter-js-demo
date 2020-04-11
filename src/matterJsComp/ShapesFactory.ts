@@ -21,10 +21,10 @@ export class ShapesFactory {
         let boxA_Ref = this.boxes.find(box => box.matterId === bodyA.id)
         let boxB_Ref = this.boxes.find(box => box.matterId === bodyB.id)
         if (!boxA_Ref || !boxB_Ref) {
-            console.log(`
-            Not creating two letter box 
-            ${newText} 
-            because one was removed`)
+            // console.log(`
+            // Not creating two letter box 
+            // ${newText} 
+            // because one was removed`)
             return 
         }
         // let newWidth,
@@ -57,8 +57,8 @@ export class ShapesFactory {
         const { type } = newBox.boxOptions
         this.addNewBoxDataToLookUps(matterId, text, type)
         this.totalCount += 1
-        console.log(`Creating box with two letters: ${newText}`)
-        console.log(newBox)
+        // console.log(`Creating box with two letters: ${newText}`)
+        // console.log(newBox)
 
 
     }

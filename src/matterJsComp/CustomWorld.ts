@@ -95,11 +95,11 @@ export class CustomWorld {
         } else {
             this.lettersChecked[firstBoxLetter] = 1
             this.lettersChecked[secondBoxLetter] = 1
-            console.log(`
-            Letter ${firstBoxLetter} and ${secondBoxLetter}
-            are part of two letter combo
-            this two letter combo occurs ${this.tools.letterPairToFreqLookup[twoLetterCombo]} times
-            `)
+            // console.log(`
+            // Letter ${firstBoxLetter} and ${secondBoxLetter}
+            // are part of two letter combo
+            // this two letter combo occurs ${this.tools.letterPairToFreqLookup[twoLetterCombo]} times
+            // `)
             this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterCombo)
             removeBodies(bodyA, bodyB)
         }
