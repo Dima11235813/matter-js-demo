@@ -1,6 +1,6 @@
 import Matter, { IPair, IEventCollision } from "matter-js";
 import { ShapesFactory } from "./ShapesFactory";
-import { BoxOptions, ShapeTypes } from "./models/boxOptions";
+import { BoxOptions, ShapeTypes, ShapeBase, decordateWithTextProps } from "./models/boxOptions";
 import deps from "./Deps";
 import shapeOptions from "./Shapes/shapeOptions";
 import { Box } from "./Shapes/Box";
@@ -62,51 +62,55 @@ export class CustomWorld {
         let secondBoxType = this.shapesFac.boxIdToType[bodyB.id]
 
         //If colliding with currently singular floor return 
-        let firstBoxIsFloor = firstBoxType === ShapeTypes.FLOOR
-        let secondBoxIsFloor = secondBoxType === ShapeTypes.FLOOR
-        if (firstBoxIsFloor || secondBoxIsFloor) {
+        //TODO Extract into class
+        let firstBoxIsntRemovable = firstBoxType === ShapeTypes.FLOOR ||
+            firstBoxType === ShapeTypes.TWO_LETTER_BOX
+        let secondBoxIsntRemovable = secondBoxType === ShapeTypes.FLOOR ||
+            secondBoxType === ShapeTypes.TWO_LETTER_BOX
+        if (firstBoxIsntRemovable || secondBoxIsntRemovable) {
             return
         }
         let firstBoxLetter = this.shapesFac.boxIdToLeterIdLookup[firstBoxId]
         let secondBoxLetter = this.shapesFac.boxIdToLeterIdLookup[secondBoxId]
-        
+
         //If a box has been kept in a collision check it can't be deleted anymore
-        if (this.lettersChecked[firstBoxLetter] || this.lettersChecked[secondBoxLetter]) return
+        // if (this.lettersChecked[firstBoxLetter] || this.lettersChecked[secondBoxLetter]) return
         let twoLetterCombo = `${firstBoxLetter}${secondBoxLetter}`
         let indexOfTwoLetterCombo = this.tools.letterPairs.indexOf(twoLetterCombo)
-        if (indexOfTwoLetterCombo === -1) {
+        const removeBodies = (bodyA: Matter.Body, bodyB: Matter.Body) => {
             const { world } = deps
             if (world) {
-                if (!firstBoxIsFloor) {
+                if (!firstBoxIsntRemovable) {
                     Matter.World.remove(world, bodyA);
                     this.shapesFac.removeBody(firstBoxId)
                 }
-                if (!firstBoxIsFloor) {
+                if (!secondBoxIsntRemovable) {
                     Matter.World.remove(world, bodyB);
                     this.shapesFac.removeBody(secondBoxId)
                 }
             }
+        }
+        if (indexOfTwoLetterCombo === -1) {
+            removeBodies(bodyA, bodyB)
         } else {
             this.lettersChecked[firstBoxLetter] = 1
             this.lettersChecked[secondBoxLetter] = 1
-            console.log(`Letter ${firstBoxLetter} and ${secondBoxLetter}
+            console.log(`
+            Letter ${firstBoxLetter} and ${secondBoxLetter}
             are part of two letter combo
-            ${this.tools.letterPairs[indexOfTwoLetterCombo]}
-            this two letter combo occurs in ${this.tools.letterPairToFreqLookup[twoLetterCombo]}
+            this two letter combo occurs ${this.tools.letterPairToFreqLookup[twoLetterCombo]} times
             `)
+            this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterCombo)
+            removeBodies(bodyA, bodyB)
         }
     }
     addShape = (mx: number, my: number) => {
         // console.log(`Adding shape at x:${mx} y:${my}`)
         const { rectWidth, rectHeight } = shapeOptions.getNewShapeOptions()
-        let newBoxOptions: BoxOptions = {
-            x: mx, y: my, w: rectWidth, h: rectHeight, options: {},
-            textWidth: rectWidth / 10,
-            textHeight: rectHeight / 10,
-            textSize: (rectWidth + rectHeight) / 3,
-            type: ShapeTypes.BOX
+        let newBoxOptions: ShapeBase = {
+            x: mx, y: my, w: rectWidth, h: rectHeight, options: {}
         }
-        this.shapesFac.createBox(newBoxOptions)
+        this.shapesFac.createBox(decordateWithTextProps(newBoxOptions))
     }
     draw = () => {
         const { p } = deps

@@ -11,15 +11,15 @@ export class Box {
     body: Matter.Body | null
     outOfBounds: boolean = false
     color: string = getRandomColor()
-    text: string = getRandomLetterOrSpace()
     public matterId: number
     constructor(
-        public boxOptions: any// BoxOptions | FloorOptions
+        public boxOptions: any,// BoxOptions | FloorOptions
+        public text: string = getRandomLetterOrSpace()
     ) {
         const { x, y, w, h, options = {} } = boxOptions
         this.body = Matter.Bodies.rectangle(x, y, w, h, options);
-        this.body.mass = Box.mass
-        this.body.friction = Box.friction
+        // this.body.mass = Box.mass
+        // this.body.friction = Box.friction
         // console.log(`Box with 
 
         // this.body.collisionFilter.group = this.boxOptions.w
@@ -78,7 +78,7 @@ export class Box {
             p.fill(255)
 
             //if hard body don't do text
-            if (this.boxOptions.type === ShapeTypes.BOX) {
+            if (this.boxOptions.type === ShapeTypes.BOX || this.boxOptions.type === ShapeTypes.TWO_LETTER_BOX) {
                 const { textWidth, textHeight, textSize } = this.boxOptions
                 p.textAlign(p.CENTER);
                 p.textSize(textSize)
