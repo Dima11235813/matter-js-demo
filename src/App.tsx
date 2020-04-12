@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import { WorldContainer } from "./matterJsComp/WorldContainer";
+import MainMenu from "./MainMenu/MainMenu";
 
 function App() {
   let world: WorldContainer | null;
@@ -17,6 +18,7 @@ function App() {
   });
   return (
     <div className="App">
+      <MainMenu/>
       <div id="worldContainter"></div>
     </div>
   );

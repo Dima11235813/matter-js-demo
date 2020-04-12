@@ -52,7 +52,7 @@ export class CustomWorld {
     }
 
     pairExistenceValidityChecker = (pair: Matter.IPair) => {
-        let seperationThreshold = 5 //set to 1 for most control over collision intensity
+        let seperationThreshold = .8//2//5 //set to 1 for most control over collision intensity
         if (pair.separation > seperationThreshold) return
         const { bodyA, bodyB } = pair
 
@@ -63,53 +63,28 @@ export class CustomWorld {
 
         //If colliding with currently singular floor return 
         //TODO Extract into class
-        let firstBoxIsntRemovable = firstBoxType === ShapeTypes.FLOOR ||
-            firstBoxType === ShapeTypes.TWO_LETTER_BOX
-        let secondBoxIsntRemovable = secondBoxType === ShapeTypes.FLOOR ||
-            secondBoxType === ShapeTypes.TWO_LETTER_BOX
-        if (firstBoxIsntRemovable && secondBoxIsntRemovable) {
+        let firstBoxIsntRemovable = firstBoxType === ShapeTypes.FLOOR || firstBoxType === ShapeTypes.THREE_LETTER_BOX
+        let secondBoxIsntRemovable = secondBoxType === ShapeTypes.FLOOR || secondBoxType === ShapeTypes.THREE_LETTER_BOX
+        //TODO figure out how to make collision handling more dynamic
+        if (firstBoxIsntRemovable || secondBoxIsntRemovable) {
+            return
+        } else if (
+            //if the collision is between a two and three letter box - don't do anything for that collision
+            firstBoxType === ShapeTypes.TWO_LETTER_BOX && secondBoxType === ShapeTypes.THREE_LETTER_BOX ||
+            secondBoxType === ShapeTypes.THREE_LETTER_BOX && firstBoxType === ShapeTypes.TWO_LETTER_BOX ||
+            //if the collision is between a one letter box and a three letter box don't do anything
+            firstBoxType === ShapeTypes.BOX && secondBoxType === ShapeTypes.THREE_LETTER_BOX ||
+            secondBoxType === ShapeTypes.BOX && firstBoxType === ShapeTypes.THREE_LETTER_BOX ||
+            //if the collision is between a one letter box and a three letter box don't do anything
+            firstBoxType === ShapeTypes.THREE_LETTER_BOX && secondBoxType === ShapeTypes.THREE_LETTER_BOX ||
+            secondBoxType === ShapeTypes.THREE_LETTER_BOX && firstBoxType === ShapeTypes.THREE_LETTER_BOX 
+            
+        ) {
+
             return
         }
         let firstBoxLetter = this.shapesFac.boxIdToLeterIdLookup[firstBoxId]
         let secondBoxLetter = this.shapesFac.boxIdToLeterIdLookup[secondBoxId]
-
-        //If one of the boxes has one letter and the other has two
-        if ((firstBoxType === ShapeTypes.BOX && secondBoxType === ShapeTypes.TWO_LETTER_BOX) ||
-            (firstBoxType === ShapeTypes.TWO_LETTER_BOX && secondBoxType === ShapeTypes.BOX)
-        ) {
-            let shouldLog = false
-            let letterAndTwoLetterCombo = `${firstBoxLetter}${secondBoxLetter}`.toLowerCase()
-            let twoLetterComboAndLetter = `${secondBoxLetter}${firstBoxLetter}`.toLowerCase()
-            let letterAndTwoLetterComboExistsInLookup = this.tools.letterCombos[3][letterAndTwoLetterCombo]
-            let twoLetterComboAndLetterExistsInLookup = this.tools.letterCombos[3][twoLetterComboAndLetter]
-            //If both variations exist, use the one with higher frequency
-            if (letterAndTwoLetterComboExistsInLookup && twoLetterComboAndLetterExistsInLookup) {
-                let textToUse: string
-                if (twoLetterComboAndLetterExistsInLookup > letterAndTwoLetterComboExistsInLookup) {
-                    textToUse = twoLetterComboAndLetter
-                } else if (twoLetterComboAndLetterExistsInLookup < letterAndTwoLetterComboExistsInLookup) {
-                    textToUse = letterAndTwoLetterCombo
-                } else {
-                    //if they're the same, then just use the first one
-                    textToUse = letterAndTwoLetterCombo
-                }
-                //add the new body
-                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, textToUse)
-            }
-            else if (letterAndTwoLetterComboExistsInLookup) {
-                //add the new body
-                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, letterAndTwoLetterCombo)
-                //remove the two old bodies
-                this.shapesFac.removeBody(firstBoxId)
-                this.shapesFac.removeBody(secondBoxId)
-            } else if (twoLetterComboAndLetterExistsInLookup) {
-                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterComboAndLetter)
-                this.shapesFac.removeBody(firstBoxId)
-                this.shapesFac.removeBody(secondBoxId)
-            }
-
-
-        }
 
         //If a box has been kept in a collision check it can't be deleted anymore
         // if (this.lettersChecked[firstBoxLetter] || this.lettersChecked[secondBoxLetter]) return
@@ -130,24 +105,63 @@ export class CustomWorld {
                 }
             }
         }
-        if (indexOfTwoLetterCombo === -1 || indexOfTwoLetterComboInverse === -1) {
-            removeBodies(bodyA, bodyB)
-        } else {
-            this.lettersChecked[firstBoxLetter] = 1
-            this.lettersChecked[secondBoxLetter] = 1
-            // console.log(`
-            // Letter ${firstBoxLetter} and ${secondBoxLetter}
-            // are part of two letter combo
-            // this two letter combo occurs ${this.tools.letterPairToFreqLookup[twoLetterCombo]} times
-            // `)
-            if (indexOfTwoLetterCombo !== -1) {
-                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterCombo)
-            } else if (indexOfTwoLetterComboInverse !== -1) {
-                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterComboInverse)
+
+        //If one of the boxes has one letter and the other has two
+        if ((firstBoxType === ShapeTypes.BOX && secondBoxType === ShapeTypes.TWO_LETTER_BOX) ||
+            (firstBoxType === ShapeTypes.TWO_LETTER_BOX && secondBoxType === ShapeTypes.BOX)
+        ) {
+            let letterAndTwoLetterCombo = `${firstBoxLetter}${secondBoxLetter}`.toLowerCase()
+            let twoLetterComboAndLetter = `${secondBoxLetter}${firstBoxLetter}`.toLowerCase()
+            let letterAndTwoLetterComboExistsInLookup = this.tools.letterCombos[3][letterAndTwoLetterCombo]
+            let twoLetterComboAndLetterExistsInLookup = this.tools.letterCombos[3][twoLetterComboAndLetter]
+            //If both variations exist, use the one with higher frequency
+            if (letterAndTwoLetterComboExistsInLookup && twoLetterComboAndLetterExistsInLookup) {
+                let textToUse: string
+                if (twoLetterComboAndLetterExistsInLookup > letterAndTwoLetterComboExistsInLookup) {
+                    textToUse = twoLetterComboAndLetter
+                } else if (twoLetterComboAndLetterExistsInLookup < letterAndTwoLetterComboExistsInLookup) {
+                    textToUse = letterAndTwoLetterCombo
+                } else {
+                    //if they're the same, then just use the first one
+                    textToUse = letterAndTwoLetterCombo
+                }
+                //TODO extract code written three times here
+                //add the new body
+                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, textToUse, ShapeTypes.TWO_LETTER_BOX)
+                removeBodies(bodyA, bodyB)
             }
-            //todo Save off details of bodies to remove bodies before adding the new one
-            removeBodies(bodyA, bodyB)
+            else if (letterAndTwoLetterComboExistsInLookup) {
+                //add the new body
+                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, letterAndTwoLetterCombo, ShapeTypes.TWO_LETTER_BOX)
+                //remove the two old bodies
+                removeBodies(bodyA, bodyB)
+            } else if (twoLetterComboAndLetterExistsInLookup) {
+                this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterComboAndLetter, ShapeTypes.TWO_LETTER_BOX)
+                removeBodies(bodyA, bodyB)
+            }
+        } else {
+            //TODO Refactor for same handling of two letter and three letter combos
+            if (indexOfTwoLetterCombo === -1 || indexOfTwoLetterComboInverse === -1) {
+                removeBodies(bodyA, bodyB)
+            } else {
+                this.lettersChecked[firstBoxLetter] = 1
+                this.lettersChecked[secondBoxLetter] = 1
+                // console.log(`
+                // Letter ${firstBoxLetter} and ${secondBoxLetter}
+                // are part of two letter combo
+                // this two letter combo occurs ${this.tools.letterPairToFreqLookup[twoLetterCombo]} times
+                // `)
+                if (indexOfTwoLetterCombo !== -1) {
+                    this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterCombo)
+                } else if (indexOfTwoLetterComboInverse !== -1) {
+                    this.shapesFac.createBoxFromTwoBodies(bodyA, bodyB, twoLetterComboInverse)
+                }
+                //todo Save off details of bodies to remove bodies before adding the new one
+                removeBodies(bodyA, bodyB)
+            }
         }
+
+
     }
     addShape = (mx: number, my: number) => {
         // console.log(`Adding shape at x:${mx} y:${my}`)

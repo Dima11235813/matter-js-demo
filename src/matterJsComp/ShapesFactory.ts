@@ -33,7 +33,7 @@ export class ShapesFactory {
         this.totalCount += 1
         return previewBox
     }
-    createBoxFromTwoBodies = (bodyA: Matter.Body, bodyB: Matter.Body, newText: string) => {
+    createBoxFromTwoBodies = (bodyA: Matter.Body, bodyB: Matter.Body, newText: string, type: ShapeTypes = ShapeTypes.TWO_LETTER_BOX) => {
         let boxA_Ref = this.boxes.find(box => box.matterId === bodyA.id)
         let boxB_Ref = this.boxes.find(box => box.matterId === bodyB.id)
         if (!boxA_Ref || !boxB_Ref) {
@@ -67,16 +67,19 @@ export class ShapesFactory {
             options: {}
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), newText)
-        newBox.boxOptions.type = ShapeTypes.TWO_LETTER_BOX
+        
+        //save the type in the new box options
+        newBox.boxOptions.type = type
+        
+        //save the new box in the collection
         this.boxes.push(newBox)
+
+        //update lookups for this box for it's text and type
         const { matterId, text } = newBox
-        const { type } = newBox.boxOptions
         this.addNewBoxDataToLookUps(matterId, text, type)
+        
+        //Keep track of how many boxes we have
         this.totalCount += 1
-        // console.log(`Creating box with two letters: ${newText}`)
-        // console.log(newBox)
-
-
     }
     addNewBoxDataToLookUps = (matterId: number, text: string, type: ShapeTypes) => {
         this.boxIdToLeterIdLookup[matterId] = text
@@ -102,8 +105,8 @@ export class ShapesFactory {
         let floor: FloorOptions = {
             x: width / 2,
             y: height - groundHeight,
-            w: width - leftAndRightPadding,
-            h: groundHeight,
+            w: width * 4,
+            h: groundHeight * 2,
             options: { isStatic: true },
             type: ShapeTypes.FLOOR
         }
