@@ -52,7 +52,7 @@ export class CustomWorld {
     }
 
     pairExistenceValidityChecker = (pair: Matter.IPair) => {
-        let seperationThreshold = .8//2//5 //set to 1 for most control over collision intensity
+        let seperationThreshold = .1//2//5 //set to 1 for most control over collision intensity
         if (pair.separation > seperationThreshold) return
         const { bodyA, bodyB } = pair
 
