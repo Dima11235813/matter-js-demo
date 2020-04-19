@@ -1,5 +1,5 @@
+// import source from './Dictionary/Dict3'
 import source from './Dictionary/Dictionary'
-import { stringify } from 'querystring'
 
 export const getRandomLetterOrSpace = () => {
     let result = ' '
@@ -17,8 +17,9 @@ const checkIfLetterNotValid = (letter: string): boolean => {
     }
     return valid
 }
+//TODO Move to constants class
 //whatever this is plus 1
-const sizeOfLargestWord = 4
+export const sizeOfLargestWord = 10
 
 const checkIfDynamicKeysCharsNotValid = (index: number, array: string[]): boolean => {
     let longestKeyIsNotValid = false
@@ -40,46 +41,53 @@ export class DictionaryTools {
     letterPairToFreqLookup: any = {}
 
     arrayOfLetterComboLookUps: any = []
-    letterCombos:any = []
+    letterCombos: any = []
     letterComboWithFreq: any = []
     letterComboToFreqLookup: any = []
 
     arrayOfKeys: any = []
+    wordLookup: Map<string, number> = new Map<string, number>()
     constructor() {
         this.dict = source
         // this.dict.sort((entry1: string, entry 2: string))
-        Object.keys(this.dict).join(' ').split('').forEach((letter: string, index: number, array: string[]) => {
-            //if on last letter don't do anything with it
-            if (index === array.length) return
-            //check to make sure that the current letter and the next letter aren't invalid letters
+        Object.keys(this.dict).forEach(word => {
+            if(word.length > 1) this.wordLookup.set(word, 1)
+        })
+        Object.keys(this.dict)
+            .join(' ')
+            .split('')
+            .forEach((letter: string, index: number, array: string[]) => {
+                //if on last letter don't do anything with it
+                if (index === array.length) return
+                //check to make sure that the current letter and the next letter aren't invalid letters
 
-            if (checkIfLetterNotValid(letter) ||
-                checkIfLetterNotValid(array[index + 1])
-            ) return
+                if (checkIfLetterNotValid(letter) ||
+                    checkIfLetterNotValid(array[index + 1])
+                ) return
 
-            //key the letter pair for current letter and next letter
-            let key = `${letter}${array[index + 1]}`.toLocaleLowerCase()
+                //key the letter pair for current letter and next letter
+                let key = `${letter}${array[index + 1]}`.toLocaleLowerCase()
 
-            this.arrayOfKeys = this.getArrayOfKeys(letter, index, array)
-            this.arrayOfKeys.forEach((key: any) => {
-                //if this is the first key for this length then create the array
-                if (!this.arrayOfLetterComboLookUps[key.length]) {
-                    this.arrayOfLetterComboLookUps[key.length] = []
-                }
-                if (!this.arrayOfLetterComboLookUps[key.length][key]) {
-                    this.arrayOfLetterComboLookUps[key.length][key] = 1
+                this.arrayOfKeys = this.getArrayOfKeys(letter, index, array)
+                this.arrayOfKeys.forEach((key: any) => {
+                    //if this is the first key for this length then create the array
+                    if (!this.arrayOfLetterComboLookUps[key.length]) {
+                        this.arrayOfLetterComboLookUps[key.length] = []
+                    }
+                    if (!this.arrayOfLetterComboLookUps[key.length][key]) {
+                        this.arrayOfLetterComboLookUps[key.length][key] = 1
+                    } else {
+                        this.arrayOfLetterComboLookUps[key.length][key] += 1
+                    }
+                })
+                //Two letter keys
+                let result = this.commonLetterPairs[key]
+                if (result) {
+                    this.commonLetterPairs[key] += 1
                 } else {
-                    this.arrayOfLetterComboLookUps[key.length][key] += 1
+                    this.commonLetterPairs[key] = 1
                 }
-            })
-            //Two letter keys
-            let result = this.commonLetterPairs[key]
-            if (result) {
-                this.commonLetterPairs[key] += 1
-            } else {
-                this.commonLetterPairs[key] = 1
-            }
-        }, {})
+            }, {})
         this.commonLetterPairs = Object.entries(this.commonLetterPairs).sort((item1: any, item2: any) => {
             if (item1[1] > item2[1]) {
                 return -1

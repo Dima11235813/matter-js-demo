@@ -1,25 +1,27 @@
 import Matter, { IEventCollision, Engine } from 'matter-js'
-import { BoxOptions, FloorOptions, ShapeTypes } from '../models/boxOptions';
+import { BoxOptions, HardBodyOptions, ShapeTypes } from '../models/boxOptions';
 import deps from '../Deps';
 import { getRandomColor } from '../../utils/colorUtils';
 import { getRandomLetterOrSpace } from '../../utils/textUtils';
 
 export class Box {
-    static border = 4
-    static mass = 1
-    static friction = 1
+    static readonly border = 4
+    static readonly mass = 1
+    static readonly friction = 1
     body: Matter.Body | null = null
+    previewBox: boolean = false
     outOfBounds: boolean = false
     color: string = getRandomColor()
     public matterId: number = -1
     constructor(
-        public boxOptions: any,//BoxOptions | FloorOptions,
+        public boxOptions: any,//BoxOptions | HardBodyOptions,
         public text: string = getRandomLetterOrSpace(),
         public noMatter: boolean = false
     ) {
         if (!noMatter) {
             const { x, y, w, h, options = {} } = boxOptions
             this.body = Matter.Bodies.rectangle(x, y, w, h, options);
+            // this.body = Matter.Bodies.circle(x, y, ((w + h) /2))
             // this.body.mass = Box.mass
             // this.body.friction = Box.friction
             // console.log(`Box with 
@@ -42,7 +44,7 @@ export class Box {
 
     }
     show = () => {
-        if (!this.noMatter && !this.body) return
+        if (!this.noMatter && !this.body && !this.previewBox) return
         const helpGc = true
         const { position, angle } = this.body!
         const { x, y } = position!
@@ -81,7 +83,7 @@ export class Box {
             p.fill(255)
 
             //if hard body don't do text
-            if (this.boxOptions.type === ShapeTypes.BOX || this.boxOptions.type === ShapeTypes.TWO_LETTER_BOX) {
+            if (this.boxOptions.type !== ShapeTypes.FLOOR) {
                 const { textWidth, textHeight, textSize } = this.boxOptions
                 p.textAlign(p.CENTER);
                 p.textSize(textSize)

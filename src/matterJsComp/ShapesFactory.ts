@@ -1,5 +1,5 @@
 import { Box } from "./Shapes/Box";
-import { BoxOptions, FloorOptions, ShapeTypes, decordateWithTextProps } from "./models/boxOptions";
+import { BoxOptions, HardBodyOptions, ShapeTypes, decordateWithTextProps, ShapeBase } from "./models/boxOptions";
 import p5 from "p5";
 import { World } from "matter-js";
 import deps from "./Deps";
@@ -7,33 +7,43 @@ import { BaseHTMLAttributes } from "react";
 import { BaseOptions } from "vm";
 
 export class ShapesFactory {
+    private static readonly growthFactor = .66
     nextUpBox: Box;
     boxes: Box[];
-    ground: Box | undefined
+    hardBodies: Box[];
     totalCount: number = 0
-    public boxIdToLeterIdLookup: any = {}
+    public boxIdToTextLookup: any = {}
     public boxIdToType: any = {}
     constructor() {
         this.boxes = []
-        //create the world's ground
-        this.createGround()
+        this.hardBodies = []
+        this.createHardBodies()
         this.nextUpBox = this.createTheNextBoxPreview()
     }
     createTheNextBoxPreview = (): Box => {
+        const { width, height } = deps.browserInfo
+        let previewBoxOptions: ShapeBase = {
+            x: width / 2,
+            y: 0,
+            w: 50,
+            h: 50,
+            options: {}
+        }
+        previewBoxOptions = decordateWithTextProps(previewBoxOptions)
         let previewBox = new Box({
-            boxOptions: {
-                x: 0,
-                y: 0,
-                w: 50,
-                h: 50
-            },
+            boxOptions: previewBoxOptions,
             noMatter: true
         })
-        this.boxes.push(previewBox)
+        previewBox.previewBox = true
         this.totalCount += 1
         return previewBox
     }
-    createBoxFromTwoBodies = (bodyA: Matter.Body, bodyB: Matter.Body, newText: string, type: ShapeTypes = ShapeTypes.TWO_LETTER_BOX) => {
+    createBoxFromTwoBodies = (
+        bodyA: Matter.Body,
+        bodyB: Matter.Body,
+        newText: string,
+        type: ShapeTypes = ShapeTypes.TWO_LETTER_BOX
+    ) => {
         let boxA_Ref = this.boxes.find(box => box.matterId === bodyA.id)
         let boxB_Ref = this.boxes.find(box => box.matterId === bodyB.id)
         if (!boxA_Ref || !boxB_Ref) {
@@ -61,28 +71,28 @@ export class ShapesFactory {
         } = boxB_Ref?.boxOptions
         let newBoxOptions = {
             x: (boxA_x + boxB_x) / 2,
-            y: (boxA_y + boxB_y) / 2,
-            w: boxA_w + boxB_w,
-            h: boxA_h + boxB_h,
+            y: (boxA_h + boxB_h) / 2,//(boxA_y + boxB_y) / 2,
+            w: (boxA_w + boxB_w) * ShapesFactory.growthFactor,
+            h: (boxA_h + boxB_h) * ShapesFactory.growthFactor,
             options: {}
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), newText)
-        
+
         //save the type in the new box options
         newBox.boxOptions.type = type
-        
+
         //save the new box in the collection
         this.boxes.push(newBox)
 
         //update lookups for this box for it's text and type
         const { matterId, text } = newBox
         this.addNewBoxDataToLookUps(matterId, text, type)
-        
+
         //Keep track of how many boxes we have
         this.totalCount += 1
     }
     addNewBoxDataToLookUps = (matterId: number, text: string, type: ShapeTypes) => {
-        this.boxIdToLeterIdLookup[matterId] = text
+        this.boxIdToTextLookup[matterId] = text
         this.boxIdToType[matterId] = type
     }
     createBox = (boxOptions: BoxOptions) => {
@@ -97,21 +107,60 @@ export class ShapesFactory {
         this.boxes = this.boxes.filter(box => box.matterId !== id)
         this.totalCount -= 1
     }
+    createHardBodies = () => {
+        //create the ground
+        this.createGround()
+        this.createLeftWall()
+        this.createRightWall()
+
+    }
+    createLeftWall = () => {
+        const { width, height } = deps.browserInfo
+        const wallWidth = 5
+        this.createHardBody(
+            0,
+            height / 2,
+            wallWidth,
+            height
+        )
+
+    }
+    createRightWall = () => {
+        const { width, height } = deps.browserInfo
+        const wallWidth = 5
+        this.createHardBody(
+            width,
+            height / 2,
+            wallWidth,
+            height
+        )
+
+    }
     createGround = () => {
         const { width, height } = deps.browserInfo
         const groundHeight = 50
-        const leftAndRightPadding = width / 5
-        //create the ground
-        let floor: FloorOptions = {
-            x: width / 2,
-            y: height - groundHeight,
-            w: width * 4,
-            h: groundHeight * 2,
+        this.createHardBody(
+            width / 2,
+            height - groundHeight,
+            width * 4,
+            groundHeight * 2
+        )
+    }
+    createHardBody = (
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+
+    ) => {
+        let body: HardBodyOptions = {
+            x, y, w, h,
             options: { isStatic: true },
             type: ShapeTypes.FLOOR
         }
-        this.ground = new Box(floor)
-        this.boxIdToLeterIdLookup[this.ground.matterId] = this.ground.text
-        this.boxIdToType[this.ground.matterId] = this.ground.boxOptions.type
+        let newBody = new Box(body)
+        this.hardBodies.push(newBody)
+        this.boxIdToTextLookup[newBody.matterId] = newBody.text
+        this.boxIdToType[newBody.matterId] = newBody.boxOptions.type
     }
 }
