@@ -9,7 +9,7 @@ export class CollisionHandler {
     lettersChecked: any = {}
     private static readonly seperationThresholdLowerBound = .02
     private static readonly seperationThresholdUpperBound = 10
-    private static readonly maxAmountOfChecksForCombo = 500
+    private static readonly maxAmountOfChecksForCombo = 25
     private static readonly minLettersToConsiderPointsForWord = 3
 
 
@@ -115,6 +115,7 @@ export class CollisionHandler {
         this._secondBoxText = this.shapesFac.boxIdToTextLookup[this._secondBoxId]
 
         //return if the box letters combined are the same size as the largest letter'
+        if (!this._firstBoxText || !this._secondBoxText) return false
         this._potentialNewBoxTextSize = this._firstBoxText.length + this._secondBoxText.length
         if (this._potentialNewBoxTextSize >= sizeOfLargestWord) return false
 
@@ -226,7 +227,7 @@ export class CollisionHandler {
         //         ${text}
         //         Removed bodies because total combo check of ${numberOfChecks} exceeded ${CollisionHandler.maxAmountOfChecksForCombo}
         //         Number of Text Combos Checked ${Object.keys(this.lettersChecked).length}
-            
+
         //     `)
     }
     createNewBody = () => {
