@@ -78,9 +78,9 @@ export class Box {
                 p.translate(this.boxOptions.x, this.boxOptions.y)
                 p.rect(0, 0, this.boxOptions.w - Box.border, this.boxOptions.h - Box.border)
             } else {
-                p.rotate(p.radians(angle))
                 p.translate(position.x, position.y)
                 p.rect(0, 0, w - Box.border, h - Box.border)
+                p.rotate(p.radians(angle))
             }
 
             //Add text on top
