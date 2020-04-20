@@ -134,7 +134,7 @@ export class ShapesFactory {
             width - wallWidth,
             (height /2),
             wallWidth,
-            height / 3
+            height 
         )
 
     }
