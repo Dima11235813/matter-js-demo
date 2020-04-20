@@ -45,10 +45,13 @@ export class CollisionHandler {
         public shapesFac: ShapesFactory
     ) {
         this.tools = new DictionaryTools()
+
         this.logInterval = setInterval(() => this.logData(), 2500)
+
     }
     logData() {
-        if (this.wordsFound && this.lettersChecked) {
+        const shouldLog = true
+        if (shouldLog && this.wordsFound && this.lettersChecked) {
             let wordsFound = Object.entries(this.wordsFound)
             let letterCombosChecked = Object.entries(this.lettersChecked)
             console.log(`

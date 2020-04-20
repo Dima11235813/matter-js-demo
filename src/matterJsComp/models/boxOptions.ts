@@ -26,7 +26,7 @@ export const decordateWithTextProps = (baseObj: ShapeBase): BoxOptions => {
     return {
         textWidth: w / 13,
         textHeight: h / 13,
-        textSize: ((w + h) / 2) * ShapesFactory.growthFactor,
+        textSize: (w + h) / 6,
         type: ShapeTypes.BOX,
         ...baseObj
     }

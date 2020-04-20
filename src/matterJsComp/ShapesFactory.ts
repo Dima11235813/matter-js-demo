@@ -22,18 +22,16 @@ export class ShapesFactory {
     }
     createTheNextBoxPreview = (): Box => {
         const { width, height } = deps.browserInfo
-        let previewBoxOptions: ShapeBase = {
+        const previewBoxSize = 50
+        let previewBoxOptions: any = {
             x: width / 2,
-            y: 0,
-            w: 50,
-            h: 50,
-            options: {}
+            y: previewBoxSize / 2,
+            w: previewBoxSize,
+            h: previewBoxSize,
+            options: { isStatic: true }
         }
         previewBoxOptions = decordateWithTextProps(previewBoxOptions)
-        let previewBox = new Box({
-            boxOptions: previewBoxOptions,
-            noMatter: true
-        })
+        let previewBox = new Box(previewBoxOptions)
         previewBox.previewBox = true
         this.totalCount += 1
         return previewBox
@@ -97,6 +95,10 @@ export class ShapesFactory {
     }
     createBox = (boxOptions: BoxOptions) => {
         let newBox = new Box(boxOptions)
+        //Update the text in the box to be the next up box
+        newBox.text = this.nextUpBox.text
+        //create a new next up box
+        this.nextUpBox = this.createTheNextBoxPreview()
         this.boxes.push(newBox)
         const { matterId, text } = newBox
         const { type } = newBox.boxOptions
@@ -119,9 +121,9 @@ export class ShapesFactory {
         const wallWidth = 5
         this.createHardBody(
             0,
-            height / 2,
+            (height / 3) * 2,
             wallWidth,
-            height
+            height / 3
         )
 
     }
@@ -129,10 +131,10 @@ export class ShapesFactory {
         const { width, height } = deps.browserInfo
         const wallWidth = 5
         this.createHardBody(
-            width,
-            height / 2,
+            width - wallWidth,
+            (height / 3) * 2,
             wallWidth,
-            height
+            height / 3
         )
 
     }

@@ -1,5 +1,5 @@
-// import source from './Dictionary/scribdDict'
-import source from './Dictionary/Dictionary'
+import source from './Dictionary/scribdDict'
+// import source from './Dictionary/Dictionary'
 
 export const getRandomLetterOrSpace = () => {
     let result = ' '
