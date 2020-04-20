@@ -140,12 +140,12 @@ export class ShapesFactory {
     }
     createGround = () => {
         const { width, height } = deps.browserInfo
-        const groundHeight = 50
+        const groundHeight = 5
         this.createHardBody(
-            width / 2,
+            0,
             height - groundHeight,
-            width * 4,
-            groundHeight * 2
+            width * 2,
+            groundHeight
         )
     }
     createHardBody = (

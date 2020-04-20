@@ -1,5 +1,6 @@
 // import source from './Dictionary/scribdDict'
-import source from './Dictionary/corporaExplitives'
+// import source from './Dictionary/corporaExplitives'
+import source from './Dictionary/combinationOfAllDict'
 // import source from './Dictionary/googleMostCommonDict'
 // import source from './Dictionary/Dictionary'
 
@@ -11,7 +12,7 @@ export const getRandomLetterOrSpace = () => {
     // console.log(`Random letter ${result}`)
     return result
 }
-const notValidList = [" ", "-",".","!","*","$","_","0"]
+const notValidList = [" ", "-",".","!","*","$","_","0","@","'","`"]
 const checkIfLetterNotValid = (letter: string): boolean => {
     let valid = false
     if (notValidList.indexOf(letter) !== -1) {

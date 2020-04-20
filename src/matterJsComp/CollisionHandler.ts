@@ -9,7 +9,7 @@ export class CollisionHandler {
     lettersChecked: any = {}
     private static readonly seperationThresholdLowerBound = .02
     private static readonly seperationThresholdUpperBound = 10
-    private static readonly maxAmountOfChecksForCombo = 50
+    private static readonly maxAmountOfChecksForCombo = 500
     private static readonly minLettersToConsiderPointsForWord = 3
 
 
