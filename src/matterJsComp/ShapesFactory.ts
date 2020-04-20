@@ -7,7 +7,7 @@ import { BaseHTMLAttributes } from "react";
 import { BaseOptions } from "vm";
 
 export class ShapesFactory {
-    private static readonly growthFactor = .66
+    public static readonly growthFactor = .66
     nextUpBox: Box;
     boxes: Box[];
     hardBodies: Box[];
@@ -71,7 +71,7 @@ export class ShapesFactory {
         } = boxB_Ref?.boxOptions
         let newBoxOptions = {
             x: (boxA_x + boxB_x) / 2,
-            y: (boxA_h + boxB_h) / 2,//(boxA_y + boxB_y) / 2,
+            y: (boxA_y + boxB_y) / 2,//(boxA_y + boxB_y) / 2,
             w: (boxA_w + boxB_w) * ShapesFactory.growthFactor,
             h: (boxA_h + boxB_h) * ShapesFactory.growthFactor,
             options: {}

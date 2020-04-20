@@ -84,7 +84,7 @@ export class Box {
 
             //if hard body don't do text
             if (this.boxOptions.type !== ShapeTypes.FLOOR) {
-                const { textWidth, textHeight, textSize } = this.boxOptions
+                const { textWidth = 10, textHeight = 10, textSize = 10} = this.boxOptions
                 p.textAlign(p.CENTER);
                 p.textSize(textSize)
                 p.text(this.text, textWidth, textHeight) //Adding fourth and fifth param slows everything down

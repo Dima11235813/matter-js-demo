@@ -1,4 +1,4 @@
-// import source from './Dictionary/Dict3'
+// import source from './Dictionary/scribdDict'
 import source from './Dictionary/Dictionary'
 
 export const getRandomLetterOrSpace = () => {
@@ -51,7 +51,17 @@ export class DictionaryTools {
         this.dict = source
         // this.dict.sort((entry1: string, entry 2: string))
         Object.keys(this.dict).forEach(word => {
-            if(word.length > 1) this.wordLookup.set(word, 1)
+            if(word.length > 1) {
+                let isValid = true
+                notValidList.forEach(char => {
+                    if(word.indexOf(char) > -1){
+                        isValid = false
+                    }
+                })
+                if(isValid){
+                    this.wordLookup.set(word.toLowerCase(), 1)
+                }
+            }
         })
         Object.keys(this.dict)
             .join(' ')
