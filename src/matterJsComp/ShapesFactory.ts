@@ -121,9 +121,9 @@ export class ShapesFactory {
         const wallWidth = 5
         this.createHardBody(
             0,
-            (height / 3) * 2,
+            (height /  2),
             wallWidth,
-            height / 3
+            height
         )
 
     }
@@ -132,7 +132,7 @@ export class ShapesFactory {
         const wallWidth = 5
         this.createHardBody(
             width - wallWidth,
-            (height / 3) * 2,
+            (height /2),
             wallWidth,
             height / 3
         )

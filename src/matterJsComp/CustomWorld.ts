@@ -70,7 +70,6 @@ export class CustomWorld {
         this.shapesFac.boxes.forEach((box: Box, index: number) => {
             box && box.outOfBounds ? delete this.shapesFac.boxes[index] : box.show()
         })
-        debugger
         this.shapesFac.nextUpBox.show()
         // this.shapesFac.boxes.forEach(box => box.show())
         this.typographyDisplay.show()

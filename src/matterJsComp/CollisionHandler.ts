@@ -7,8 +7,8 @@ import deps from "./Deps";
 export class CollisionHandler {
     tools: DictionaryTools
     lettersChecked: any = {}
-    private static readonly seperationThresholdLowerBound = .2
-    private static readonly seperationThresholdUpperBound = 5
+    private static readonly seperationThresholdLowerBound = .02
+    private static readonly seperationThresholdUpperBound = 10
     private static readonly maxAmountOfChecksForCombo = 50
     private static readonly minLettersToConsiderPointsForWord = 3
 
@@ -54,14 +54,14 @@ export class CollisionHandler {
         if (shouldLog && this.wordsFound && this.lettersChecked) {
             let wordsFound = Object.entries(this.wordsFound)
             let letterCombosChecked = Object.entries(this.lettersChecked)
-            console.log(`
-                    ${wordsFound.length}
-                    Number Of Words Found
-                    ${JSON.stringify(wordsFound)}
-                    Letter combos checker
-                    ${letterCombosChecked.length}
-                    ${JSON.stringify(letterCombosChecked)}
-                `)
+            // console.log(`
+            //         ${wordsFound.length}
+            //         Number Of Words Found
+            //         ${JSON.stringify(wordsFound)}
+            //         Letter combos checker
+            //         ${letterCombosChecked.length}
+            //         ${JSON.stringify(letterCombosChecked)}
+            //     `)
         }
     }
     resetValues = () => {
@@ -88,6 +88,7 @@ export class CollisionHandler {
         this.pair = pair
         //if separation threshold aka collision stength 
         //isn't big enough ignore the collision
+        // console.log(`Collision ${this.pair.separation}`)
         if (this.pair.separation < CollisionHandler.seperationThresholdLowerBound ||
             this.pair.separation > CollisionHandler.seperationThresholdUpperBound
         ) return false
@@ -220,13 +221,13 @@ export class CollisionHandler {
         this.resetValues()
     }
     logRemovedBodyData = (text: string, numberOfChecks: number) => {
-        console.log(`
-                Removing Body
-                ${text}
-                Removed bodies because total combo check of ${numberOfChecks} exceeded ${CollisionHandler.maxAmountOfChecksForCombo}
-                Number of Text Combos Checked ${Object.keys(this.lettersChecked).length}
+        // console.log(`
+        //         Removing Body
+        //         ${text}
+        //         Removed bodies because total combo check of ${numberOfChecks} exceeded ${CollisionHandler.maxAmountOfChecksForCombo}
+        //         Number of Text Combos Checked ${Object.keys(this.lettersChecked).length}
             
-            `)
+        //     `)
     }
     createNewBody = () => {
         //if library doesn't provide two bodies in a pair collision return
