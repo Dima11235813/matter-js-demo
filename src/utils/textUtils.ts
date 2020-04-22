@@ -20,8 +20,8 @@ export const getRandomWeightedLetterCreator = () => {
             return 1
         } else return 0
     })
-    console.log("weightedLetters")
-    console.log(weightedLetters)
+    // console.log("weightedLetters")
+    // console.log(weightedLetters)
     const getLetterForRandomWeight = (randomDigitWithWeight: number) : string => {
         let randomLetter = ""
         let accum = 0
@@ -36,17 +36,17 @@ export const getRandomWeightedLetterCreator = () => {
                 foundLetter = true
             }
         })
-        console.log(`
-        Random letter 
-        ${randomLetter}
-        Value 
-        ${accum}
-        `)
+        // console.log(`
+        // Random letter 
+        // ${randomLetter}
+        // Value 
+        // ${accum}
+        // `)
         return randomLetter
     }
     return () => {
         let randomDigitWithWeight = Math.floor(Math.random() * sum)
-        console.log(`Generated random digits ${randomDigitWithWeight} while sum is ${sum}`)
+        // console.log(`Generated random digits ${randomDigitWithWeight} while sum is ${sum}`)
         return getLetterForRandomWeight(randomDigitWithWeight)
     }
 }
@@ -54,7 +54,7 @@ export const getRandomWeightedLetterCreator = () => {
 const randLetterGen = getRandomWeightedLetterCreator()
 export const getRandomLetterOrSpace = () => {
     let nextRandLetter = randLetterGen()
-    console.log(`${nextRandLetter} Random letter generated`)
+    // console.log(`${nextRandLetter} Random letter generated`)
     return nextRandLetter
     let result = ' '
     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -200,7 +200,7 @@ export class DictionaryTools {
                 }
             })
         })
-        const shouldLog = true
+        const shouldLog = false
         if (shouldLog) {
             console.log("letterCombos")
             console.log(this.letterCombos)
