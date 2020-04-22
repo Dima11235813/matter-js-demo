@@ -1,18 +1,70 @@
 // import source from './Dictionary/scribdDict'
 // import source from './Dictionary/corporaExplitives'
 import source from './Dictionary/combinationOfAllDict'
+import { letterFreqLookupRatio } from './letterFreqLookupSource'
 // import source from './Dictionary/googleMostCommonDict'
 // import source from './Dictionary/Dictionary'
 
+
+export const getRandomWeightedLetterCreator = () => {
+    let sum = Math.floor(Object.values(letterFreqLookupRatio).reduce((accum: number, current: number) => {
+        return accum + current
+    }))
+    let weightedLetters = Object.entries(letterFreqLookupRatio)
+    weightedLetters.sort((letterAndFreq1: any, letterAndFreq2: any) => {
+        let ratio1 = letterAndFreq1[1]
+        let ratio2 = letterAndFreq2[1]
+        if (ratio1 < ratio2) {
+            return -1
+        } else if (ratio2 < ratio1) {
+            return 1
+        } else return 0
+    })
+    console.log("weightedLetters")
+    console.log(weightedLetters)
+    const getLetterForRandomWeight = (randomDigitWithWeight: number) : string => {
+        let randomLetter = ""
+        let accum = 0
+        let foundLetter = false
+        //see if stopping execution with do while will improve perf significantly enough
+        weightedLetters.forEach((letterAndFreq: any, index: number, array: any) => {
+            let letter = letterAndFreq[0]
+            let ratio = letterAndFreq[1]
+            accum += ratio
+            if(!foundLetter && accum >= randomDigitWithWeight){
+                randomLetter = letter
+                foundLetter = true
+            }
+        })
+        console.log(`
+        Random letter 
+        ${randomLetter}
+        Value 
+        ${accum}
+        `)
+        return randomLetter
+    }
+    return () => {
+        let randomDigitWithWeight = Math.floor(Math.random() * sum)
+        console.log(`Generated random digits ${randomDigitWithWeight} while sum is ${sum}`)
+        return getLetterForRandomWeight(randomDigitWithWeight)
+    }
+}
+
+const randLetterGen = getRandomWeightedLetterCreator()
 export const getRandomLetterOrSpace = () => {
+    let nextRandLetter = randLetterGen()
+    console.log(`${nextRandLetter} Random letter generated`)
+    return nextRandLetter
     let result = ' '
     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    let fullAlphabet = `${alphabet}${alphabet.toLocaleLowerCase()}`
+    // let fullAlphabet = `${alphabet}${alphabet.toLocaleLowerCase()}`
+    let fullAlphabet = alphabet.toLocaleLowerCase()
     result = fullAlphabet[Math.floor(Math.random() * fullAlphabet.length)]
     // console.log(`Random letter ${result}`)
     return result
 }
-const notValidList = [" ", "-",".","!","*","$","_","0","@","'","`"]
+const notValidList = [" ", "-", ".", "!", "*", "$", "_", "0", "@", "'", "`"]
 const checkIfLetterNotValid = (letter: string): boolean => {
     let valid = false
     if (notValidList.indexOf(letter) !== -1) {
@@ -54,14 +106,14 @@ export class DictionaryTools {
         this.dict = source
         // this.dict.sort((entry1: string, entry 2: string))
         Object.keys(this.dict).forEach(word => {
-            if(word.length > 1) {
+            if (word.length > 1) {
                 let isValid = true
                 notValidList.forEach(char => {
-                    if(word.indexOf(char) > -1){
+                    if (word.indexOf(char) > -1) {
                         isValid = false
                     }
                 })
-                if(isValid){
+                if (isValid) {
                     this.wordLookup.set(word.toLowerCase(), 1)
                 }
             }

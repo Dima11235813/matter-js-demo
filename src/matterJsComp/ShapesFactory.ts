@@ -107,6 +107,9 @@ export class ShapesFactory {
     }
     removeBody = (id: number) => {
         this.boxes = this.boxes.filter(box => box.matterId !== id)
+        //TODO Optimize by removing 
+        this.boxIdToTextLookup[id] = ""
+        this.boxIdToType[id] = -1
         this.totalCount -= 1
     }
     createHardBodies = () => {
@@ -121,7 +124,7 @@ export class ShapesFactory {
         const wallWidth = 5
         this.createHardBody(
             0,
-            (height /  2),
+            (height / 2),
             wallWidth,
             height
         )
@@ -132,9 +135,9 @@ export class ShapesFactory {
         const wallWidth = 5
         this.createHardBody(
             width - wallWidth,
-            (height /2),
+            (height / 2),
             wallWidth,
-            height 
+            height
         )
 
     }

@@ -166,9 +166,13 @@ export class CollisionHandler {
             //if inverse has higher freq reassign text to use
             if (boxB_hasHigherFreq) {
                 this._textToUse = this.twoBoxTextComboInverse
+            }else{
+                this._textToUse = this.twoBoxTextCombo
             }
-        }
-        if (this.freqTwoBoxTextCombo > 0) {
+            this.createNewBody()
+            this.removeBothBodies()
+            return true
+        }else if (this.freqTwoBoxTextCombo > 0) {
             this._textToUse = this.twoBoxTextCombo
             this.createNewBody()
             this.removeBothBodies()
@@ -251,6 +255,7 @@ export class CollisionHandler {
         if (world) {
             if (!isntRemovable) {
                 World.remove(world, body);
+                console.log(`Removing id ${id}`)
                 this.shapesFac.removeBody(id)
             }
         }
