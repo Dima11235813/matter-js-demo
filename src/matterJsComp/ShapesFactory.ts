@@ -5,6 +5,7 @@ import { World } from "matter-js";
 import deps from "./Deps";
 import { BaseHTMLAttributes } from "react";
 import { BaseOptions } from "vm";
+import { getRandomLetterOrSpace } from "../utils/textUtils";
 
 export class ShapesFactory {
     public static readonly growthFactor = .66
@@ -33,8 +34,10 @@ export class ShapesFactory {
         previewBoxOptions = decordateWithTextProps(previewBoxOptions)
         let previewBox = new Box(previewBoxOptions)
         previewBox.previewBox = true
-        this.totalCount += 1
         return previewBox
+    }
+    getNewTextForNextBoxPreview = () => {
+        this.nextUpBox.text = getRandomLetterOrSpace()
     }
     createBoxFromTwoBodies = (
         bodyA: Matter.Body,
@@ -98,7 +101,11 @@ export class ShapesFactory {
         //Update the text in the box to be the next up box
         newBox.text = this.nextUpBox.text
         //create a new next up box
-        this.nextUpBox = this.createTheNextBoxPreview()
+        this.getNewTextForNextBoxPreview()
+        
+        //This was a bad idea as it added an extra body to matter js every time
+
+        // this.nextUpBox = this.createTheNextBoxPreview()
         this.boxes.push(newBox)
         const { matterId, text } = newBox
         const { type } = newBox.boxOptions

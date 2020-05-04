@@ -255,7 +255,7 @@ export class CollisionHandler {
         if (world) {
             if (!isntRemovable) {
                 World.remove(world, body);
-                console.log(`Removing id ${id}`)
+                // console.log(`Removing id ${id}`)
                 this.shapesFac.removeBody(id)
             }
         }
