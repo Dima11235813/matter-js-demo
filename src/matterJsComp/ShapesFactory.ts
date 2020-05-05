@@ -182,6 +182,7 @@ export class ShapesFactory {
     createHardBodies = () => {
         //create the ground
         this.createGround()
+        this.createCeiling()
         this.createLeftWall()
         this.createRightWall()
 
@@ -214,6 +215,16 @@ export class ShapesFactory {
         this.createHardBody(
             0,
             height - groundHeight,
+            width * 2,
+            groundHeight
+        )
+    }
+    createCeiling = () => {
+        const { width, height } = deps.browserInfo
+        const groundHeight = 5
+        this.createHardBody(
+            0,
+            0,
             width * 2,
             groundHeight
         )
