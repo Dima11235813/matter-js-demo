@@ -26,7 +26,7 @@ export class Box {
             // this.body.friction = Box.friction
             // console.log(`Box with 
 
-            // this.body.collisionFilter.group = this.boxOptions.w
+            // this.body.collisionFilter.group = this.boOxptions.w
             // Matter
             // console.log()
             // width of ${w}
@@ -75,6 +75,7 @@ export class Box {
 
             //Create rect
             if (this.previewBox) {
+                p.strokeWeight(this.boxOptions.border)
                 p.translate(this.boxOptions.x, this.boxOptions.y)
                 p.rect(0, 0, this.boxOptions.w - Box.border, this.boxOptions.h - Box.border)
             } else {

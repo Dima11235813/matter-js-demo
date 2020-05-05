@@ -10,7 +10,7 @@ export class TypographyDisplay {
     }
     show = () => {
         const { p, world } = deps
-        if (p && world) {
+        if (p && world && process.env.NODE_ENV === "development") {
             const numberOfBodiesInWorld = world?.bodies.length - 1 //subtract for the floor
             const numberOfShapesInFac = this.shapesFac.boxes.length
             const textToDisplay = `
@@ -20,7 +20,7 @@ export class TypographyDisplay {
             Total Created ${this.shapesFac.totalCount}
             `
             //https://p5js.org/reference/#/p5/text
-            p.text(textToDisplay, 20, 20)
+            p.text(textToDisplay, 20, 120)
         }
     }
 }

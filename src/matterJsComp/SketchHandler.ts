@@ -1,5 +1,5 @@
 import p5 from "p5"
-import { CustomWorld } from './CustomWorld';
+import { CustomWorld, EventClickType } from './CustomWorld';
 import deps from "./Deps";
 
 export class SketchHandler {
@@ -21,10 +21,29 @@ export class SketchHandler {
             this.customWorld!.draw()
         }
         p!.mouseDragged = (event: any) => {
-            this.customWorld?.addShape(p!.mouseX, p!.mouseY)
+            console.log("mouse dragged")
+            this.conditionallyHandleClickOrDrag(p!.mouseX, p!.mouseY)
         }
         p!.mouseClicked = (event: any) => {
-            this.customWorld?.addShape(p!.mouseX, p!.mouseY)
+            console.log("mouse clicked")
+            //check if user clicked on preview shape - 
+            this.customWorld?.catogorizeClickType(p!.mouseX, p!.mouseY)
+            //if so this outcome is handle in the method
+            this.conditionallyHandleClickOrDrag(p!.mouseX, p!.mouseY)
         }
+        p!.mouseMoved = (event: any) => {
+            console.log("mouse moved")
+            //check if user clicked on preview shape - 
+            // this.customWorld?.setMouseMoveCoordinates(p!.mouseX, p!.mouseY)
+        }
+    }
+    conditionallyHandleClickOrDrag = (x: number, y: number) => {
+        if (
+            this.customWorld?.clickType === EventClickType.CREATE_LETTER_BOX
+        ) {
+            //otherwise create a shape where the user clicked
+            this.customWorld?.addShape(x, y)
+        }
+
     }
 }

@@ -5,11 +5,15 @@ import { World } from "matter-js";
 import deps from "./Deps";
 import { BaseHTMLAttributes } from "react";
 import { BaseOptions } from "vm";
-import { getRandomLetterOrSpace } from "../utils/textUtils";
+import { getRandomLetterOrSpace, alphabet } from "../utils/textUtils";
 
 export class ShapesFactory {
+    public static readonly defaultPreviewTextBoxSize = 12
+    public static readonly defaultBorder = 5
     public static readonly growthFactor = .66
+    public static readonly previewBoxSize = 50
     nextUpBox: Box;
+    previewBoxes: Box[];
     boxes: Box[];
     hardBodies: Box[];
     totalCount: number = 0
@@ -20,6 +24,45 @@ export class ShapesFactory {
         this.hardBodies = []
         this.createHardBodies()
         this.nextUpBox = this.createTheNextBoxPreview()
+        this.previewBoxes = this.createPreviewBoxes()
+    }
+    setLetterBasedOnXy(text: string) {
+        this.nextUpBox.text = text
+        this.updateBorderBasedOnLetter()
+    }
+    createPreviewBoxes = (): Box[] => {
+        let xLocationStart = 50
+        const { width } = deps.browserInfo
+        let shouldShrinkBoxes = alphabet.length * xLocationStart < width
+        if (shouldShrinkBoxes) {
+            //change x location start based on how far under we are
+        }
+
+
+        return alphabet.split('').map((letter: string) => {
+            xLocationStart += ShapesFactory.previewBoxSize
+
+            //set up options and create the preview box
+            let newPreviewBoxOptions = this.getPreviewBoxProps(xLocationStart)
+            let newPreviewBox = new Box(newPreviewBoxOptions)
+
+            //update its letter to be this iterations alphabet letter
+            newPreviewBox.text = letter
+            newPreviewBox.boxOptions.type = ShapeTypes.LETTER_PREVIEW_BOX
+
+            return newPreviewBox
+
+        })
+    }
+    getPreviewBoxProps = (x: number): any => {
+        return {
+            x: x,
+            y: ShapesFactory.previewBoxSize / 2,
+            w: ShapesFactory.previewBoxSize,
+            h: ShapesFactory.previewBoxSize,
+            border: ShapesFactory.defaultBorder,
+            options: { isStatic: true, color: "grey" }
+        }
     }
     createTheNextBoxPreview = (): Box => {
         const { width, height } = deps.browserInfo
@@ -38,6 +81,21 @@ export class ShapesFactory {
     }
     getNewTextForNextBoxPreview = () => {
         this.nextUpBox.text = getRandomLetterOrSpace()
+    }
+    updateBorderBasedOnLetter = () => {
+        //todo extract to box class logic
+        this.previewBoxes.forEach((box: Box) => {
+            if (
+                box.text.toLowerCase() === this.nextUpBox.text.toLowerCase()
+            ) {
+                box.boxOptions.textSize = ShapesFactory.defaultPreviewTextBoxSize * 2
+                // box.boxOptions.border = ShapesFactory.defaultBorder * 3
+            } else {
+                box.boxOptions.textSize = ShapesFactory.defaultPreviewTextBoxSize
+                // box.boxOptions.border = ShapesFactory.defaultBorder
+
+            }
+        })
     }
     createBoxFromTwoBodies = (
         bodyA: Matter.Body,
@@ -75,6 +133,7 @@ export class ShapesFactory {
             y: (boxA_y + boxB_y) / 2,//(boxA_y + boxB_y) / 2,
             w: (boxA_w + boxB_w) * ShapesFactory.growthFactor,
             h: (boxA_h + boxB_h) * ShapesFactory.growthFactor,
+            border: (boxA_h + boxB_h) * ShapesFactory.defaultBorder,
             options: {}
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), newText)
@@ -102,7 +161,8 @@ export class ShapesFactory {
         newBox.text = this.nextUpBox.text
         //create a new next up box
         this.getNewTextForNextBoxPreview()
-        
+        this.updateBorderBasedOnLetter()
+
         //This was a bad idea as it added an extra body to matter js every time
 
         // this.nextUpBox = this.createTheNextBoxPreview()
@@ -166,7 +226,7 @@ export class ShapesFactory {
 
     ) => {
         let body: HardBodyOptions = {
-            x, y, w, h,
+            x, y, w, h, border: ShapesFactory.defaultBorder,
             options: { isStatic: true },
             type: ShapeTypes.FLOOR
         }

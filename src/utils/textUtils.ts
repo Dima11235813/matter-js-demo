@@ -51,13 +51,13 @@ export const getRandomWeightedLetterCreator = () => {
     }
 }
 
+export const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const randLetterGen = getRandomWeightedLetterCreator()
 export const getRandomLetterOrSpace = () => {
     let nextRandLetter = randLetterGen()
     // console.log(`${nextRandLetter} Random letter generated`)
     return nextRandLetter
     let result = ' '
-    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     // let fullAlphabet = `${alphabet}${alphabet.toLocaleLowerCase()}`
     let fullAlphabet = alphabet.toLocaleLowerCase()
     result = fullAlphabet[Math.floor(Math.random() * fullAlphabet.length)]
