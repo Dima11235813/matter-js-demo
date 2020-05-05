@@ -7,6 +7,9 @@ import { Box } from "./Shapes/Box";
 import { TypographyDisplay } from "./TypographyDisplay";
 import { DictionaryTools } from "../utils/textUtils";
 import { CollisionHandler } from "./CollisionHandler";
+import { stores } from "../stores";
+import { AppModes } from "./models/appMode";
+import App from "../App";
 
 export enum EventClickType {
     CREATE_LETTER_BOX, DRAG_BOX, SELECT_LETTER
@@ -60,8 +63,11 @@ export class CustomWorld {
     }
     // setMouseMoveCoordinates = (x: number, y: number) => {
     //     this.mouseX
-    // } 
+    // }
     catogorizeClickType = (x: number, y: number) => {
+        const { mode } = stores.menuStore!
+        //If handling click while moving around a box, drop that box
+
         let clickedOnPreviewBox = false
         //todo refactor to exit if finds click target
         this.shapesFac.previewBoxes.forEach((box: Box) => {
@@ -70,22 +76,40 @@ export class CustomWorld {
                 this.shapesFac.setLetterBasedOnXy(box.text)
             }
         })
+        if (mode === AppModes.MOVE) {
+            //if in move mode we need to save which box we click everytime we click
+            this.shapesFac.boxes.forEach((box: Box) => {
+                if (this.checkLocationIsInBox(box, x, y)) {
+                    deps.boxLastClicked = box
+                }
+            })
+        }
         if (clickedOnPreviewBox) {
             this.clickType = EventClickType.SELECT_LETTER
         } else {
             this.clickType = EventClickType.CREATE_LETTER_BOX
         }
     }
+    moveBoxIfOneSelected = (x: number, y: number) => {
+        //Update the current box's locaiton
+        if (deps.boxLastClicked && deps.boxLastClicked!.body && deps.boxLastClicked!.body!.position) {
+            deps.boxLastClicked!.body!.position.x = x
+            deps.boxLastClicked!.body!.position.y = y
+        }
+    }
     //TODO move to box util class or inner class fun
     checkLocationIsInBox = (box: Box, x: number, y: number): boolean => {
         const { x: boxX, y: boxY, w: boxW, h: boxH } = box.boxOptions
+        const { position, angle } = box.body!
+        const { x: xPos, y: yPos } = position!
         if (
-            x < boxX + boxW / 2 &&
-            x > boxX - boxW / 2 &&
-            y < boxY + boxH / 2 &&
-            y > boxY - boxH / 2
+            x < xPos + boxW / 2 &&
+            x > xPos - boxW / 2 &&
+            y < yPos + boxH / 2 &&
+            y > yPos - boxH / 2
 
         ) {
+            // debugger
             console.log("clcked on a preview box")
             return true
         }
@@ -94,8 +118,8 @@ export class CustomWorld {
     addShape = (mx: number, my: number) => {
         //todo extract to create util in factory
         if (mx > 50 && mx < 50 * 26 + 100 && my < 75) return
-            // console.log(`Adding shape at x:${mx} y:${my}`)
-            const { rectWidth, rectHeight } = shapeOptions.getNewShapeOptions()
+        // console.log(`Adding shape at x:${mx} y:${my}`)
+        const { rectWidth, rectHeight } = shapeOptions.getNewShapeOptions()
         //todo move all creation logic to encapsulated within the factory class
         let newBoxOptions: ShapeBase = {
             x: mx, y: my, w: rectWidth, h: rectHeight, options: {}, border: 1

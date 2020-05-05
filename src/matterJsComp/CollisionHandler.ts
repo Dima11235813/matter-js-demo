@@ -84,7 +84,7 @@ export class CollisionHandler {
         this.pair = undefined
 
     }
-    extractNeededData = (pair: IPair): boolean => {
+    checkCollision = (pair: IPair): boolean => {
         this.pair = pair
         //if separation threshold aka collision stength 
         //isn't big enough ignore the collision
@@ -101,6 +101,19 @@ export class CollisionHandler {
 
         this._firstBoxId = bodyA.id
         this._secondBoxId = bodyB.id
+        if (deps.boxLastClicked &&
+            (this._firstBoxId === deps.boxLastClicked.matterId ||
+                this._secondBoxId === deps.boxLastClicked.matterId)
+        ) {
+            console.log(`
+    Ignoring collision with box being moved 
+    this._firstBoxId ${this._firstBoxId}
+    this._secondBoxId ${this._secondBoxId}
+    deps.boxLastClicked.matterId ${deps.boxLastClicked.matterId}
+                `
+            )
+            return false
+        }
 
         this._firstBoxType = this.shapesFac.boxIdToType[bodyA.id]
         this._secondBoxType = this.shapesFac.boxIdToType[bodyB.id]
@@ -110,6 +123,7 @@ export class CollisionHandler {
 
         //If colliding with floor return 
         if (this._firstBoxIsntRemovable || this._secondBoxIsntRemovable) return false
+        console.log(pair)
 
         this._firstBoxText = this.shapesFac.boxIdToTextLookup[this._firstBoxId]
         this._secondBoxText = this.shapesFac.boxIdToTextLookup[this._secondBoxId]
@@ -133,8 +147,8 @@ export class CollisionHandler {
         return true
     }
     hanldeCollision = (pair: IPair) => {
-        let allDataAvail = this.extractNeededData(pair)
-        if (!allDataAvail) {
+        let collisionIsOkayToHandle = this.checkCollision(pair)
+        if (!collisionIsOkayToHandle) {
             this.resetValues()
             return false
         }
@@ -166,13 +180,13 @@ export class CollisionHandler {
             //if inverse has higher freq reassign text to use
             if (boxB_hasHigherFreq) {
                 this._textToUse = this.twoBoxTextComboInverse
-            }else{
+            } else {
                 this._textToUse = this.twoBoxTextCombo
             }
             this.createNewBody()
             this.removeBothBodies()
             return true
-        }else if (this.freqTwoBoxTextCombo > 0) {
+        } else if (this.freqTwoBoxTextCombo > 0) {
             this._textToUse = this.twoBoxTextCombo
             this.createNewBody()
             this.removeBothBodies()

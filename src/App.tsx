@@ -3,23 +3,13 @@ import logo from "./logo.svg";
 import "./App.css";
 import { WorldContainer } from "./matterJsComp/WorldContainer";
 import MainMenu from "./MainMenu/MainMenu";
+import WordWorld from "./WordWorld";
 
 function App() {
-  let world: WorldContainer | null;
-  let worldDomContainer: HTMLElement | null;
-  let clearWorld = () => {
-    worldDomContainer = null;
-    world = null;
-  };
-  useEffect(() => {
-    worldDomContainer = document.getElementById("worldContainter");
-    if (worldDomContainer) world = new WorldContainer(worldDomContainer);
-    return clearWorld;
-  });
   return (
     <div className="App">
       <MainMenu/>
-      <div id="worldContainter"></div>
+      <WordWorld/>
     </div>
   );
 }

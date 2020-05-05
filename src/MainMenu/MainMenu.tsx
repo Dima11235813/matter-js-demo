@@ -1,3 +1,4 @@
+import { inject, observer } from "mobx-react";
 import React from "react";
 
 // import { inject, observer } from "mobx-react";
@@ -10,17 +11,22 @@ import MenuItem from "@material-ui/core/MenuItem";
 import MenuList from "@material-ui/core/MenuList";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 
-import styles from './MainMenu.module.scss'
+import styles from "./MainMenu.module.scss";
 
 //Icons
 import AddIcon from "@material-ui/icons/Add";
 import PanToolIcon from "@material-ui/icons/PanTool";
+import { MenuStore } from "../stores/MenuStore";
+import { AppModes } from "../matterJsComp/models/appMode";
 //https://material-ui.com/components/material-icons/#material-icons
 
-// interface MainMenuProps {
-// }
-// const MainMenu = (props: MainMenuProps) => {
-const MainMenu = () => {
+const menuBackgroundPrimary = "blue";
+
+interface MainMenuProps {
+  menuStore?: MenuStore;
+}
+// function MainMenu() {
+const MainMenu = (props: MainMenuProps) => {
   const useStyles = makeStyles((theme: Theme) =>
     createStyles({
       root: {
@@ -63,14 +69,18 @@ const MainMenu = () => {
     prevOpen.current = open;
   }, [open]);
 
+  const { setMode, mode } = props.menuStore!;
+
   const handleCreateMode = (
     event: React.MouseEvent<EventTarget, MouseEvent>
   ) => {
     console.log("Create Mode");
+    setMode(AppModes.CREATE);
     handleClose(event);
   };
   const handleDragMode = (event: React.MouseEvent<EventTarget, MouseEvent>) => {
     console.log("Drag Mode");
+    setMode(AppModes.MOVE);
     handleClose(event);
   };
   return (
@@ -82,17 +92,39 @@ const MainMenu = () => {
             id="menu-list-grow"
             onKeyDown={handleListKeyDown}
           >
-            <MenuItem onClick={handleCreateMode}>
-              <AddIcon />
-            </MenuItem>
-            <MenuItem onClick={handleDragMode}>
-              <PanToolIcon />
-            </MenuItem>
+            {
+              (mode === AppModes.CREATE ? (
+                <MenuItem onClick={handleCreateMode}>
+                  <AddIcon 
+                   color="primary"
+                   htmlColor={menuBackgroundPrimary}
+                  />
+                </MenuItem>
+              ) : (
+                <MenuItem onClick={handleCreateMode}>
+                  <AddIcon />
+                </MenuItem>
+              ))
+            }
+            {
+              (mode === AppModes.MOVE ? (
+                <MenuItem onClick={handleDragMode}>
+                  <PanToolIcon 
+                   color="primary"
+                   htmlColor={menuBackgroundPrimary}
+                  />
+                </MenuItem>
+              ) : (
+                <MenuItem onClick={handleDragMode}>
+                  <PanToolIcon />
+                </MenuItem>
+              ))
+            }
           </MenuList>
         </ClickAwayListener>
       </Paper>
     </div>
   );
 };
-export default MainMenu;
-// export default inject("webPaintStore")(observer(MainMenu));
+
+export default inject("menuStore")(observer(MainMenu));

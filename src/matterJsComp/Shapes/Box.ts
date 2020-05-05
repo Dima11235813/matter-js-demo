@@ -3,6 +3,8 @@ import { BoxOptions, HardBodyOptions, ShapeTypes } from '../models/boxOptions';
 import deps from '../Deps';
 import { getRandomColor } from '../../utils/colorUtils';
 import { getRandomLetterOrSpace } from '../../utils/textUtils';
+import { stores } from '../../stores';
+import { AppModes } from '../models/appMode';
 
 export class Box {
     static readonly border = 4
@@ -43,6 +45,7 @@ export class Box {
         }
 
     }
+    count = 0
     show = () => {
         if (!this.noMatter && !this.body && !this.previewBox) return
         const helpGc = true
@@ -54,7 +57,7 @@ export class Box {
             const { world } = deps
             //TODO Triggers the before remove and after remove composite hooks
             //See if this can help garbage clean up on this body
-            if (helpGc && world && this.body) { 
+            if (helpGc && world && this.body) {
                 // console.log(`Removing out of bounds item from world. Number of items in world: ${world.bodies.length}`)
                 Matter.World.remove(world, this.body);
                 this.body = null
@@ -65,7 +68,9 @@ export class Box {
         const { p } = deps
         if (p) {
             p.push()
-            const { w, h } = this.boxOptions
+            const { mode } = stores.menuStore
+            const { boxLastClicked } = deps
+            const { x, y, w, h } = this.boxOptions
 
             //Rect options
             //https://p5js.org/reference/#/p5/rectMode
@@ -78,7 +83,22 @@ export class Box {
                 p.strokeWeight(this.boxOptions.border)
                 p.translate(this.boxOptions.x, this.boxOptions.y)
                 p.rect(0, 0, this.boxOptions.w - Box.border, this.boxOptions.h - Box.border)
-            } else {
+            }
+            //  else if (
+            //     boxLastClicked?.matterId === this.body!.id && mode === AppModes.MOVE
+            // ) {
+            //     //Temp logging hack
+            //     this.count += 1
+            //     if (this.count % 100 === 0) {
+            //         console.log("Drawing body")
+            //         console.log(this.body)
+            //     }
+            //     ////////////
+            //     p.translate(x, y)
+            //     p.rect(0, 0, w - Box.border, h - Box.border)
+            //     p.rotate(p.radians(angle))
+            // }
+            else {
                 p.translate(position.x, position.y)
                 p.rect(0, 0, w - Box.border, h - Box.border)
                 p.rotate(p.radians(angle))
