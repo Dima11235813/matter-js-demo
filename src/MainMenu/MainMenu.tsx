@@ -9,7 +9,6 @@ import ClickAwayListener from "@material-ui/core/ClickAwayListener";
 import Paper from "@material-ui/core/Paper";
 import MenuItem from "@material-ui/core/MenuItem";
 import MenuList from "@material-ui/core/MenuList";
-import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 
 import styles from "./MainMenu.module.scss";
 
@@ -27,17 +26,6 @@ interface MainMenuProps {
 }
 // function MainMenu() {
 const MainMenu = (props: MainMenuProps) => {
-  const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-      root: {
-        display: "flex",
-      },
-      paper: {
-        marginRight: theme.spacing(2),
-      },
-    })
-  );
-  const classes = useStyles();
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef<HTMLButtonElement>(null);
 

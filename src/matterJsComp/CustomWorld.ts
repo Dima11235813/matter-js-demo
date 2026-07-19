@@ -30,6 +30,10 @@ export class CustomWorld {
         deps.world = deps.engine.world
 
         //test bounds
+        deps.world.bounds = deps.world.bounds || {
+            min: { x: 0, y: 0 },
+            max: { x: deps.browserInfo.width, y: deps.browserInfo.height }
+        };
         deps.world.bounds.min.x = 0
         deps.world.bounds.min.y = 0
         deps.world.bounds.max.x = deps.browserInfo.width
