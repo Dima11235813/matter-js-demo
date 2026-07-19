@@ -1,5 +1,6 @@
 import { inject, observer } from "mobx-react";
 import React from "react";
+import { logger } from "../utils/logger";
 
 // import { inject, observer } from "mobx-react";
 
@@ -62,12 +63,12 @@ const MainMenu = (props: MainMenuProps) => {
   const handleCreateMode = (
     event: React.MouseEvent<EventTarget, MouseEvent>
   ) => {
-    console.log("Create Mode");
+    logger.log("Create Mode");
     setMode(AppModes.CREATE);
     handleClose(event);
   };
   const handleDragMode = (event: React.MouseEvent<EventTarget, MouseEvent>) => {
-    console.log("Drag Mode");
+    logger.log("Drag Mode");
     setMode(AppModes.MOVE);
     handleClose(event);
   };

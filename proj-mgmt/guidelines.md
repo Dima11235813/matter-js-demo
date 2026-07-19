@@ -31,3 +31,12 @@ This document details the guidelines for all future development passes. The orch
 ## 📖 5. Intuitive Documentation
 *   **TSDoc / JSDoc**: Document classes and non-obvious functions using standard TSDoc formats.
 *   **Comments**: Explain *why* a complex logic branches or mathematical formula is chosen, not just *what* the code does.
+
+## 🧪 6. Testing Pipeline Standards
+*   **Pipeline Execution Order**:
+    1.  **Linting & Compile Check**: Execute `yarn build` to ensure TypeScript compilation passes.
+    2.  **Unit Tests (`yarn test:unit`)**: Verify pure domain functions (e.g., `determineMergeText`) in isolation from React DOM and Matter.js.
+    3.  **E2E Tests (`yarn test:e2e`)**: Run Playwright to verify visual rendering, canvas layout, responsive viewports, and physics engine interactions.
+*   **Architectural Dependency Isolation**:
+    *   No business or domain logic should reside in templates or direct third-party handlers (such as Matter.js event loops).
+    *   Extract all decisions (e.g., scoring rules, word attraction/merges) into pure, testable functions in the domain utility layer, facilitating future engine swaps.

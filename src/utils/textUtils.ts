@@ -215,5 +215,46 @@ export class DictionaryTools {
         })
         return arrayOfKeys
     }
+}
 
+export interface MergeResult {
+    shouldMerge: boolean;
+    textToUse: string;
+}
+
+export function determineMergeText(
+    textA: string,
+    textB: string,
+    letterCombos: Record<string, number>[]
+): MergeResult {
+    if (!textA || !textB) {
+        return { shouldMerge: false, textToUse: "" };
+    }
+    const potentialLength = textA.length + textB.length;
+    if (potentialLength >= sizeOfLargestWord) {
+        return { shouldMerge: false, textToUse: "" };
+    }
+    const combo = `${textA}${textB}`.toLowerCase();
+    const comboInverse = `${textB}${textA}`.toLowerCase();
+    
+    const lookUp = letterCombos[potentialLength];
+    if (!lookUp) {
+        return { shouldMerge: false, textToUse: "" };
+    }
+    
+    const freq = lookUp[combo] || 0;
+    const freqInverse = lookUp[comboInverse] || 0;
+    
+    if (freq > 0 && freqInverse > 0) {
+        return {
+            shouldMerge: true,
+            textToUse: freqInverse > freq ? comboInverse : combo
+        };
+    } else if (freq > 0) {
+        return { shouldMerge: true, textToUse: combo };
+    } else if (freqInverse > 0) {
+        return { shouldMerge: true, textToUse: comboInverse };
+    }
+    
+    return { shouldMerge: false, textToUse: "" };
 }

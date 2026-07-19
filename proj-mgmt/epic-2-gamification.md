@@ -45,3 +45,17 @@ Turn the physics prototype into an engaging, addictive educational game. Players
   * **Story 2.4.2**: *As a player, I want an interactive node graph at the game-over screen showing the branching tree of my word consolidations, so I can save/share my creation path.*
     * [ ] **Task 2.4.2.1**: Create a Canvas or SVG-based force-directed graph component representing the merge tree.
     * [ ] **Task 2.4.2.2**: Enable tooltips showing the similarity scores and vector distances on each edge of the graph.
+
+### Feature 2.5: Lexical Fountain Sandbox Modes (Linguistic Scale Progression)
+* **Description**: Establish modular sandbox rules determining the scale at which physical objects interact and merge (from single characters to full text blocks).
+* **User Stories**:
+  * **Story 2.5.1**: *As a player, I want to toggle between "Word Mode", "Sentence Mode", and "Paragraph Mode", so that I can control the linguistic scope of my sandbox interactions.*
+    * [ ] **Task 2.5.1.1**: Add a mode selector dropdown/toggle to the side menu representing: `Word`, `Sentence`, `Paragraph` modes.
+    * [ ] **Task 2.5.1.2**: Update the physics collision handler to execute different merge checks based on the active sandbox scale.
+  * **Story 2.5.2**: *As a player in Sentence Mode, I want words to attract each other based on parts-of-speech (nouns attract verbs/adjectives) and cosine vector proximity to fuse into clauses, so I can watch sentences physically construct themselves.*
+    * [ ] **Task 2.5.2.1**: Implement a parts-of-speech tagging utility on word merger outcomes.
+    * [ ] **Task 2.5.2.2**: Calculate attraction forces between bodies based on syntactic compatibility and cosine vector distance.
+  * **Story 2.5.3**: *As a player in Paragraph Mode, I want sentences to cluster, merging physically into paragraphs that trace a thematic arc, so I can construct a structured narrative flow in the canvas.*
+    * [ ] **Task 2.5.3.1**: Add support for multi-line paragraph block physics bodies that grow in size dynamically.
+    * [ ] **Task 2.5.3.2**: Hook paragraph fusion outcomes into context-similarity checks (e.g. combining sentence themes).
+

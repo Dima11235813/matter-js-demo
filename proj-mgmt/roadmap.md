@@ -1,15 +1,16 @@
-# Word Physics Embeddings Game - Master Roadmap
+# Lexical Fountain - Master Roadmap
 
-Welcome to the future roadmap for the **Word Physics Embeddings Game**. This document outlines our transition from a primitive in-memory string-matching physics prototype to an enterprise-grade, gamified learning application where players explore linguistic relationships through play.
+Welcome to the future roadmap for **Lexical Fountain** (formerly Word Physics Embeddings Game). This document outlines our transition from a primitive in-memory string-matching physics prototype to an enterprise-grade, gamified learning application and sandbox where players explore linguistic relationships through physics and semantic embeddings.
 
 ---
 
-## 🌟 The Vision
+## 🌟 The Vision (Lexical Fountain Sandbox)
 
-By merging a **2D rigid-body physics engine (Matter.js + p5.js)** with **word embeddings (vector semantics)**, we will build a game where:
-1. Words don't just collide; they **attract, repel, and merge** based on their semantic relationships.
-2. Players discover concepts and relationships by physically combining words (e.g. colliding `coffee` and `milk` to make `latte`, or seeing `hot` and `cold` cancel each other out).
-3. The codebase transitions into a modern, scalable, enterprise-grade architecture with a dedicated TypeScript backend, shared models, and modern build tooling.
+By merging a **2D rigid-body physics engine (Matter.js + p5.js)** with **word embeddings (vector semantics)**, we will build a multi-mode sandbox where language flows dynamically:
+1. **Word Mode (Core)**: Dropped letters bounce and collide, merging into words when dictionary patterns are formed.
+2. **Sentence Mode (Linguistic Attraction)**: Formed words attract, repel, and merge into complex sentences based on vector semantic proximity and grammar templates.
+3. **Paragraph Mode (Textual Synthesis)**: Sentences cluster and fuse together to compose synthetically coherent paragraphs, driven by context embeddings and local language generation.
+4. **Semantic Physics**: Words don't just collide; they attract or repel based on cosine distance. Colliding `coffee` + `milk` yields `latte`, while opposing concepts (e.g. `hot` + `cold`) cancel each other out.
 
 ---
 
