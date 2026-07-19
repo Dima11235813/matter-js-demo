@@ -1,12 +1,12 @@
 import { ShapesFactory } from "./ShapesFactory";
-import { ShapeTypes } from "./models/boxOptions";
+import { ShapeTypes, getShapeTypeForLength } from "./models/boxOptions";
 import { DictionaryTools, sizeOfLargestWord } from "../utils/textUtils";
 import Matter, { Body, World, Pair } from "matter-js";
 import deps from "./Deps";
 
 export class CollisionHandler {
     tools: DictionaryTools
-    lettersChecked: any = {}
+    lettersChecked: Record<string, number> = {}
     private static readonly seperationThresholdLowerBound = .02
     private static readonly seperationThresholdUpperBound = 10
     private static readonly maxAmountOfChecksForCombo = 25
@@ -39,7 +39,7 @@ export class CollisionHandler {
     private _potentialNewBoxTextSize: number = 1;
     private _textToUse: string = "";
 
-    wordsFound: any = {}
+    wordsFound: Record<string, number> = {}
     logInterval: NodeJS.Timeout;
     constructor(
         public shapesFac: ShapesFactory
@@ -139,14 +139,15 @@ export class CollisionHandler {
 
         //get the right lookup by size of new combo
         let lookUpToUse = this.tools.letterCombos[this._potentialNewBoxTextSize]
+        if (!lookUpToUse) return false
 
         //check if the letter pairs exist in the language
-        this.freqTwoBoxTextCombo = lookUpToUse[this.twoBoxTextCombo]
-        this.freqTwoBoxTextComboInverse = lookUpToUse[this.twoBoxTextComboInverse]
+        this.freqTwoBoxTextCombo = lookUpToUse[this.twoBoxTextCombo] || 0
+        this.freqTwoBoxTextComboInverse = lookUpToUse[this.twoBoxTextComboInverse] || 0
 
         return true
     }
-    hanldeCollision = (pair: Pair) => {
+    handleCollision = (pair: Pair) => {
         let collisionIsOkayToHandle = this.checkCollision(pair)
         if (!collisionIsOkayToHandle) {
             this.resetValues()
@@ -261,7 +262,7 @@ export class CollisionHandler {
             this._bodyA,
             this._bodyB,
             this._textToUse,
-            this._potentialNewBoxTextSize
+            getShapeTypeForLength(this._potentialNewBoxTextSize)
         )
     }
     removeBody = (body: Body, isntRemovable: boolean, id: number) => {

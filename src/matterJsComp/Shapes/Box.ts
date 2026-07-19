@@ -16,7 +16,7 @@ export class Box {
     color: string = getRandomColor()
     public matterId: number = -1
     constructor(
-        public boxOptions: any,//BoxOptions | HardBodyOptions,
+        public boxOptions: BoxOptions | HardBodyOptions,
         public text: string = getRandomLetterOrSpace(),
         public noMatter: boolean = false
     ) {
@@ -109,7 +109,8 @@ export class Box {
 
             //if hard body don't do text
             if (this.boxOptions.type !== ShapeTypes.FLOOR) {
-                const { textWidth = 10, textHeight = 10, textSize = 10 } = this.boxOptions
+                const textOptions = this.boxOptions as BoxOptions
+                const { textWidth = 10, textHeight = 10, textSize = 10 } = textOptions
                 p.textAlign(p.CENTER);
                 p.textSize(textSize)
                 p.text(this.text, textWidth, textHeight) //Adding fourth and fifth param slows everything down

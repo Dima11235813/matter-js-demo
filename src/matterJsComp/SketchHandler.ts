@@ -22,7 +22,7 @@ export class SketchHandler {
         p!.draw = () => {
             this.customWorld!.draw()
         }
-        p!.mouseDragged = (event: any) => {
+        p!.mouseDragged = () => {
             const { mode } = stores.menuStore
             console.log("mouse dragged")
             if (mode === AppModes.MOVE && deps.boxLastClicked) {
@@ -30,7 +30,7 @@ export class SketchHandler {
             }
             this.conditionallyHandleClickOrDrag(p!.mouseX, p!.mouseY)
         }
-        p!.mousePressed = (event: any) => {
+        p!.mousePressed = () => {
             //check if user clicked on preview shape - or box shape
             this.customWorld?.catogorizeClickType(p!.mouseX, p!.mouseY)
             const { mode } = stores.menuStore
@@ -40,7 +40,7 @@ export class SketchHandler {
                 this.conditionallyHandleClickOrDrag(p!.mouseX, p!.mouseY)
             }
         }
-        p!.mouseMoved = (event: any) => {
+        p!.mouseMoved = () => {
             const { mode } = stores.menuStore
             console.log("mouse moved")
             // if (mode === AppModes.MOVE && deps.boxLastClicked) {
@@ -49,7 +49,7 @@ export class SketchHandler {
             //check if user clicked on preview shape - 
             // this.customWorld?.setMouseMoveCoordinates(p!.mouseX, p!.mouseY)
         }
-        p!.mouseReleased = (event: any) => {
+        p!.mouseReleased = () => {
             const x = p?.mouseX
             const y = p?.mouseY
             const { mode } = stores.menuStore

@@ -53,7 +53,7 @@ export class CustomWorld {
                 // console.log(event)
                 let pairs: Pair[] = event.pairs;
                 pairs.forEach((pair: Pair) => {
-                    this.collisionHandler.hanldeCollision(pair)
+                    this.collisionHandler.handleCollision(pair)
                 })
             });
 

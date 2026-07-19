@@ -17,8 +17,8 @@ export class ShapesFactory {
     boxes: Box[];
     hardBodies: Box[];
     totalCount: number = 0
-    public boxIdToTextLookup: any = {}
-    public boxIdToType: any = {}
+    public boxIdToTextLookup: Record<number, string> = {}
+    public boxIdToType: Record<number, ShapeTypes> = {}
     constructor() {
         this.boxes = []
         this.hardBodies = []
@@ -54,27 +54,29 @@ export class ShapesFactory {
 
         })
     }
-    getPreviewBoxProps = (x: number): any => {
+    getPreviewBoxProps = (x: number): HardBodyOptions => {
         return {
             x: x,
             y: ShapesFactory.previewBoxSize / 2,
             w: ShapesFactory.previewBoxSize,
             h: ShapesFactory.previewBoxSize,
             border: ShapesFactory.defaultBorder,
-            options: { isStatic: true, color: "grey" }
+            options: { isStatic: true },
+            type: ShapeTypes.LETTER_PREVIEW_BOX
         }
     }
     createTheNextBoxPreview = (): Box => {
         const { width, height } = deps.browserInfo
         const previewBoxSize = 50
-        let previewBoxOptions: any = {
+        const baseOptions: ShapeBase = {
             x: width / 2,
             y: previewBoxSize / 2,
             w: previewBoxSize,
             h: previewBoxSize,
+            border: ShapesFactory.defaultBorder,
             options: { isStatic: true }
         }
-        previewBoxOptions = decordateWithTextProps(previewBoxOptions)
+        const previewBoxOptions = decordateWithTextProps(baseOptions)
         let previewBox = new Box(previewBoxOptions)
         previewBox.previewBox = true
         return previewBox
@@ -85,13 +87,14 @@ export class ShapesFactory {
     updateBorderBasedOnLetter = () => {
         //todo extract to box class logic
         this.previewBoxes.forEach((box: Box) => {
+            const boxOpts = box.boxOptions as BoxOptions
             if (
                 box.text.toLowerCase() === this.nextUpBox.text.toLowerCase()
             ) {
-                box.boxOptions.textSize = ShapesFactory.defaultPreviewTextBoxSize * 2
+                boxOpts.textSize = ShapesFactory.defaultPreviewTextBoxSize * 2
                 // box.boxOptions.border = ShapesFactory.defaultBorder * 3
             } else {
-                box.boxOptions.textSize = ShapesFactory.defaultPreviewTextBoxSize
+                boxOpts.textSize = ShapesFactory.defaultPreviewTextBoxSize
                 // box.boxOptions.border = ShapesFactory.defaultBorder
 
             }

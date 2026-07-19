@@ -3,7 +3,7 @@ import p5 from 'p5';
 import deps from './Deps';
 
 export class WorldContainer {
-    sketch: any;
+    sketch: p5;
     sketchHandler: SketchHandler | undefined;
     constructor(
         public worldDomContainer: HTMLElement
