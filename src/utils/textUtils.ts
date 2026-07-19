@@ -124,6 +124,16 @@ export class DictionaryTools {
             }
         })
     }
+    getRandomWords(count: number): string[] {
+        const words = Array.from(this.wordLookup.keys())
+        if (words.length === 0) return ["lexical", "fountain", "word", "physics"]
+        const selected: string[] = []
+        for (let i = 0; i < count; i++) {
+            const index = Math.floor(Math.random() * words.length)
+            selected.push(words[index])
+        }
+        return selected;
+    }
 
     private processLetterCombinations(arrayOfLetterComboLookUps: Record<string, number>[]): void {
         Object.keys(this.dict)

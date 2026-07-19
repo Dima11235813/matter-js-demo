@@ -15,6 +15,7 @@ export class Box {
     outOfBounds: boolean = false
     color: string = getRandomColor()
     public matterId: number = -1
+    public embedding?: number[]
     constructor(
         public boxOptions: BoxOptions | HardBodyOptions,
         public text: string = getRandomLetterOrSpace(),
@@ -74,7 +75,13 @@ export class Box {
 
             //Rect options
             //https://p5js.org/reference/#/p5/rectMode
-            p.strokeWeight(Box.border)
+            const isSelected = stores.menuStore.selectedWordIds.includes(this.matterId)
+            if (isSelected) {
+                p.stroke("#ff007f")
+                p.strokeWeight(Box.border + 3)
+            } else {
+                p.strokeWeight(Box.border)
+            }
             p.fill(this.color)
             p.rectMode(p.CENTER)
 

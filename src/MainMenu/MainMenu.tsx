@@ -16,6 +16,8 @@ import styles from "./MainMenu.module.scss";
 //Icons
 import AddIcon from "@material-ui/icons/Add";
 import PanToolIcon from "@material-ui/icons/PanTool";
+import BubbleChartIcon from "@material-ui/icons/BubbleChart";
+import ExtensionIcon from "@material-ui/icons/Extension";
 import { MenuStore } from "../stores/MenuStore";
 import { AppModes } from "../matterJsComp/models/appMode";
 //https://material-ui.com/components/material-icons/#material-icons
@@ -58,7 +60,7 @@ const MainMenu = (props: MainMenuProps) => {
     prevOpen.current = open;
   }, [open]);
 
-  const { setMode, mode } = props.menuStore!;
+  const { setMode, mode, setView, view } = props.menuStore!;
 
   const handleCreateMode = (
     event: React.MouseEvent<EventTarget, MouseEvent>
@@ -106,6 +108,35 @@ const MainMenu = (props: MainMenuProps) => {
               ) : (
                 <MenuItem onClick={handleDragMode}>
                   <PanToolIcon />
+                </MenuItem>
+              ))
+            }
+            <hr style={{ margin: "8px 0", border: "none", borderTop: "1px solid rgba(255, 255, 255, 0.12)" }} />
+            {
+              (view === "fountain" ? (
+                <MenuItem id="fountain-toggle" onClick={() => setView("fountain")}>
+                  <BubbleChartIcon 
+                   color="primary"
+                   htmlColor={menuBackgroundPrimary}
+                  />
+                </MenuItem>
+              ) : (
+                <MenuItem id="fountain-toggle" onClick={() => setView("fountain")}>
+                  <BubbleChartIcon style={{ color: "rgba(255, 255, 255, 0.5)" }} />
+                </MenuItem>
+              ))
+            }
+            {
+              (view === "sandbox" ? (
+                <MenuItem id="sandbox-toggle" onClick={() => setView("sandbox")}>
+                  <ExtensionIcon 
+                   color="primary"
+                   htmlColor={menuBackgroundPrimary}
+                  />
+                </MenuItem>
+              ) : (
+                <MenuItem id="sandbox-toggle" onClick={() => setView("sandbox")}>
+                  <ExtensionIcon style={{ color: "rgba(255, 255, 255, 0.5)" }} />
                 </MenuItem>
               ))
             }

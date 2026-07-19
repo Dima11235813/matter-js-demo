@@ -5,27 +5,32 @@ import { World } from "matter-js";
 import Matter from "matter-js";
 import deps from "./Deps";
 import { getRandomLetterOrSpace, alphabet } from "../utils/textUtils";
+import { getEmbedding } from "../utils/embeddingService";
+import { stores } from "../stores";
 
 export class ShapesFactory {
     public static readonly defaultPreviewTextBoxSize = 12
-    public static readonly defaultBorder = 2
+    public static readonly defaultBorder = 4
     public static readonly growthFactor = .66
     public static readonly previewBoxSize = 50
-    nextUpBox: Box;
-    previewBoxes: Box[];
-    boxes: Box[];
-    hardBodies: Box[];
-    totalCount: number = 0
+    public nextUpBox: Box;
+    public previewBoxes: Box[];
+    public boxes: Box[];
+    public hardBodies: Box[];
+    public totalCount: number = 0
     public boxIdToTextLookup: Record<number, string> = {}
     public boxIdToType: Record<number, ShapeTypes> = {}
     constructor() {
         this.boxes = []
         this.hardBodies = []
         this.createHardBodies()
-        this.nextUpBox = this.createTheNextBoxPreview()
-        this.previewBoxes = this.createPreviewBoxes()
+        
+        const isFountain = stores.menuStore.view === "fountain"
+        this.nextUpBox = isFountain ? (null as unknown as Box) : this.createTheNextBoxPreview()
+        this.previewBoxes = isFountain ? [] : this.createPreviewBoxes()
     }
     setLetterBasedOnXy(text: string) {
+        if (!this.nextUpBox) return
         this.nextUpBox.text = text
         this.updateBorderBasedOnLetter()
     }
@@ -88,9 +93,11 @@ export class ShapesFactory {
         return previewBox
     }
     getNewTextForNextBoxPreview = () => {
+        if (!this.nextUpBox) return
         this.nextUpBox.text = getRandomLetterOrSpace()
     }
     updateBorderBasedOnLetter = () => {
+        if (!this.nextUpBox) return
         this.previewBoxes.forEach((box: Box) => {
             const boxOpts = box.boxOptions as BoxOptions
             if (
@@ -135,6 +142,9 @@ export class ShapesFactory {
             options: {}
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), newText)
+        getEmbedding(newText).then(vector => {
+            newBox.embedding = vector
+        })
 
         newBox.boxOptions.type = type
         this.boxes.push(newBox)
@@ -149,19 +159,44 @@ export class ShapesFactory {
     }
     createBox = (boxOptions: BoxOptions) => {
         let newBox = new Box(boxOptions)
-        newBox.text = this.nextUpBox.text
-        this.getNewTextForNextBoxPreview()
-        this.updateBorderBasedOnLetter()
+        if (this.nextUpBox) {
+            newBox.text = this.nextUpBox.text
+            this.getNewTextForNextBoxPreview()
+            this.updateBorderBasedOnLetter()
+        }
         this.boxes.push(newBox)
         const { matterId, text } = newBox
         const { type } = newBox.boxOptions
         this.addNewBoxDataToLookUps(matterId, text, type)
         this.totalCount += 1
     }
+    createWordBox = (text: string, x: number, y: number): Box => {
+        let newWidth = text.length * 20 + 20
+        let newHeight = 44
+        let newBoxOptions = {
+            x: x,
+            y: y,
+            w: newWidth,
+            h: newHeight,
+            border: ShapesFactory.defaultBorder,
+            options: { friction: 0.1, restitution: 0.3 }
+        }
+        let newBox = new Box(decordateWithTextProps(newBoxOptions), text)
+        getEmbedding(text).then(vector => {
+            newBox.embedding = vector
+        })
+        newBox.boxOptions.type = ShapeTypes.BOX
+        this.boxes.push(newBox)
+        
+        const { matterId } = newBox
+        this.addNewBoxDataToLookUps(matterId, text, ShapeTypes.BOX)
+        this.totalCount += 1
+        return newBox
+    }
     removeBody = (id: number) => {
         this.boxes = this.boxes.filter(box => box.matterId !== id)
         this.boxIdToTextLookup[id] = ""
-        this.boxIdToType[id] = -1
+        this.boxIdToType[id] = -1 as unknown as ShapeTypes
         this.totalCount -= 1
     }
     createHardBodies = () => {

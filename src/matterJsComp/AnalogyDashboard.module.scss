@@ -1,0 +1,124 @@
+.DashboardRoot {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  background: rgba(18, 18, 22, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: "Outfit", "Inter", sans-serif;
+  color: #ffffff;
+  pointer-events: none; /* Let clicks pass through to Matter.js canvas */
+}
+
+.TopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.Logo {
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #00f2fe, #4facfe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ScoreCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ScoreLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ScoreValue {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #00f2fe;
+}
+
+.AnalogyRow {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.Formula {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ActiveWord {
+  background: rgba(255, 0, 127, 0.1);
+  border: 1px solid #ff007f;
+  border-radius: 6px;
+  padding: 4px 12px;
+  color: #ff007f;
+  text-transform: lowercase;
+  box-shadow: 0 0 10px rgba(255, 0, 127, 0.15);
+  animation: popIn 0.25s ease-out;
+}
+
+.EmptyWord {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 16px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.Connector {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+.LogCard {
+  background: rgba(0, 242, 254, 0.05);
+  border: 1px solid rgba(0, 242, 254, 0.15);
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: center;
+  animation: slideUp 0.3s ease-out;
+}
+
+.LogText {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #00f2fe;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(5px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}

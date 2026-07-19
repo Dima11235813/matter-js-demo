@@ -45,6 +45,28 @@ test.describe('Lexical Fountain Gameplay E2E Regression Tests', () => {
     await page.screenshot({ path: path.join(artifactDir, 'e2e_desktop_merge.png') });
   });
 
+  test('Should toggle Sandbox mode and spawn letters on drag', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(2000);
+
+    // 1. Click on Sandbox Mode toggle in the menu
+    const sandboxToggle = page.locator('#sandbox-toggle').first();
+    await expect(sandboxToggle).toBeVisible();
+    await sandboxToggle.click();
+    await page.waitForTimeout(1000); // Wait for world recreation
+
+    // 2. Perform click and drag on the canvas
+    await page.mouse.move(300, 300);
+    await page.mouse.down();
+    await page.mouse.move(400, 350);
+    await page.mouse.move(500, 300);
+    await page.mouse.up();
+    await page.waitForTimeout(2000); // Wait for physics and letter drops
+
+    // 3. Take screenshot to visually verify letters spawned in sandbox mode
+    await page.screenshot({ path: path.join(artifactDir, 'sandbox_drag_letters.png') });
+  });
+
   test('Should adapt rendering for Mobile Viewport', async ({ page }) => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
