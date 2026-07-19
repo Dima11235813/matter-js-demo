@@ -1,5 +1,6 @@
 import { inject, observer } from "mobx-react";
 import React from "react";
+import { logger } from "../utils/logger";
 
 // import { inject, observer } from "mobx-react";
 
@@ -9,7 +10,6 @@ import ClickAwayListener from "@material-ui/core/ClickAwayListener";
 import Paper from "@material-ui/core/Paper";
 import MenuItem from "@material-ui/core/MenuItem";
 import MenuList from "@material-ui/core/MenuList";
-import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 
 import styles from "./MainMenu.module.scss";
 
@@ -27,17 +27,6 @@ interface MainMenuProps {
 }
 // function MainMenu() {
 const MainMenu = (props: MainMenuProps) => {
-  const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-      root: {
-        display: "flex",
-      },
-      paper: {
-        marginRight: theme.spacing(2),
-      },
-    })
-  );
-  const classes = useStyles();
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef<HTMLButtonElement>(null);
 
@@ -74,12 +63,12 @@ const MainMenu = (props: MainMenuProps) => {
   const handleCreateMode = (
     event: React.MouseEvent<EventTarget, MouseEvent>
   ) => {
-    console.log("Create Mode");
+    logger.log("Create Mode");
     setMode(AppModes.CREATE);
     handleClose(event);
   };
   const handleDragMode = (event: React.MouseEvent<EventTarget, MouseEvent>) => {
-    console.log("Drag Mode");
+    logger.log("Drag Mode");
     setMode(AppModes.MOVE);
     handleClose(event);
   };

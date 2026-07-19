@@ -1,24 +1,19 @@
-import { action, observable } from 'mobx';
+import { action, makeObservable, observable } from 'mobx';
 import { CommonStore } from "./CommonStore"
 import { RootStore } from "./RootStore";
 import { AppModes } from '../matterJsComp/models/appMode';
 
 export class MenuStore extends CommonStore {
-    @observable mode: AppModes
+    mode: AppModes
     constructor(store: RootStore) {
         super(store);
-        this.mode =  AppModes.CREATE
+        this.mode = AppModes.CREATE;
+        makeObservable(this, {
+            mode: observable,
+            setMode: action
+        });
     }
-    @action setMode = (newMode: AppModes) => {
+    setMode = (newMode: AppModes) => {
         this.mode = newMode
     }
 }
-
-//THIS pattern requires
-// "emitDecoratorMetadata": true,
-// "experimentalDecorators": true,
-//in tsconfig 
-
-//TODO research if there's any implication in this decision - the above is easier to write
-
-//https://stackoverflow.com/questions/38271273/experimental-decorators-warning-in-typescript-compilation

@@ -1,4 +1,4 @@
-import Matter, { IPair, IEventCollision } from "matter-js";
+import Matter, { Pair, IEventCollision } from "matter-js";
 import { ShapesFactory } from "./ShapesFactory";
 import { BoxOptions, ShapeTypes, ShapeBase, decordateWithTextProps } from "./models/boxOptions";
 import deps from "./Deps";
@@ -30,6 +30,10 @@ export class CustomWorld {
         deps.world = deps.engine.world
 
         //test bounds
+        deps.world.bounds = deps.world.bounds || {
+            min: { x: 0, y: 0 },
+            max: { x: deps.browserInfo.width, y: deps.browserInfo.height }
+        };
         deps.world.bounds.min.x = 0
         deps.world.bounds.min.y = 0
         deps.world.bounds.max.x = deps.browserInfo.width
@@ -51,9 +55,9 @@ export class CustomWorld {
             'collisionStart',
             (event: IEventCollision<Matter.Engine>) => {
                 // console.log(event)
-                let pairs: IPair[] = event.pairs;
-                pairs.forEach((pair: IPair) => {
-                    this.collisionHandler.hanldeCollision(pair)
+                let pairs: Pair[] = event.pairs;
+                pairs.forEach((pair: Pair) => {
+                    this.collisionHandler.handleCollision(pair)
                 })
             });
 
@@ -66,21 +70,20 @@ export class CustomWorld {
     // }
     catogorizeClickType = (x: number, y: number) => {
         const { mode } = stores.menuStore!
-        //If handling click while moving around a box, drop that box
-
         let clickedOnPreviewBox = false
-        //todo refactor to exit if finds click target
         this.shapesFac.previewBoxes.forEach((box: Box) => {
-            //check if box is in click
             if (this.checkLocationIsInBox(box, x, y)) {
                 this.shapesFac.setLetterBasedOnXy(box.text)
+                clickedOnPreviewBox = true
             }
         })
         if (mode === AppModes.MOVE) {
-            //if in move mode we need to save which box we click everytime we click
             this.shapesFac.boxes.forEach((box: Box) => {
                 if (this.checkLocationIsInBox(box, x, y)) {
                     deps.boxLastClicked = box
+                    if (box.body) {
+                        Matter.Body.setStatic(box.body, true)
+                    }
                 }
             })
         }
@@ -91,55 +94,52 @@ export class CustomWorld {
         }
     }
     moveBoxIfOneSelected = (x: number, y: number) => {
-        //Update the current box's locaiton
-        if (deps.boxLastClicked && deps.boxLastClicked!.body && deps.boxLastClicked!.body!.position) {
-            deps.boxLastClicked!.body!.position.x = x
-            deps.boxLastClicked!.body!.position.y = y
+        if (deps.boxLastClicked && deps.boxLastClicked.body) {
+            Matter.Body.setPosition(deps.boxLastClicked.body, { x, y })
+            Matter.Body.setVelocity(deps.boxLastClicked.body, { x: 0, y: 0 })
         }
     }
-    //TODO move to box util class or inner class fun
+    handleWindowResize = (width: number, height: number) => {
+        if (deps.world) {
+            deps.world.bounds.max.x = width
+            deps.world.bounds.max.y = height
+        }
+        this.shapesFac.updateHardBodies()
+        this.shapesFac.updatePreviewBoxes()
+    }
     checkLocationIsInBox = (box: Box, x: number, y: number): boolean => {
-        const { x: boxX, y: boxY, w: boxW, h: boxH } = box.boxOptions
-        const { position, angle } = box.body!
-        const { x: xPos, y: yPos } = position!
+        const { w: boxW, h: boxH } = box.boxOptions
+        if (!box.body) return false
+        const { position } = box.body
+        const { x: xPos, y: yPos } = position
         if (
             x < xPos + boxW / 2 &&
             x > xPos - boxW / 2 &&
             y < yPos + boxH / 2 &&
             y > yPos - boxH / 2
-
         ) {
-            // debugger
-            console.log("clcked on a preview box")
             return true
         }
         return false
     }
     addShape = (mx: number, my: number) => {
-        //todo extract to create util in factory
-        if (mx > 50 && mx < 50 * 26 + 100 && my < 75) return
-        // console.log(`Adding shape at x:${mx} y:${my}`)
+        const previewTopBarHeight = 75
+        if (my < previewTopBarHeight) return
         const { rectWidth, rectHeight } = shapeOptions.getNewShapeOptions()
-        //todo move all creation logic to encapsulated within the factory class
         let newBoxOptions: ShapeBase = {
             x: mx, y: my, w: rectWidth, h: rectHeight, options: {}, border: 1
         }
         this.shapesFac.createBox(decordateWithTextProps(newBoxOptions))
-
     }
     draw = () => {
         const { p } = deps
-        p?.background(177)
-        this.shapesFac.hardBodies.forEach(body => body ? body.show() : null)
-        // console.log(`Boxes length before filter ${this.shapesFac.boxes.length}`)
-        this.shapesFac.boxes = this.shapesFac.boxes.filter((box: Box) => box.body)
-        // console.log(`Boxes length after filter ${this.shapesFac.boxes.length}`)
-        this.shapesFac.boxes.forEach((box: Box, index: number) => {
-            box && box.outOfBounds ? delete this.shapesFac.boxes[index] : box.show()
-        })
-        // this.shapesFac.nextUpBox.show()
-        this.shapesFac.previewBoxes.forEach((previewBox: Box, index: number) => previewBox.show())
-        this.shapesFac.boxes.forEach(box => box.show())
-        this.typographyDisplay.show()
+        if (p) {
+            p.background("#0c0c0e")
+            this.shapesFac.hardBodies.forEach(body => body && body.show())
+            this.shapesFac.boxes = this.shapesFac.boxes.filter((box: Box) => box && box.body && !box.outOfBounds)
+            this.shapesFac.boxes.forEach(box => box.show())
+            this.shapesFac.previewBoxes.forEach(previewBox => previewBox.show())
+            this.typographyDisplay.show()
+        }
     }
 }

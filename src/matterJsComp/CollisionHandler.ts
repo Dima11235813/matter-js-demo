@@ -1,19 +1,20 @@
 import { ShapesFactory } from "./ShapesFactory";
-import { ShapeTypes } from "./models/boxOptions";
-import { DictionaryTools, sizeOfLargestWord } from "../utils/textUtils";
-import Matter, { Body, World, IPair } from "matter-js";
+import { ShapeTypes, getShapeTypeForLength } from "./models/boxOptions";
+import { DictionaryTools, sizeOfLargestWord, determineMergeText } from "../utils/textUtils";
+import Matter, { Body, World, Pair } from "matter-js";
 import deps from "./Deps";
+import { logger } from "../utils/logger";
 
 export class CollisionHandler {
     tools: DictionaryTools
-    lettersChecked: any = {}
+    lettersChecked: Record<string, number> = {}
     private static readonly seperationThresholdLowerBound = .02
     private static readonly seperationThresholdUpperBound = 10
     private static readonly maxAmountOfChecksForCombo = 25
     private static readonly minLettersToConsiderPointsForWord = 3
 
 
-    private pair: IPair | undefined;
+    private pair: Pair | undefined;
 
     private _firstBoxIsntRemovable: boolean = false;
     private _secondBoxIsntRemovable: boolean = false;
@@ -39,7 +40,7 @@ export class CollisionHandler {
     private _potentialNewBoxTextSize: number = 1;
     private _textToUse: string = "";
 
-    wordsFound: any = {}
+    wordsFound: Record<string, number> = {}
     logInterval: NodeJS.Timeout;
     constructor(
         public shapesFac: ShapesFactory
@@ -84,7 +85,7 @@ export class CollisionHandler {
         this.pair = undefined
 
     }
-    checkCollision = (pair: IPair): boolean => {
+    checkCollision = (pair: Pair): boolean => {
         this.pair = pair
         //if separation threshold aka collision stength 
         //isn't big enough ignore the collision
@@ -105,7 +106,7 @@ export class CollisionHandler {
             (this._firstBoxId === deps.boxLastClicked.matterId ||
                 this._secondBoxId === deps.boxLastClicked.matterId)
         ) {
-            console.log(`
+            logger.log(`
     Ignoring collision with box being moved 
     this._firstBoxId ${this._firstBoxId}
     this._secondBoxId ${this._secondBoxId}
@@ -123,36 +124,23 @@ export class CollisionHandler {
 
         //If colliding with floor return 
         if (this._firstBoxIsntRemovable || this._secondBoxIsntRemovable) return false
-        console.log(pair)
+        logger.log(pair)
 
         this._firstBoxText = this.shapesFac.boxIdToTextLookup[this._firstBoxId]
         this._secondBoxText = this.shapesFac.boxIdToTextLookup[this._secondBoxId]
 
-        //return if the box letters combined are the same size as the largest letter'
-        if (!this._firstBoxText || !this._secondBoxText) return false
-        this._potentialNewBoxTextSize = this._firstBoxText.length + this._secondBoxText.length
-        if (this._potentialNewBoxTextSize >= sizeOfLargestWord) return false
+        const mergeResult = determineMergeText(this._firstBoxText, this._secondBoxText, this.tools.letterCombos)
+        if (!mergeResult.shouldMerge) return false
 
-        //Set up the potential new box text
-        this.twoBoxTextCombo = `${this._firstBoxText}${this._secondBoxText}`.toLowerCase()
-        this.twoBoxTextComboInverse = `${this._secondBoxText}${this._firstBoxText}`.toLowerCase()
-
-        //get the right lookup by size of new combo
-        let lookUpToUse = this.tools.letterCombos[this._potentialNewBoxTextSize]
-
-        //check if the letter pairs exist in the language
-        this.freqTwoBoxTextCombo = lookUpToUse[this.twoBoxTextCombo]
-        this.freqTwoBoxTextComboInverse = lookUpToUse[this.twoBoxTextComboInverse]
-
+        this._textToUse = mergeResult.textToUse
         return true
     }
-    hanldeCollision = (pair: IPair) => {
+    handleCollision = (pair: Pair) => {
         let collisionIsOkayToHandle = this.checkCollision(pair)
         if (!collisionIsOkayToHandle) {
             this.resetValues()
             return false
         }
-        //return if either of the box tests are already words
         let firstIsWord: number | undefined = this.tools.wordLookup.get(this._firstBoxText)
         let secondIsWord: number | undefined = this.tools.wordLookup.get(this._secondBoxText)
 
@@ -174,29 +162,8 @@ export class CollisionHandler {
             }
         }
 
-        let boxB_hasHigherFreq = this.freqTwoBoxTextComboInverse > this.freqTwoBoxTextCombo
-        //If both variations exist, use the one with higher frequency
-        if (this.freqTwoBoxTextCombo && this.freqTwoBoxTextComboInverse) {
-            //if inverse has higher freq reassign text to use
-            if (boxB_hasHigherFreq) {
-                this._textToUse = this.twoBoxTextComboInverse
-            } else {
-                this._textToUse = this.twoBoxTextCombo
-            }
-            this.createNewBody()
-            this.removeBothBodies()
-            return true
-        } else if (this.freqTwoBoxTextCombo > 0) {
-            this._textToUse = this.twoBoxTextCombo
-            this.createNewBody()
-            this.removeBothBodies()
-            return true
-        } else if (this.freqTwoBoxTextComboInverse > 0) {
-            this._textToUse = this.twoBoxTextComboInverse
-            this.createNewBody()
-            this.removeBothBodies()
-            return true
-        }
+        this.createNewBody()
+        this.removeBothBodies()
 
         //keep track of how often we're checking combos
         if (!this.lettersChecked[this._firstBoxText]) {
@@ -220,9 +187,7 @@ export class CollisionHandler {
             firstTextCheckFreq > CollisionHandler.maxAmountOfChecksForCombo
         ) {
             if (this._bodyA) {
-
                 this.removeBody(this._bodyA, false, this._firstBoxId)
-                // this.logRemovedBodyData(this._firstBoxText, firstTextCheckFreq)
             }
         }
         if (
@@ -233,11 +198,10 @@ export class CollisionHandler {
         ) {
             if (this._bodyB) {
                 this.removeBody(this._bodyB, false, this._secondBoxId)
-                // this.logRemovedBodyData(this._secondBoxText, secondTextCheckFreq)
             }
         }
-        // console.log(JSON.stringify(this.lettersChecked))
         this.resetValues()
+        return true
     }
     logRemovedBodyData = (text: string, numberOfChecks: number) => {
         // console.log(`
@@ -261,7 +225,7 @@ export class CollisionHandler {
             this._bodyA,
             this._bodyB,
             this._textToUse,
-            this._potentialNewBoxTextSize
+            getShapeTypeForLength(this._potentialNewBoxTextSize)
         )
     }
     removeBody = (body: Body, isntRemovable: boolean, id: number) => {
