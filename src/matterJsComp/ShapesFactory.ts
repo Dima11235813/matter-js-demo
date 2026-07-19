@@ -2,98 +2,110 @@ import { Box } from "./Shapes/Box";
 import { BoxOptions, HardBodyOptions, ShapeTypes, decordateWithTextProps, ShapeBase } from "./models/boxOptions";
 import p5 from "p5";
 import { World } from "matter-js";
+import Matter from "matter-js";
 import deps from "./Deps";
-import { BaseHTMLAttributes } from "react";
-import { BaseOptions } from "vm";
 import { getRandomLetterOrSpace, alphabet } from "../utils/textUtils";
+import { getEmbedding } from "../utils/embeddingService";
+import { stores } from "../stores";
 
 export class ShapesFactory {
     public static readonly defaultPreviewTextBoxSize = 12
-    public static readonly defaultBorder = 5
+    public static readonly defaultBorder = 4
     public static readonly growthFactor = .66
     public static readonly previewBoxSize = 50
-    nextUpBox: Box;
-    previewBoxes: Box[];
-    boxes: Box[];
-    hardBodies: Box[];
-    totalCount: number = 0
-    public boxIdToTextLookup: any = {}
-    public boxIdToType: any = {}
+    public nextUpBox: Box;
+    public previewBoxes: Box[];
+    public boxes: Box[];
+    public hardBodies: Box[];
+    public totalCount: number = 0
+    public boxIdToTextLookup: Record<number, string> = {}
+    public boxIdToType: Record<number, ShapeTypes> = {}
     constructor() {
         this.boxes = []
         this.hardBodies = []
         this.createHardBodies()
-        this.nextUpBox = this.createTheNextBoxPreview()
-        this.previewBoxes = this.createPreviewBoxes()
+        
+        const isFountain = stores.menuStore.view === "fountain"
+        this.nextUpBox = isFountain ? (null as unknown as Box) : this.createTheNextBoxPreview()
+        this.previewBoxes = isFountain ? [] : this.createPreviewBoxes()
     }
     setLetterBasedOnXy(text: string) {
+        if (!this.nextUpBox) return
         this.nextUpBox.text = text
         this.updateBorderBasedOnLetter()
     }
     createPreviewBoxes = (): Box[] => {
-        let xLocationStart = 50
         const { width } = deps.browserInfo
-        let shouldShrinkBoxes = alphabet.length * xLocationStart < width
-        if (shouldShrinkBoxes) {
-            //change x location start based on how far under we are
-        }
-
-
-        return alphabet.split('').map((letter: string) => {
-            xLocationStart += ShapesFactory.previewBoxSize
-
-            //set up options and create the preview box
-            let newPreviewBoxOptions = this.getPreviewBoxProps(xLocationStart)
-            let newPreviewBox = new Box(newPreviewBoxOptions)
-
-            //update its letter to be this iterations alphabet letter
+        const isMobile = width < 768
+        const cols = isMobile ? 13 : 26
+        const gap = isMobile ? 6 : 3
+        const totalPadding = 16
+        const availableWidth = width - totalPadding
+        const previewBoxSize = Math.max(16, Math.min(40, (availableWidth / cols) - gap))
+        
+        const previewBoxes: Box[] = []
+        alphabet.split('').forEach((letter: string, index: number) => {
+            const row = Math.floor(index / cols)
+            const col = index % cols
+            
+            const rowCount = Math.min(cols, alphabet.length - row * cols)
+            const rowWidth = rowCount * (previewBoxSize + gap) - gap
+            const xLocationStart = (width - rowWidth) / 2 + previewBoxSize / 2
+            
+            const xPos = xLocationStart + col * (previewBoxSize + gap)
+            const yPos = 12 + previewBoxSize / 2 + row * (previewBoxSize + gap + 4)
+            
+            const newPreviewBoxOptions = this.getPreviewBoxProps(xPos, yPos, previewBoxSize)
+            const newPreviewBox = new Box(newPreviewBoxOptions)
             newPreviewBox.text = letter
             newPreviewBox.boxOptions.type = ShapeTypes.LETTER_PREVIEW_BOX
-
-            return newPreviewBox
-
+            previewBoxes.push(newPreviewBox)
         })
+        return previewBoxes
     }
-    getPreviewBoxProps = (x: number): any => {
+    getPreviewBoxProps = (x: number, y: number, size: number): HardBodyOptions => {
         return {
             x: x,
-            y: ShapesFactory.previewBoxSize / 2,
-            w: ShapesFactory.previewBoxSize,
-            h: ShapesFactory.previewBoxSize,
+            y: y,
+            w: size,
+            h: size,
             border: ShapesFactory.defaultBorder,
-            options: { isStatic: true, color: "grey" }
+            options: { isStatic: true },
+            type: ShapeTypes.LETTER_PREVIEW_BOX
         }
     }
     createTheNextBoxPreview = (): Box => {
-        const { width, height } = deps.browserInfo
-        const previewBoxSize = 50
-        let previewBoxOptions: any = {
+        const { width } = deps.browserInfo
+        const isMobile = width < 768
+        const previewBoxSize = 40
+        const yPos = isMobile ? 90 : 50
+        const baseOptions: ShapeBase = {
             x: width / 2,
-            y: previewBoxSize / 2,
+            y: yPos,
             w: previewBoxSize,
             h: previewBoxSize,
+            border: ShapesFactory.defaultBorder,
             options: { isStatic: true }
         }
-        previewBoxOptions = decordateWithTextProps(previewBoxOptions)
+        const previewBoxOptions = decordateWithTextProps(baseOptions)
         let previewBox = new Box(previewBoxOptions)
         previewBox.previewBox = true
         return previewBox
     }
     getNewTextForNextBoxPreview = () => {
+        if (!this.nextUpBox) return
         this.nextUpBox.text = getRandomLetterOrSpace()
     }
     updateBorderBasedOnLetter = () => {
-        //todo extract to box class logic
+        if (!this.nextUpBox) return
         this.previewBoxes.forEach((box: Box) => {
+            const boxOpts = box.boxOptions as BoxOptions
             if (
                 box.text.toLowerCase() === this.nextUpBox.text.toLowerCase()
             ) {
-                box.boxOptions.textSize = ShapesFactory.defaultPreviewTextBoxSize * 2
-                // box.boxOptions.border = ShapesFactory.defaultBorder * 3
+                boxOpts.textSize = 18
             } else {
-                box.boxOptions.textSize = ShapesFactory.defaultPreviewTextBoxSize
-                // box.boxOptions.border = ShapesFactory.defaultBorder
-
+                boxOpts.textSize = 12
             }
         })
     }
@@ -106,49 +118,39 @@ export class ShapesFactory {
         let boxA_Ref = this.boxes.find(box => box.matterId === bodyA.id)
         let boxB_Ref = this.boxes.find(box => box.matterId === bodyB.id)
         if (!boxA_Ref || !boxB_Ref) {
-            // console.log(`
-            // Not creating two letter box 
-            // ${newText} 
-            // because one was removed`)
             return
         }
-        // let newWidth,
-        // newHeight,
-        // newX,
-        // newY
         const {
             x: boxA_x,
             y: boxA_y,
-            w: boxA_w,
-            h: boxA_h,
-        } = boxA_Ref?.boxOptions
+        } = boxA_Ref.boxOptions
         const {
             x: boxB_x,
             y: boxB_y,
-            w: boxB_w,
-            h: boxB_h,
-        } = boxB_Ref?.boxOptions
+        } = boxB_Ref.boxOptions
+        
+        let newLen = newText.length
+        let newWidth = newLen * 30 + 18
+        let newHeight = 48
+
         let newBoxOptions = {
             x: (boxA_x + boxB_x) / 2,
-            y: (boxA_y + boxB_y) / 2,//(boxA_y + boxB_y) / 2,
-            w: (boxA_w + boxB_w) * ShapesFactory.growthFactor,
-            h: (boxA_h + boxB_h) * ShapesFactory.growthFactor,
-            border: (boxA_h + boxB_h) * ShapesFactory.defaultBorder,
+            y: (boxA_y + boxB_y) / 2,
+            w: newWidth,
+            h: newHeight,
+            border: ShapesFactory.defaultBorder,
             options: {}
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), newText)
+        getEmbedding(newText).then(vector => {
+            newBox.embedding = vector
+        })
 
-        //save the type in the new box options
         newBox.boxOptions.type = type
-
-        //save the new box in the collection
         this.boxes.push(newBox)
 
-        //update lookups for this box for it's text and type
         const { matterId, text } = newBox
         this.addNewBoxDataToLookUps(matterId, text, type)
-
-        //Keep track of how many boxes we have
         this.totalCount += 1
     }
     addNewBoxDataToLookUps = (matterId: number, text: string, type: ShapeTypes) => {
@@ -157,74 +159,109 @@ export class ShapesFactory {
     }
     createBox = (boxOptions: BoxOptions) => {
         let newBox = new Box(boxOptions)
-        //Update the text in the box to be the next up box
-        newBox.text = this.nextUpBox.text
-        //create a new next up box
-        this.getNewTextForNextBoxPreview()
-        this.updateBorderBasedOnLetter()
-
-        //This was a bad idea as it added an extra body to matter js every time
-
-        // this.nextUpBox = this.createTheNextBoxPreview()
+        if (this.nextUpBox) {
+            newBox.text = this.nextUpBox.text
+            this.getNewTextForNextBoxPreview()
+            this.updateBorderBasedOnLetter()
+        }
         this.boxes.push(newBox)
         const { matterId, text } = newBox
         const { type } = newBox.boxOptions
         this.addNewBoxDataToLookUps(matterId, text, type)
         this.totalCount += 1
     }
+    createWordBox = (text: string, x: number, y: number): Box => {
+        let newWidth = text.length * 20 + 20
+        let newHeight = 44
+        let newBoxOptions = {
+            x: x,
+            y: y,
+            w: newWidth,
+            h: newHeight,
+            border: ShapesFactory.defaultBorder,
+            options: { friction: 0.1, restitution: 0.3 }
+        }
+        let newBox = new Box(decordateWithTextProps(newBoxOptions), text)
+        getEmbedding(text).then(vector => {
+            newBox.embedding = vector
+        })
+        newBox.boxOptions.type = ShapeTypes.BOX
+        this.boxes.push(newBox)
+        
+        const { matterId } = newBox
+        this.addNewBoxDataToLookUps(matterId, text, ShapeTypes.BOX)
+        this.totalCount += 1
+        return newBox
+    }
     removeBody = (id: number) => {
         this.boxes = this.boxes.filter(box => box.matterId !== id)
-        //TODO Optimize by removing 
         this.boxIdToTextLookup[id] = ""
-        this.boxIdToType[id] = -1
+        this.boxIdToType[id] = -1 as unknown as ShapeTypes
         this.totalCount -= 1
     }
     createHardBodies = () => {
-        //create the ground
         this.createGround()
         this.createCeiling()
         this.createLeftWall()
         this.createRightWall()
-
+    }
+    updateHardBodies = () => {
+        const { world } = deps
+        if (world) {
+            this.hardBodies.forEach(body => {
+                if (body && body.body) {
+                    World.remove(world, body.body)
+                }
+            })
+        }
+        this.hardBodies = []
+        this.createHardBodies()
+    }
+    updatePreviewBoxes = () => {
+        this.previewBoxes = this.createPreviewBoxes()
+        const { width } = deps.browserInfo
+        const isMobile = width < 768
+        const yPos = isMobile ? 90 : 50
+        if (this.nextUpBox && this.nextUpBox.body) {
+            Matter.Body.setPosition(this.nextUpBox.body, { x: width / 2, y: yPos })
+        }
     }
     createLeftWall = () => {
-        const { width, height } = deps.browserInfo
-        const wallWidth = 5
+        const { height } = deps.browserInfo
+        const wallWidth = 10
         this.createHardBody(
             0,
             (height / 2),
             wallWidth,
             height
         )
-
     }
     createRightWall = () => {
         const { width, height } = deps.browserInfo
-        const wallWidth = 5
+        const wallWidth = 10
         this.createHardBody(
-            width - wallWidth,
+            width,
             (height / 2),
             wallWidth,
             height
         )
-
     }
     createGround = () => {
         const { width, height } = deps.browserInfo
-        const groundHeight = 5
+        const groundHeight = 10
         this.createHardBody(
-            0,
-            height - groundHeight,
+            width / 2,
+            height - groundHeight / 2,
             width * 2,
             groundHeight
         )
     }
     createCeiling = () => {
-        const { width, height } = deps.browserInfo
-        const groundHeight = 5
+        const { width } = deps.browserInfo
+        const groundHeight = 10
         this.createHardBody(
-            0,
-            0,
+            width / 2,
+            groundHeight / 2,
             width * 2,
             groundHeight
         )
@@ -234,7 +271,6 @@ export class ShapesFactory {
         y: number,
         w: number,
         h: number,
-
     ) => {
         let body: HardBodyOptions = {
             x, y, w, h, border: ShapesFactory.defaultBorder,

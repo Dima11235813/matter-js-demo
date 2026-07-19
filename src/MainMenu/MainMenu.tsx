@@ -1,5 +1,6 @@
 import { inject, observer } from "mobx-react";
 import React from "react";
+import { logger } from "../utils/logger";
 
 // import { inject, observer } from "mobx-react";
 
@@ -9,13 +10,14 @@ import ClickAwayListener from "@material-ui/core/ClickAwayListener";
 import Paper from "@material-ui/core/Paper";
 import MenuItem from "@material-ui/core/MenuItem";
 import MenuList from "@material-ui/core/MenuList";
-import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 
 import styles from "./MainMenu.module.scss";
 
 //Icons
 import AddIcon from "@material-ui/icons/Add";
 import PanToolIcon from "@material-ui/icons/PanTool";
+import BubbleChartIcon from "@material-ui/icons/BubbleChart";
+import ExtensionIcon from "@material-ui/icons/Extension";
 import { MenuStore } from "../stores/MenuStore";
 import { AppModes } from "../matterJsComp/models/appMode";
 //https://material-ui.com/components/material-icons/#material-icons
@@ -27,17 +29,6 @@ interface MainMenuProps {
 }
 // function MainMenu() {
 const MainMenu = (props: MainMenuProps) => {
-  const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-      root: {
-        display: "flex",
-      },
-      paper: {
-        marginRight: theme.spacing(2),
-      },
-    })
-  );
-  const classes = useStyles();
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef<HTMLButtonElement>(null);
 
@@ -69,17 +60,17 @@ const MainMenu = (props: MainMenuProps) => {
     prevOpen.current = open;
   }, [open]);
 
-  const { setMode, mode } = props.menuStore!;
+  const { setMode, mode, setView, view } = props.menuStore!;
 
   const handleCreateMode = (
     event: React.MouseEvent<EventTarget, MouseEvent>
   ) => {
-    console.log("Create Mode");
+    logger.log("Create Mode");
     setMode(AppModes.CREATE);
     handleClose(event);
   };
   const handleDragMode = (event: React.MouseEvent<EventTarget, MouseEvent>) => {
-    console.log("Drag Mode");
+    logger.log("Drag Mode");
     setMode(AppModes.MOVE);
     handleClose(event);
   };
@@ -117,6 +108,35 @@ const MainMenu = (props: MainMenuProps) => {
               ) : (
                 <MenuItem onClick={handleDragMode}>
                   <PanToolIcon />
+                </MenuItem>
+              ))
+            }
+            <hr style={{ margin: "8px 0", border: "none", borderTop: "1px solid rgba(255, 255, 255, 0.12)" }} />
+            {
+              (view === "fountain" ? (
+                <MenuItem id="fountain-toggle" onClick={() => setView("fountain")}>
+                  <BubbleChartIcon 
+                   color="primary"
+                   htmlColor={menuBackgroundPrimary}
+                  />
+                </MenuItem>
+              ) : (
+                <MenuItem id="fountain-toggle" onClick={() => setView("fountain")}>
+                  <BubbleChartIcon style={{ color: "rgba(255, 255, 255, 0.5)" }} />
+                </MenuItem>
+              ))
+            }
+            {
+              (view === "sandbox" ? (
+                <MenuItem id="sandbox-toggle" onClick={() => setView("sandbox")}>
+                  <ExtensionIcon 
+                   color="primary"
+                   htmlColor={menuBackgroundPrimary}
+                  />
+                </MenuItem>
+              ) : (
+                <MenuItem id="sandbox-toggle" onClick={() => setView("sandbox")}>
+                  <ExtensionIcon style={{ color: "rgba(255, 255, 255, 0.5)" }} />
                 </MenuItem>
               ))
             }

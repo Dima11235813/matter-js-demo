@@ -1,22 +1,28 @@
 import React, { useEffect } from "react";
-import logo from "./logo.svg";
 import "./App.css";
 import { WorldContainer } from "./matterJsComp/WorldContainer";
-import MainMenu from "./MainMenu/MainMenu";
+import { inject, observer } from "mobx-react";
+import { MenuStore } from "./stores/MenuStore";
 
-function WordWorld() {
-  let world: WorldContainer | null;
-  let worldDomContainer: HTMLElement | null;
-  let clearWorld = () => {
-    worldDomContainer = null;
-    world = null;
-  };
-  useEffect(() => {
-    worldDomContainer = document.getElementById("worldContainter");
-    if (worldDomContainer) world = new WorldContainer(worldDomContainer);
-    return clearWorld;
-  });
-  return <div id="worldContainter"></div>;
+interface WordWorldProps {
+  menuStore?: MenuStore;
 }
+
+const WordWorld = inject("menuStore")(observer((props: WordWorldProps) => {
+  useEffect(() => {
+    let world: WorldContainer | null = null;
+    const worldDomContainer = document.getElementById("worldContainter");
+    if (worldDomContainer) {
+      world = new WorldContainer(worldDomContainer);
+    }
+    return () => {
+      if (world) {
+        world.destroy();
+      }
+    };
+  }, [props.menuStore?.view]);
+
+  return <div id="worldContainter"></div>;
+}));
 
 export default WordWorld;

@@ -15,8 +15,9 @@ export class Box {
     outOfBounds: boolean = false
     color: string = getRandomColor()
     public matterId: number = -1
+    public embedding?: number[]
     constructor(
-        public boxOptions: any,//BoxOptions | HardBodyOptions,
+        public boxOptions: BoxOptions | HardBodyOptions,
         public text: string = getRandomLetterOrSpace(),
         public noMatter: boolean = false
     ) {
@@ -74,7 +75,13 @@ export class Box {
 
             //Rect options
             //https://p5js.org/reference/#/p5/rectMode
-            p.strokeWeight(Box.border)
+            const isSelected = stores.menuStore.selectedWordIds.includes(this.matterId)
+            if (isSelected) {
+                p.stroke("#ff007f")
+                p.strokeWeight(Box.border + 3)
+            } else {
+                p.strokeWeight(Box.border)
+            }
             p.fill(this.color)
             p.rectMode(p.CENTER)
 
@@ -84,35 +91,21 @@ export class Box {
                 p.translate(this.boxOptions.x, this.boxOptions.y)
                 p.rect(0, 0, this.boxOptions.w - Box.border, this.boxOptions.h - Box.border)
             }
-            //  else if (
-            //     boxLastClicked?.matterId === this.body!.id && mode === AppModes.MOVE
-            // ) {
-            //     //Temp logging hack
-            //     this.count += 1
-            //     if (this.count % 100 === 0) {
-            //         console.log("Drawing body")
-            //         console.log(this.body)
-            //     }
-            //     ////////////
-            //     p.translate(x, y)
-            //     p.rect(0, 0, w - Box.border, h - Box.border)
-            //     p.rotate(p.radians(angle))
-            // }
             else {
                 p.translate(position.x, position.y)
+                p.rotate(angle)
                 p.rect(0, 0, w - Box.border, h - Box.border)
-                p.rotate(p.radians(angle))
             }
 
-            //Add text on top
             p.fill(255)
 
-            //if hard body don't do text
             if (this.boxOptions.type !== ShapeTypes.FLOOR) {
-                const { textWidth = 10, textHeight = 10, textSize = 10 } = this.boxOptions
-                p.textAlign(p.CENTER);
+                const textOptions = this.boxOptions as BoxOptions
+                const { textSize = 20 } = textOptions
+                p.textAlign(p.CENTER, p.CENTER)
                 p.textSize(textSize)
-                p.text(this.text, textWidth, textHeight) //Adding fourth and fifth param slows everything down
+                p.textFont("Outfit, Inter, system-ui, -apple-system, sans-serif")
+                p.text(this.text, 0, 2)
             }
 
             p.pop()
