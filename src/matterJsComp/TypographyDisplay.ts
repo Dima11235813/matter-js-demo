@@ -10,7 +10,7 @@ export class TypographyDisplay {
     }
     show = () => {
         const { p, world } = deps
-        if (p && world && process.env.NODE_ENV === "development") {
+        if (p && world && import.meta.env.DEV) {
             const numberOfBodiesInWorld = world?.bodies.length - 1 //subtract for the floor
             const numberOfShapesInFac = this.shapesFac.boxes.length
             const textToDisplay = `

@@ -1,7 +1,7 @@
 import { ShapesFactory } from "./ShapesFactory";
 import { ShapeTypes } from "./models/boxOptions";
 import { DictionaryTools, sizeOfLargestWord } from "../utils/textUtils";
-import Matter, { Body, World, IPair } from "matter-js";
+import Matter, { Body, World, Pair } from "matter-js";
 import deps from "./Deps";
 
 export class CollisionHandler {
@@ -13,7 +13,7 @@ export class CollisionHandler {
     private static readonly minLettersToConsiderPointsForWord = 3
 
 
-    private pair: IPair | undefined;
+    private pair: Pair | undefined;
 
     private _firstBoxIsntRemovable: boolean = false;
     private _secondBoxIsntRemovable: boolean = false;
@@ -84,7 +84,7 @@ export class CollisionHandler {
         this.pair = undefined
 
     }
-    checkCollision = (pair: IPair): boolean => {
+    checkCollision = (pair: Pair): boolean => {
         this.pair = pair
         //if separation threshold aka collision stength 
         //isn't big enough ignore the collision
@@ -146,7 +146,7 @@ export class CollisionHandler {
 
         return true
     }
-    hanldeCollision = (pair: IPair) => {
+    hanldeCollision = (pair: Pair) => {
         let collisionIsOkayToHandle = this.checkCollision(pair)
         if (!collisionIsOkayToHandle) {
             this.resetValues()

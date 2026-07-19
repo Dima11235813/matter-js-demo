@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import "./index.css";
 import * as Sentry from "@sentry/browser";
 import App from "./App";
@@ -11,13 +11,14 @@ Sentry.init({
   dsn: "https://a21df14579c147e3b7aff794b0bc763a@sentry.io/5172530",
 });
 
-ReactDOM.render(
+const container = document.getElementById("root");
+const root = createRoot(container!);
+root.render(
   <React.StrictMode>
     <Provider {...stores}>
       <App />
     </Provider>
-  </React.StrictMode>,
-  document.getElementById("root")
+  </React.StrictMode>
 );
 
 // If you want your app to work offline and load faster, you can change

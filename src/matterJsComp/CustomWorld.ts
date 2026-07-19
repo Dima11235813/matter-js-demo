@@ -1,4 +1,4 @@
-import Matter, { IPair, IEventCollision } from "matter-js";
+import Matter, { Pair, IEventCollision } from "matter-js";
 import { ShapesFactory } from "./ShapesFactory";
 import { BoxOptions, ShapeTypes, ShapeBase, decordateWithTextProps } from "./models/boxOptions";
 import deps from "./Deps";
@@ -51,8 +51,8 @@ export class CustomWorld {
             'collisionStart',
             (event: IEventCollision<Matter.Engine>) => {
                 // console.log(event)
-                let pairs: IPair[] = event.pairs;
-                pairs.forEach((pair: IPair) => {
+                let pairs: Pair[] = event.pairs;
+                pairs.forEach((pair: Pair) => {
                     this.collisionHandler.hanldeCollision(pair)
                 })
             });
