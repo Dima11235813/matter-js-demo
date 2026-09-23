@@ -28,3 +28,7 @@ yarn-error.log*
 /test-results
 /playwright-report
 .env
+
+# generated embedding vocabulary (yarn vocab:build)
+/public/vocab
+/.playwright-mcp

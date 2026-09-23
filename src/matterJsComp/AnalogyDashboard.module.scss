@@ -122,3 +122,209 @@
   0% { transform: translateY(5px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
 }
+
+.Status {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+.StatusError {
+  composes: Status;
+  color: #ff6b6b;
+}
+
+.DevFlag {
+  color: #ffb020;
+}
+
+.Points {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+}
+
+.Alternatives {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.AltChip {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  color: rgba(255, 255, 255, 0.75);
+  font-variant-numeric: tabular-nums;
+}
+
+.AltBar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgba(0, 242, 254, 0.12);
+  z-index: -1;
+}
+
+.WordForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto; /* the dashboard root passes clicks through; the form must not */
+}
+
+.WordInput {
+  flex: 1 1 180px;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+
+  &:focus {
+    outline: none;
+    border-color: #00f2fe;
+  }
+}
+
+.WordButton {
+  background: linear-gradient(135deg, #00f2fe, #4facfe);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  color: #0c0c0e;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.WordMessage {
+  flex-basis: 100%;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ModeTag {
+  margin-left: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  vertical-align: middle;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.45);
+}
+
+.TopControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.HintOn,
+.HintOff {
+  pointer-events: auto;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.HintOn {
+  background: rgba(255, 176, 32, 0.15);
+  border: 1px solid #ffb020;
+  color: #ffb020;
+}
+
+.HintOff {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.GameHud {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.TimerTrack {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.TimerFill,
+.TimerFillLow {
+  height: 100%;
+  transition: width 0.2s linear;
+}
+
+.TimerFill {
+  background: linear-gradient(90deg, #00f2fe, #4facfe);
+}
+
+.TimerFillLow {
+  background: #ff6b6b;
+}
+
+.HudRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.Clock {
+  font-weight: 800;
+  color: #fff;
+}
+
+.GameOver {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 0, 127, 0.08);
+  border: 1px solid rgba(255, 0, 127, 0.35);
+  animation: slideUp 0.3s ease-out;
+}
+
+.GameOverTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ff007f;
+}
+
+.GameOverStats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+
+  strong {
+    color: #fff;
+  }
+}

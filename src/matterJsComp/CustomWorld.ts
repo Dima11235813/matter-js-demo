@@ -9,7 +9,11 @@ import { DictionaryTools } from "../utils/textUtils";
 import { CollisionHandler } from "./CollisionHandler";
 import { stores } from "../stores";
 import { AppModes } from "./models/appMode";
-import { cosineSimilarity, findClosestAnalogy } from "../utils/embeddingService";
+import { semanticEngine } from "../services/semanticEngine";
+import { playAnalogy } from "../services/playground";
+import { isRoundRunning, startTimedRound } from "../services/timedGameController";
+import { isWordView } from "../stores/MenuStore";
+import { SemanticPhysics } from "./SemanticPhysics";
 
 export enum EventClickType {
     CREATE_LETTER_BOX, DRAG_BOX, SELECT_LETTER
@@ -17,9 +21,12 @@ export enum EventClickType {
 
 
 export class CustomWorld {
+    static readonly initialWordCount = 8
+    static readonly maxSpawnsPerFrame = 2
     shapesFac: ShapesFactory;
     collisionHandler: CollisionHandler;
     typographyDisplay: TypographyDisplay;
+    semanticPhysics: SemanticPhysics;
     //TODO Move to interaction store
     clickType: EventClickType = EventClickType.CREATE_LETTER_BOX
     constructor() {
@@ -61,15 +68,23 @@ export class CustomWorld {
                 })
             });
 
+        this.semanticPhysics = new SemanticPhysics(this.shapesFac, engine!)
+        deps.pendingWordSpawns = []
+        deps.activeWorld = this
         const { view } = stores.menuStore
-        if (view === "fountain") {
-            const { width, height } = deps.browserInfo
-            const randomWords = this.collisionHandler.tools.getRandomWords(6)
-            randomWords.forEach((word: string) => {
-                const rx = 100 + Math.random() * (width - 200)
-                const ry = 100 + Math.random() * (height - 300)
-                this.shapesFac.createWordBox(word, rx, ry)
-            })
+        if (isWordView(view)) {
+            // StrictMode mounts twice; only the world whose engine is still live may seed words.
+            semanticEngine.start()
+                .then(() => {
+                    if (deps.engine !== engine) return
+                    if (view === "game") {
+                        startTimedRound(stores)
+                    } else {
+                        semanticEngine.randomWords(CustomWorld.initialWordCount)
+                            .forEach(word => deps.pendingWordSpawns.push({ word }))
+                    }
+                })
+                .catch(() => { /* status surfaced by bootSemanticPlayground */ })
         }
 
         // run the engine
@@ -81,29 +96,14 @@ export class CustomWorld {
     catogorizeClickType = (x: number, y: number) => {
         const { mode, view } = stores.menuStore!
 
-        if (view === "fountain") {
-            this.shapesFac.boxes.forEach((box: Box) => {
-                if (this.checkLocationIsInBox(box, x, y)) {
-                    if (box.embedding !== undefined) {
-                        stores.menuStore.toggleWordSelection(box.matterId, box.text)
-                        
-                        if (stores.menuStore.selectedWordTexts.length === 3) {
-                            const [wordA, wordB, wordC] = stores.menuStore.selectedWordTexts
-                            stores.menuStore.clearWordSelection()
-                            
-                            findClosestAnalogy(wordA, wordB, wordC).then(({ word: wordD, similarity }) => {
-                                const rx = 100 + Math.random() * (deps.browserInfo.width - 200)
-                                const ry = 100 + Math.random() * (deps.browserInfo.height - 300)
-                                this.shapesFac.createWordBox(wordD, rx, ry)
-                                
-                                const points = Math.max(10, Math.round(similarity * 100))
-                                stores.menuStore.addScore(points)
-                                stores.menuStore.setLastAnalogy(`${wordA} is to ${wordB} as ${wordC} is to ${wordD} (+${points} pts)`)
-                            })
-                        }
-                    }
-                }
-            })
+        let clickedOnWordBox = false
+        const canSelect = view === "fountain" || (view === "game" && isRoundRunning(stores))
+        if (canSelect) {
+            const box = this.shapesFac.boxes.find(b => b.embedding !== undefined && this.checkLocationIsInBox(b, x, y))
+            if (box) {
+                clickedOnWordBox = true
+                this.selectWordForAnalogy(box)
+            }
         }
 
         let clickedOnPreviewBox = false
@@ -123,11 +123,43 @@ export class CustomWorld {
                 }
             })
         }
-        if (clickedOnPreviewBox) {
+        if (clickedOnPreviewBox || clickedOnWordBox) {
             this.clickType = EventClickType.SELECT_LETTER
         } else {
             this.clickType = EventClickType.CREATE_LETTER_BOX
         }
+    }
+    /** Third selection completes "a is to b as c is to ?" and spawns the answer. */
+    selectWordForAnalogy = (box: Box) => {
+        const { menuStore } = stores
+        menuStore.toggleWordSelection(box.matterId, box.text)
+        if (menuStore.selectedWordTexts.length < 3) return
+        const [wordA, wordB, wordC] = menuStore.selectedWordTexts
+        menuStore.clearWordSelection()
+        playAnalogy(stores, wordA, wordB, wordC)
+    }
+    /** Texts of the embedding word boxes currently in the world. */
+    wordTexts = (): string[] => {
+        return this.shapesFac.boxes.filter(b => b.embedding !== undefined && b.body).map(b => b.text)
+    }
+    /** Removes every word box (used when a timed round restarts in the same world). */
+    clearWordBoxes = () => {
+        deps.pendingWordSpawns = []
+        this.shapesFac.boxes
+            .filter(b => b.embedding !== undefined && b.body)
+            .forEach(b => this.collisionHandler.removeBody(b.body!, false, b.matterId))
+    }
+    spawnQueuedWords = () => {
+        const { width, height } = deps.browserInfo
+        const batch = deps.pendingWordSpawns.splice(0, CustomWorld.maxSpawnsPerFrame)
+        const onBoard = new Set(this.wordTexts())
+        batch.forEach(({ word, x, y }) => {
+            if (onBoard.has(word)) return
+            // Spawn below the dashboard overlay so new words are never hidden behind it.
+            const rx = x ?? 100 + Math.random() * Math.max(1, width - 200)
+            const ry = y ?? 280 + Math.random() * Math.max(1, height - 360)
+            this.shapesFac.createWordBox(word, rx, ry)
+        })
     }
     moveBoxIfOneSelected = (x: number, y: number) => {
         if (deps.boxLastClicked && deps.boxLastClicked.body) {
@@ -160,9 +192,12 @@ export class CustomWorld {
     }
     addShape = (mx: number, my: number) => {
         const { view } = stores.menuStore
+        // Timed rounds have a scarce, dealt word supply: clicking empty space adds nothing.
+        if (view === "game") return
         if (view === "fountain") {
-            const randomWord = this.collisionHandler.tools.getRandomWords(1)[0]
-            this.shapesFac.createWordBox(randomWord, mx, my)
+            if (!semanticEngine.isReady) return
+            const [randomWord] = semanticEngine.randomWords(1)
+            if (randomWord) this.shapesFac.createWordBox(randomWord, mx, my)
         } else {
             const previewTopBarHeight = 75
             if (my < previewTopBarHeight) return
@@ -173,60 +208,21 @@ export class CustomWorld {
             this.shapesFac.createBox(decordateWithTextProps(newBoxOptions))
         }
     }
-    applyMagnetismForces = () => {
-        const activeWordBoxes = this.shapesFac.boxes.filter(b => b.embedding !== undefined);
-        for (let i = 0; i < activeWordBoxes.length; i++) {
-            const boxA = activeWordBoxes[i];
-            if (!boxA.body) continue;
-            
-            let forceX = 0;
-            let forceY = 0;
-            
-            for (let j = 0; j < activeWordBoxes.length; j++) {
-                if (i === j) continue;
-                const boxB = activeWordBoxes[j];
-                if (!boxB.body) continue;
-                
-                const dx = boxB.body.position.x - boxA.body.position.x;
-                const dy = boxB.body.position.y - boxA.body.position.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance < 10) continue;
-                
-                const sim = cosineSimilarity(boxA.embedding!, boxB.embedding!);
-                
-                let magnitude = 0;
-                if (sim > 0.4) {
-                    // Attraction force (pulls similar concepts together)
-                    magnitude = (sim - 0.4) * 0.0003;
-                } else if (sim < 0.15) {
-                    // Repulsion force (pushes different concepts apart, scaling down over distance)
-                    magnitude = (sim - 0.15) * (150 / (distance + 1)) * 0.0003;
-                }
-                
-                if (magnitude !== 0) {
-                    forceX += (dx / distance) * magnitude;
-                    forceY += (dy / distance) * magnitude;
-                }
-            }
-            
-            if (forceX !== 0 || forceY !== 0) {
-                Matter.Body.applyForce(boxA.body, boxA.body.position, { x: forceX, y: forceY });
-            }
-        }
-    }
     draw = () => {
         const { p } = deps
         if (p) {
             p.background("#0c0c0e")
             
             const { view } = stores.menuStore
-            if (view === "fountain") {
-                this.applyMagnetismForces()
+            if (isWordView(view)) {
+                this.spawnQueuedWords()
+                this.semanticPhysics.drawThreads(p)
             }
             
             this.shapesFac.hardBodies.forEach(body => body && body.show())
             this.shapesFac.boxes = this.shapesFac.boxes.filter((box: Box) => box && box.body && !box.outOfBounds)
             this.shapesFac.boxes.forEach(box => box.show())
+            if (isWordView(view)) this.semanticPhysics.drawThreadLabels(p)
             
             if (view === "sandbox") {
                 this.shapesFac.previewBoxes.forEach(previewBox => previewBox.show())

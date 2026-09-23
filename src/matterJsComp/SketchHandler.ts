@@ -27,14 +27,17 @@ export class SketchHandler {
             p!.resizeCanvas(width, height)
             this.customWorld?.handleWindowResize(width, height)
         }
-        p!.mouseDragged = () => {
+        p!.mouseDragged = (event?: MouseEvent) => {
+            if (!this.isCanvasEvent(event)) return
             const { mode } = stores.menuStore
             if (mode === AppModes.MOVE && deps.boxLastClicked) {
                 this.customWorld?.moveBoxIfOneSelected(p!.mouseX, p!.mouseY)
             }
             this.conditionallyHandleClickOrDrag(p!.mouseX, p!.mouseY)
         }
-        p!.mousePressed = () => {
+        p!.mousePressed = (event?: MouseEvent) => {
+            // p5 listens on window, so clicks on overlay UI (inputs, menu) would otherwise spawn boxes.
+            if (!this.isCanvasEvent(event)) return
             this.customWorld?.catogorizeClickType(p!.mouseX, p!.mouseY)
             const { mode } = stores.menuStore
             if (mode === AppModes.CREATE) {
@@ -53,6 +56,10 @@ export class SketchHandler {
                 deps.boxLastClicked = undefined
             }
         }
+    }
+    isCanvasEvent = (event?: Event): boolean => {
+        if (!event || !this.canvas) return true
+        return event.target === this.canvas.elt
     }
     conditionallyHandleClickOrDrag = (x: number, y: number) => {
         const { mode } = stores.menuStore

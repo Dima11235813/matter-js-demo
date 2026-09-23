@@ -18,7 +18,16 @@ import AddIcon from "@material-ui/icons/Add";
 import PanToolIcon from "@material-ui/icons/PanTool";
 import BubbleChartIcon from "@material-ui/icons/BubbleChart";
 import ExtensionIcon from "@material-ui/icons/Extension";
-import { MenuStore } from "../stores/MenuStore";
+import EmojiEventsIcon from "@material-ui/icons/EmojiEvents";
+import SecurityIcon from "@material-ui/icons/Security";
+import PersonIcon from "@material-ui/icons/Person";
+import PersonOutlineIcon from "@material-ui/icons/PersonOutline";
+import TimerIcon from "@material-ui/icons/Timer";
+import WbIncandescentIcon from "@material-ui/icons/WbIncandescent";
+import { MenuStore, isWordView } from "../stores/MenuStore";
+import { GameStore } from "../stores/GameStore";
+import { stores } from "../stores";
+import { toggleHintMode } from "../services/playground";
 import { AppModes } from "../matterJsComp/models/appMode";
 //https://material-ui.com/components/material-icons/#material-icons
 
@@ -26,7 +35,10 @@ const menuBackgroundPrimary = "blue";
 
 interface MainMenuProps {
   menuStore?: MenuStore;
+  gameStore?: GameStore;
 }
+
+const inactiveIconStyle = { color: "rgba(255, 255, 255, 0.5)" };
 // function MainMenu() {
 const MainMenu = (props: MainMenuProps) => {
   const [open, setOpen] = React.useState(false);
@@ -61,6 +73,7 @@ const MainMenu = (props: MainMenuProps) => {
   }, [open]);
 
   const { setMode, mode, setView, view } = props.menuStore!;
+  const { hintMode } = props.gameStore!;
 
   const handleCreateMode = (
     event: React.MouseEvent<EventTarget, MouseEvent>
@@ -140,6 +153,18 @@ const MainMenu = (props: MainMenuProps) => {
                 </MenuItem>
               ))
             }
+            <MenuItem id="game-toggle" title="Timed game" onClick={() => setView("game")}>
+              {view === "game"
+                ? <TimerIcon color="primary" htmlColor={menuBackgroundPrimary} />
+                : <TimerIcon style={inactiveIconStyle} />}
+            </MenuItem>
+            {isWordView(view) && (
+              <MenuItem id="hint-toggle" title={hintMode ? "Hint mode on" : "Hint mode off"} onClick={() => toggleHintMode(stores)}>
+                {hintMode
+                  ? <WbIncandescentIcon htmlColor="#ffb020" />
+                  : <WbIncandescentIcon style={inactiveIconStyle} />}
+              </MenuItem>
+            )}
           </MenuList>
         </ClickAwayListener>
       </Paper>
@@ -147,4 +172,4 @@ const MainMenu = (props: MainMenuProps) => {
   );
 };
 
-export default inject("menuStore")(observer(MainMenu));
+export default inject("menuStore", "gameStore")(observer(MainMenu));

@@ -2,10 +2,37 @@ import { action, makeObservable, observable } from 'mobx';
 import { CommonStore } from "./CommonStore"
 import { RootStore } from "./RootStore";
 import { AppModes } from '../matterJsComp/models/appMode';
+import { Neighbor } from '../embeddings/VectorIndex';
+import { CorpusStats } from '../services/semanticEngine';
+
+export type EngineStatus = "loading" | "ready" | "error"
+export type AppView = "sandbox" | "fountain" | "game"
+
+/** Views that hold embedding word boxes: the free-play sandbox ("fountain") and the timed game. */
+export function isWordView(view: AppView): boolean {
+    return view === "fountain" || view === "game"
+}
+
+export interface LastPlay {
+    a: string
+    b: string
+    c: string
+    answer: string
+    similarity: number
+    points: number
+    isNewQuestion: boolean
+    alternatives: Neighbor[]
+}
 
 export class MenuStore extends CommonStore {
+    engineStatus: EngineStatus = "loading"
+    engineMessage: string = ""
+    corpusStats: CorpusStats | null = null
+    lastPlay: LastPlay | null = null
+    wordInputMessage: string = ""
+
     mode: AppModes
-    view: "sandbox" | "fountain" | "game"
+    view: AppView
     role: "admin" | "user" | "anon"
     score: number
     selectedWordIds: number[]
@@ -40,13 +67,24 @@ export class MenuStore extends CommonStore {
             addScore: action,
             toggleWordSelection: action,
             clearWordSelection: action,
-            setLastAnalogy: action
+            setLastAnalogy: action,
+            engineStatus: observable,
+            engineMessage: observable,
+            corpusStats: observable.ref,
+            lastPlay: observable.ref,
+            wordInputMessage: observable,
+            setEngineStatus: action,
+            setScore: action,
+            setCorpusStats: action,
+            setLastPlay: action,
+            clearLastPlay: action,
+            setWordInputMessage: action
         });
     }
     setMode = (newMode: AppModes) => {
         this.mode = newMode
     }
-    setView = (newView: "sandbox" | "fountain" | "game") => {
+    setView = (newView: AppView) => {
         this.view = newView
     }
     setRole = (newRole: "admin" | "user" | "anon") => {
@@ -76,5 +114,26 @@ export class MenuStore extends CommonStore {
     }
     setLastAnalogy = (text: string) => {
         this.lastAnalogy = text
+    }
+    setEngineStatus = (status: EngineStatus, message: string = "") => {
+        this.engineStatus = status
+        this.engineMessage = message
+    }
+    setScore = (score: number) => {
+        this.score = score
+    }
+    setCorpusStats = (stats: CorpusStats) => {
+        this.corpusStats = stats
+        this.score = stats.score
+    }
+    setLastPlay = (play: LastPlay) => {
+        this.lastPlay = play
+    }
+    clearLastPlay = () => {
+        this.lastPlay = null
+        this.lastAnalogy = ""
+    }
+    setWordInputMessage = (message: string) => {
+        this.wordInputMessage = message
     }
 }

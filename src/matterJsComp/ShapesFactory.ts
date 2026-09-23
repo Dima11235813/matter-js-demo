@@ -5,7 +5,7 @@ import { World } from "matter-js";
 import Matter from "matter-js";
 import deps from "./Deps";
 import { getRandomLetterOrSpace, alphabet } from "../utils/textUtils";
-import { getEmbedding } from "../utils/embeddingService";
+import { semanticEngine } from "../services/semanticEngine";
 import { stores } from "../stores";
 
 export class ShapesFactory {
@@ -142,9 +142,8 @@ export class ShapesFactory {
             options: {}
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), newText)
-        getEmbedding(newText).then(vector => {
-            newBox.embedding = vector
-        })
+        // Letter merges only gain an embedding when they spell a known word; no model call per merge.
+        newBox.embedding = semanticEngine.lookup(newText)
 
         newBox.boxOptions.type = type
         this.boxes.push(newBox)
@@ -182,9 +181,7 @@ export class ShapesFactory {
             options: { friction: 0.1, restitution: 0.3 }
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), text)
-        getEmbedding(text).then(vector => {
-            newBox.embedding = vector
-        })
+        newBox.embedding = semanticEngine.lookup(text)
         newBox.boxOptions.type = ShapeTypes.BOX
         this.boxes.push(newBox)
         

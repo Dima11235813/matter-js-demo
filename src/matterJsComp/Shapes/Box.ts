@@ -15,7 +15,8 @@ export class Box {
     outOfBounds: boolean = false
     color: string = getRandomColor()
     public matterId: number = -1
-    public embedding?: number[]
+    /** Centered, normalized vector from the semantic engine; undefined for non-words. */
+    public embedding?: Float32Array
     constructor(
         public boxOptions: BoxOptions | HardBodyOptions,
         public text: string = getRandomLetterOrSpace(),

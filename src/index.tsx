@@ -6,10 +6,15 @@ import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 import { Provider } from "mobx-react";
 import { stores } from "./stores";
+import { bootSemanticPlayground } from "./services/playground";
+import { installDevtools } from "./devtools";
 
 Sentry.init({
   dsn: "https://a21df14579c147e3b7aff794b0bc763a@sentry.io/5172530",
 });
+
+bootSemanticPlayground(stores);
+if (import.meta.env.DEV) installDevtools();
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
