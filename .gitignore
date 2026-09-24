@@ -32,3 +32,6 @@ yarn-error.log*
 # generated embedding vocabulary (yarn vocab:build)
 /public/vocab
 /.playwright-mcp
+
+# stray Vite dependency cache (created when the dev server ran without package.json)
+/.vite
