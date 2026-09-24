@@ -18,4 +18,9 @@ export interface WordWorld {
     wordTexts(): string[];
     clearWordBoxes(): void;
     wordProbes(): WordProbe[];
+    /**
+     * Brings words into view and highlights them briefly: in 3D the camera flies to them; in 2D
+     * (no camera yet) they pulse. Words not on the board are ignored.
+     */
+    focusWords(words: readonly string[]): void;
 }

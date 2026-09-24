@@ -5,6 +5,7 @@ import { AppModes } from '../matterJsComp/models/appMode';
 import { Neighbor } from '../embeddings/VectorIndex';
 import { CorpusStats } from '../services/semanticEngine';
 import { loadThemePreference, ThemeName } from '../theme/palette';
+import { prependBoardAnalogy } from '../game/boardAnalogies';
 
 export type EngineStatus = "loading" | "ready" | "error"
 export type AppView = "sandbox" | "fountain" | "game"
@@ -25,11 +26,20 @@ export interface LastPlay {
     alternatives: Neighbor[]
 }
 
+/** An analogy played on the current board (newest first in `boardAnalogies`). */
+export interface BoardAnalogy extends LastPlay {
+    id: number
+    playedAt: number
+}
+
 export class MenuStore extends CommonStore {
     engineStatus: EngineStatus = "loading"
     engineMessage: string = ""
     corpusStats: CorpusStats | null = null
     lastPlay: LastPlay | null = null
+    boardAnalogies: BoardAnalogy[] = []
+    analogiesOpen: boolean = false
+    private nextAnalogyId = 1
     wordInputMessage: string = ""
     theme: ThemeName = loadThemePreference()
 
@@ -80,6 +90,11 @@ export class MenuStore extends CommonStore {
             setCorpusStats: action,
             setLastPlay: action,
             clearLastPlay: action,
+            boardAnalogies: observable.ref,
+            analogiesOpen: observable,
+            addBoardAnalogy: action,
+            clearBoardAnalogies: action,
+            setAnalogiesOpen: action,
             setWordInputMessage: action,
             theme: observable,
             setTheme: action
@@ -132,6 +147,18 @@ export class MenuStore extends CommonStore {
     }
     setLastPlay = (play: LastPlay) => {
         this.lastPlay = play
+    }
+    /** Records an analogy played on this board; the list is newest first and capped. */
+    addBoardAnalogy = (play: LastPlay, playedAt: number = Date.now()) => {
+        const entry: BoardAnalogy = { ...play, id: this.nextAnalogyId++, playedAt }
+        this.boardAnalogies = prependBoardAnalogy(this.boardAnalogies, entry)
+    }
+    /** A new board (new round, new view) starts a new list; a 2D <-> 3D switch keeps it. */
+    clearBoardAnalogies = () => {
+        this.boardAnalogies = []
+    }
+    setAnalogiesOpen = (open: boolean) => {
+        this.analogiesOpen = open
     }
     clearLastPlay = () => {
         this.lastPlay = null

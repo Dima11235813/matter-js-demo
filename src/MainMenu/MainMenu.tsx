@@ -26,6 +26,7 @@ import WbIncandescentIcon from "@material-ui/icons/WbIncandescent";
 import Brightness4Icon from "@material-ui/icons/Brightness4";
 import Brightness7Icon from "@material-ui/icons/Brightness7";
 import ThreeDRotationIcon from "@material-ui/icons/ThreeDRotation";
+import ListAltIcon from "@material-ui/icons/ListAlt";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores } from "../stores";
@@ -85,7 +86,7 @@ const MainMenu = (props: MainMenuProps) => {
     prevOpen.current = open;
   }, [open]);
 
-  const { setMode, mode, setView, view, theme } = props.menuStore!;
+  const { setMode, mode, setView, view, theme, analogiesOpen, boardAnalogies, setAnalogiesOpen } = props.menuStore!;
   const { hintMode, dimension } = props.gameStore!;
 
   const handleCreateMode = (event: React.MouseEvent<EventTarget>) => {
@@ -127,6 +128,15 @@ const MainMenu = (props: MainMenuProps) => {
                 active={dimension === "3d"}
                 onClick={() => toggleDimension(stores)}
                 icon={<ThreeDRotationIcon />}
+              />
+            )}
+            {isWordView(view) && (
+              <MenuButton
+                id="analogies-toggle"
+                tooltip={`Analogies on this board (${boardAnalogies.length}): click one to focus on it`}
+                active={analogiesOpen}
+                onClick={() => setAnalogiesOpen(!analogiesOpen)}
+                icon={<ListAltIcon />}
               />
             )}
             <MenuButton

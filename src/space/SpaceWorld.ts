@@ -4,39 +4,32 @@ import deps from "../matterJsComp/Deps";
 import { WordProbe, WordWorld } from "../matterJsComp/wordWorld";
 import { SpaceSimulation } from "../physics/spaceSimulation";
 import { Layout3d, layout3dConfig } from "../physics/layoutPresets";
-import { bestViewDirection, principalAxes, Vec3 } from "../physics/principalAxes";
 import { semanticEngine } from "../services/semanticEngine";
 import { selectWordForAnalogy, takeHandoff } from "../services/playground";
 import { isRoundRunning, startTimedRound } from "../services/timedGameController";
 import { stores } from "../stores";
 import { getRandomColor } from "../utils/colorUtils";
-import { boundingSphere, canvasToSpace, fitDistance, ndcToCanvas, pixelMatchedDistance, Size } from "./handoff";
+import { CameraDirector, FOV } from "./CameraDirector";
+import { canvasToSpace, ndcToCanvas, pixelMatchedDistance, Size } from "./handoff";
 import { SpaceScene } from "./SpaceScene";
 
-const FOV = 50;
 const INITIAL_WORDS = 8;
 /** A press that moves less than this (px) is a click, not an orbit drag. */
 const CLICK_SLOP = 6;
-/** Keep the pixel-matched start this long before framing, so the 2D -> 3D switch is seamless. */
-const FRAMING_DELAY_MS = 1200;
-/** Per-frame easing toward the framed camera (0..1). */
-const FRAMING_EASE = 0.04;
 
 /**
  * The 3D hint view (Epic 5, Phases 3-4): three.js rendering of SpaceSimulation. Starts with the
  * camera pixel-matched to the 2D canvas so the switch is seamless, then the layout inflates into
- * depth and the camera eases into a slow orbit until the player takes over. The scroll wheel
- * zooms toward the pointer; drag orbits; click selects words for analogies; double-click resets.
- *
- * Until the player touches the controls, the camera auto-frames: it eases toward the words'
- * centroid and a distance where the whole layout fits below the docked dashboard. In the shape
- * layout it also turns to the best view (looking along the least-variance principal axis).
+ * depth. The scroll wheel zooms toward the pointer; drag orbits; click selects words for analogies;
+ * double-click resets the camera. Camera behaviour (auto-framing, best view, focus) lives in
+ * CameraDirector.
  */
 export class SpaceWorld implements WordWorld {
     readonly dimension = "3d" as const;
     private readonly renderer: THREE.WebGLRenderer;
     private readonly camera: THREE.PerspectiveCamera;
     private readonly controls: OrbitControls;
+    private readonly director: CameraDirector;
     private readonly view = new SpaceScene();
     private readonly sim = new SpaceSimulation(semanticEngine.calibration, layout3dConfig(stores.gameStore.layout3d));
     private layout: Layout3d = stores.gameStore.layout3d;
@@ -45,10 +38,6 @@ export class SpaceWorld implements WordWorld {
     private size: Size;
     private press: { x: number; y: number } | undefined;
     private hovered: number | undefined;
-    private autoRotateTimer: number | undefined;
-    private autoFrame = true;
-    private readonly startedAt = performance.now();
-    private viewOffsetY = 0;
 
     constructor(private readonly container: HTMLElement) {
         this.size = [container.clientWidth || window.innerWidth, window.innerHeight];
@@ -66,16 +55,13 @@ export class SpaceWorld implements WordWorld {
         this.controls.minDistance = 120;
         this.controls.maxDistance = 5000;
         this.controls.autoRotateSpeed = 0.5;
-        this.controls.addEventListener("start", this.stopAutoRotate);
-        // Let the layout inflate first, then drift so the depth is visible without interaction.
-        // Orbits layout drifts so its depth is visible; the shape layout holds its best view instead.
-        this.autoRotateTimer = window.setTimeout(() => { this.controls.autoRotate = this.layout === "orbits"; }, 2500);
+        this.director = new CameraDirector(this.camera, this.controls, () => this.layout);
 
         const canvas = this.renderer.domElement;
         canvas.addEventListener("pointerdown", this.onPointerDown);
         canvas.addEventListener("pointerup", this.onPointerUp);
         canvas.addEventListener("pointermove", this.onPointerMove);
-        canvas.addEventListener("dblclick", this.resetView);
+        canvas.addEventListener("dblclick", this.director.reset);
         window.addEventListener("resize", this.onResize);
 
         deps.activeWorld = this;
@@ -95,6 +81,11 @@ export class SpaceWorld implements WordWorld {
         this.colors.clear();
     }
 
+    /** Flies the camera to the words (fitting them all in view) and makes them glow. */
+    focusWords(words: readonly string[]): void {
+        this.director.focusOn(words, this.sim.bodies);
+    }
+
     /** Canvas-pixel projections (for hand-off back to 2D and for tests) plus 3D positions. */
     wordProbes(): (WordProbe & { color: string })[] {
         return this.sim.bodies.map(b => {
@@ -105,15 +96,14 @@ export class SpaceWorld implements WordWorld {
     }
 
     destroy(): void {
-        window.clearTimeout(this.autoRotateTimer);
         this.renderer.setAnimationLoop(null);
         const canvas = this.renderer.domElement;
         canvas.removeEventListener("pointerdown", this.onPointerDown);
         canvas.removeEventListener("pointerup", this.onPointerUp);
         canvas.removeEventListener("pointermove", this.onPointerMove);
-        canvas.removeEventListener("dblclick", this.resetView);
+        canvas.removeEventListener("dblclick", this.director.reset);
         window.removeEventListener("resize", this.onResize);
-        this.controls.removeEventListener("start", this.stopAutoRotate);
+        this.director.dispose();
         this.controls.dispose();
         this.view.dispose();
         this.renderer.dispose();
@@ -130,6 +120,7 @@ export class SpaceWorld implements WordWorld {
         } else if (view === "game") {
             if (!isRoundRunning(stores)) startTimedRound(stores);
         } else {
+            stores.menuStore.clearBoardAnalogies();
             semanticEngine.randomWords(INITIAL_WORDS).forEach(word => deps.pendingWordSpawns.push({ word }));
         }
     }
@@ -138,58 +129,27 @@ export class SpaceWorld implements WordWorld {
         if (stores.gameStore.layout3d !== this.layout) {
             this.layout = stores.gameStore.layout3d;
             this.sim.setConfig(layout3dConfig(this.layout));
-            this.resetView(); // the layout changes size and shape: re-frame it (and orient, for shape)
+            this.director.reset(); // the layout changes size and shape: re-frame it (and orient, for shape)
         }
         this.spawnQueuedWords();
         this.sim.step();
         if (this.view.applyTheme(stores.menuStore.theme)) this.renderer.setClearColor(this.view.scene.background as THREE.Color);
         const selected = new Set(stores.menuStore.selectedWordIds);
-        this.view.syncLabels(this.sim.bodies, id => this.colors.get(id)!, selected);
+        this.view.syncLabels(this.sim.bodies, id => this.colors.get(id)!, selected, this.director.glowing(this.sim.bodies));
         // Shape layout: draw the nearest-neighbour skeleton so lines, rings, and stars are readable.
         const threads = this.layout === "shape" ? this.sim.skeleton(2) : this.sim.links;
         this.view.syncThreads(this.sim.bodies, threads, this.hovered);
         this.view.syncPills(this.sim.bodies, threads, this.hovered);
-        this.frameCamera();
+        this.director.update(this.sim.bodies, this.size, deps.overlayRect);
         this.controls.update();
         this.view.updateFog(this.camera.position.distanceTo(this.controls.target));
         this.renderer.render(this.view.scene, this.camera);
     };
 
-    /**
-     * Shifts the projection centre below a dashboard docked at the top, and (while auto-framing)
-     * eases the orbit target to the words' centroid and the distance at which they all fit.
-     */
-    private frameCamera(): void {
-        const [width, height] = this.size;
-        const rect = deps.overlayRect;
-        const topBand = rect && rect.top < 100 ? Math.min(rect.bottom, height * 0.5) : 0;
-        const offsetY = -topBand / 2;
-        if (offsetY !== this.viewOffsetY) {
-            this.viewOffsetY = offsetY;
-            this.camera.setViewOffset(width, height, 0, offsetY, width, height);
-        }
-        if (!this.autoFrame || this.sim.bodies.length === 0 || performance.now() - this.startedAt < FRAMING_DELAY_MS) return;
-
-        const { center, radius } = boundingSphere(this.sim.bodies);
-        const available = (height - topBand) / height;
-        const fov = (2 * Math.atan(Math.tan((FOV * Math.PI) / 360) * available) * 180) / Math.PI;
-        const desired = Math.max(this.controls.minDistance, fitDistance(radius * 1.05, fov, width / (height - topBand)));
-        const offset = this.camera.position.clone().sub(this.controls.target);
-        const length = offset.length() + (desired - offset.length()) * FRAMING_EASE;
-        if (this.layout === "shape" && this.sim.bodies.length >= 3) {
-            // Look along the least-variance axis so lines and rings are seen face-on, not end-on.
-            const current = offset.clone().normalize();
-            const best = bestViewDirection(principalAxes(this.sim.bodies.map(b => b.position)), current.toArray() as Vec3);
-            offset.copy(current.lerp(new THREE.Vector3(...best), FRAMING_EASE).normalize());
-        }
-        offset.setLength(length);
-        this.controls.target.lerp(new THREE.Vector3(...center), FRAMING_EASE);
-        this.camera.position.copy(this.controls.target).add(offset);
-    }
-
     private spawnQueuedWords(): void {
         const onBoard = new Set(this.sim.bodies.map(b => b.word));
-        for (const { word, x, y, color } of deps.pendingWordSpawns.splice(0, 4)) {
+        const batch = deps.pendingWordSpawns.splice(0, 4);
+        for (const { word, x, y, color } of batch) {
             const vector = semanticEngine.lookup(word);
             if (!vector || onBoard.has(word)) continue;
             const start = x !== undefined && y !== undefined ? canvasToSpace([x, y], this.size) : undefined;
@@ -197,6 +157,9 @@ export class SpaceWorld implements WordWorld {
             this.colors.set(body.id, color ?? getRandomColor());
             onBoard.add(word);
         }
+        // New player words and analogy answers get focus, even if the word was already on the board.
+        const focus = batch.filter(request => request.focus).map(request => request.word);
+        if (focus.length > 0) this.focusWords(focus);
     }
 
     private pick(event: PointerEvent): number | undefined {
@@ -230,20 +193,7 @@ export class SpaceWorld implements WordWorld {
         this.size = [this.container.clientWidth || window.innerWidth, window.innerHeight];
         this.renderer.setSize(...this.size);
         this.camera.aspect = this.size[0] / this.size[1];
-        this.viewOffsetY = Number.NaN; // force frameCamera to re-apply the offset for the new size
+        this.director.invalidateViewOffset();
         this.camera.updateProjectionMatrix();
-    };
-
-    /** The player took the camera: stop drifting and stop auto-framing. */
-    private stopAutoRotate = () => {
-        window.clearTimeout(this.autoRotateTimer);
-        this.controls.autoRotate = false;
-        this.autoFrame = false;
-    };
-
-    /** Double-click: hand the camera back to auto-framing and the slow orbit. */
-    private resetView = () => {
-        this.autoFrame = true;
-        this.controls.autoRotate = this.layout === "orbits";
     };
 }

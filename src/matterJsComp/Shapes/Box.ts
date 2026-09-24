@@ -1,3 +1,4 @@
+import p5 from 'p5'
 import Matter, { IEventCollision, Engine } from 'matter-js'
 import { BoxOptions, HardBodyOptions, ShapeTypes } from '../models/boxOptions';
 import deps from '../Deps';
@@ -24,6 +25,8 @@ export class Box {
     public matterId: number = -1
     /** Centered, normalized vector from the semantic engine; undefined for non-words. */
     public embedding?: Float32Array
+    /** performance.now() until which the word pulses (focus from the HUD or a new-word spawn). */
+    public focusUntil: number = 0
     constructor(
         public boxOptions: BoxOptions | HardBodyOptions,
         public text: string = getRandomLetterOrSpace(),
@@ -55,6 +58,20 @@ export class Box {
 
     }
     count = 0
+    /** Pulsing ring while focused: 2D has no camera, so focus is shown by drawing the eye to the word. */
+    private drawFocusRing = (p: p5, w: number, h: number, color: string) => {
+        const now = performance.now()
+        if (now >= this.focusUntil) return
+        const pulse = 0.5 + 0.5 * Math.sin(now / 110)
+        const c = p.color(color)
+        c.setAlpha(110 + 145 * pulse)
+        p.push()
+        p.noFill()
+        p.stroke(c)
+        p.strokeWeight(3)
+        p.rect(0, 0, w + 14 + 10 * pulse, h + 14 + 10 * pulse, 10)
+        p.pop()
+    }
     show = () => {
         if (!this.noMatter && !this.body && !this.previewBox) return
         const helpGc = true
@@ -105,6 +122,7 @@ export class Box {
                 p.translate(position.x, position.y)
                 p.rotate(angle)
                 p.rect(0, 0, w - Box.border, h - Box.border)
+                this.drawFocusRing(p, w, h, palette.thread)
             }
 
             p.noStroke()

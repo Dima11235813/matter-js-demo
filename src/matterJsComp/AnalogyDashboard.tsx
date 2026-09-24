@@ -3,7 +3,8 @@ import { inject, observer } from "mobx-react";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores as rootStores } from "../stores";
-import { submitPlayerWord } from "../services/playground";
+import { focusWords, submitPlayerWord } from "../services/playground";
+import { analogyWords } from "../game/boardAnalogies";
 import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle } from "./GamePanels";
 import { useDashboardPlacement } from "./useDashboardPlacement";
 import styles from "./AnalogyDashboard.module.scss";
@@ -44,6 +45,13 @@ const StatusLine = observer(({ store }: { store: MenuStore }) => {
   );
 });
 
+/** A word in the HUD that focuses the view on it. */
+const WordLink = ({ word, strong = false }: { word: string; strong?: boolean }) => (
+  <button type="button" className={strong ? styles.WordLinkStrong : styles.WordLink} onClick={() => focusWords([word])} title={`Focus on "${word}"`}>
+    {word}
+  </button>
+);
+
 const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
   const { lastPlay } = store;
   if (!lastPlay) return null;
@@ -51,8 +59,17 @@ const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
   return (
     <div className={styles.LogCard} data-testid="last-play">
       <div className={styles.LogText}>
-        {a} : {b} :: {c} : <strong>{answer}</strong>
+        <WordLink word={a} /> : <WordLink word={b} /> :: <WordLink word={c} /> : <WordLink word={answer} strong />
         <span className={styles.Points}> +{points}{isNewQuestion ? " new!" : ""}</span>
+        <button
+          type="button"
+          className={styles.FocusAll}
+          onClick={() => focusWords(analogyWords(lastPlay))}
+          aria-label="Focus on this analogy"
+          title="Focus on this analogy"
+        >
+          ⌖
+        </button>
       </div>
       <div className={styles.Alternatives}>
         {[{ word: answer, similarity }, ...alternatives].map(n => (

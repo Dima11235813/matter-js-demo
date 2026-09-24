@@ -21,6 +21,7 @@ export function startTimedRound(stores: RootStore): void {
     deps.activeWorld?.clearWordBoxes();
     menuStore.clearWordSelection();
     menuStore.clearLastPlay();
+    menuStore.clearBoardAnalogies();
     gameStore.setLastRoundPoints(null);
 
     const now = Date.now();

@@ -23,6 +23,8 @@ export interface WordSpawnRequest {
     x?: number
     y?: number
     color?: string
+    /** Focus the word once it is on the board (new player words and analogy answers). */
+    focus?: boolean
 }
 
 const MENU_LEFT_PADDING = 60

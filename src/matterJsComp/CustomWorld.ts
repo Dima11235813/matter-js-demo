@@ -28,6 +28,7 @@ export class CustomWorld implements WordWorld {
     readonly dimension = "2d" as const
     static readonly initialWordCount = 8
     static readonly maxSpawnsPerFrame = 2
+    static readonly focusMs = 2800
     shapesFac: ShapesFactory;
     collisionHandler: CollisionHandler;
     typographyDisplay: TypographyDisplay;
@@ -92,6 +93,7 @@ export class CustomWorld implements WordWorld {
                     if (view === "game") {
                         if (!isRoundRunning(stores)) startTimedRound(stores)
                     } else {
+                        stores.menuStore.clearBoardAnalogies()
                         semanticEngine.randomWords(CustomWorld.initialWordCount)
                             .forEach(word => deps.pendingWordSpawns.push({ word }))
                     }
@@ -168,6 +170,15 @@ export class CustomWorld implements WordWorld {
             const box = this.shapesFac.createWordBox(word, rx, ry)
             if (color) box.setColor(color)
         })
+        // New player words and analogy answers get focus, even if the word was already on the board.
+        const focus = batch.filter(request => request.focus).map(request => request.word)
+        if (focus.length > 0) this.focusWords(focus)
+    }
+    /** 2D focus: the words pulse for a few seconds (no camera to move until 2D zoom, Task 5.7.1). */
+    focusWords = (words: readonly string[]) => {
+        const wanted = new Set(words)
+        const until = performance.now() + CustomWorld.focusMs
+        this.shapesFac.boxes.forEach(box => { if (box.embedding !== undefined && wanted.has(box.text)) box.focusUntil = until })
     }
     /** Hover reveals the similarity numbers of the word under the pointer. */
     handleHover = (x: number, y: number) => {

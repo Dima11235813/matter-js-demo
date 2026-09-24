@@ -55,14 +55,17 @@ export class SpaceScene {
         fog.far = cameraDistance * 2.4;
     }
 
-    syncLabels(bodies: readonly SpaceBody[], colorOf: (id: number) => string, selected: ReadonlySet<number>): void {
+    syncLabels(bodies: readonly SpaceBody[], colorOf: (id: number) => string, selected: ReadonlySet<number>, glowing: ReadonlySet<number> = new Set()): void {
         const palette = palettes[this.theme ?? "dark"];
         const alive = new Set<number>();
+        const pulse = 1 + 0.12 * Math.sin(performance.now() / 110);
         for (const body of bodies) {
             alive.add(body.id);
             const isSelected = selected.has(body.id);
-            const style = { fill: colorOf(body.id), stroke: isSelected ? palette.selection : palette.boxStroke, strokeWidth: isSelected ? 7 : 4 };
-            const styleKey = `${this.theme}|${style.fill}|${isSelected}`;
+            const isGlowing = glowing.has(body.id);
+            const stroke = isSelected ? palette.selection : isGlowing ? palette.thread : palette.boxStroke;
+            const style = { fill: colorOf(body.id), stroke, strokeWidth: isSelected || isGlowing ? 7 : 4 };
+            const styleKey = `${this.theme}|${style.fill}|${isSelected}|${isGlowing}`;
             let label = this.labels.get(body.id);
             if (!label) {
                 const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ fog: true }));
@@ -82,6 +85,10 @@ export class SpaceScene {
                 label.styleKey = styleKey;
             }
             label.sprite.position.set(body.position[0], body.position[1], body.position[2]);
+            // Focused labels pulse in size so the eye finds them.
+            const [w, h] = labelSize(body.word);
+            const scale = isGlowing ? pulse : 1;
+            label.sprite.scale.set(w * scale, h * scale, 1);
         }
         for (const [id, label] of this.labels) if (!alive.has(id)) this.removeLabel(id, label);
     }

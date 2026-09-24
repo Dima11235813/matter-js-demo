@@ -55,12 +55,12 @@ export async function submitPlayerWord(store: MenuStore, input: string): Promise
     switch (outcome.status) {
         case "added":
             store.setWordInputMessage(`"${outcome.word}" joined the corpus`);
-            deps.pendingWordSpawns.push({ word: outcome.word });
+            deps.pendingWordSpawns.push({ word: outcome.word, focus: true });
             await refreshStats(store);
             break;
         case "known":
             store.setWordInputMessage(`"${outcome.word}" is already known`);
-            deps.pendingWordSpawns.push({ word: outcome.word });
+            deps.pendingWordSpawns.push({ word: outcome.word, focus: true });
             break;
         default:
             store.setWordInputMessage(outcome.reason);
@@ -83,6 +83,11 @@ export function selectWordForAnalogy(stores: RootStore, id: number, text: string
         void playAnalogy(stores, a, b, c);
     }
     return true;
+}
+
+/** Brings words into view in whichever world (2D or 3D) is live. */
+export function focusWords(words: readonly string[]): void {
+    deps.activeWorld?.focusWords(words);
 }
 
 /** Takes the words handed over by the previous world if it showed the same view. */
@@ -117,8 +122,10 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
     // In a timed round the round rules decide the points (repeats score 0); lifetime score still accrues.
     const round = menuStore.view === "game" ? recordRoundAnalogy(stores, result) : undefined;
     const points = round ? round.points : play.points;
-    deps.pendingWordSpawns.push({ word: result.answer });
-    menuStore.setLastPlay({ ...result, points, isNewQuestion: round ? !round.duplicate : isNewQuestion });
+    deps.pendingWordSpawns.push({ word: result.answer, focus: true });
+    const lastPlay = { ...result, points, isNewQuestion: round ? !round.duplicate : isNewQuestion };
+    menuStore.setLastPlay(lastPlay);
+    menuStore.addBoardAnalogy(lastPlay);
     menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${result.answer} (+${points} pts)`);
     await refreshStats(menuStore);
 }

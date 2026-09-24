@@ -82,7 +82,7 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
 * **Description**: There is no way to make more room on a crowded canvas. In 2D this is a zoom/pan view transform (canvas ↔ world coordinates for input, keep-out, and spawning); in 3D it is camera manipulation (dolly, orbit, focus-on-word), so it lands naturally with the three.js camera work in Phase 3.
 * **Input (decided 2026-09-23)**: the scroll wheel zooms in both 2D and 3D, toward the pointer; pinch does the same on touch.
 * [ ] **Task 5.7.1**: 2D view transform: scroll-wheel/pinch zoom toward the pointer, drag-pan in Move mode, with correct hit-testing, dashboard keep-out, and spawning in world coordinates.
-* [~] **Task 5.7.2**: 3D camera controls: scroll-wheel dolly toward the pointer with zoom limits ✅, reset view (double-click) ✅, focus-on-word ⬜.
+* [x] **Task 5.7.2**: 3D camera controls: scroll-wheel dolly toward the pointer with zoom limits ✅, reset view (double-click) ✅, focus-on-word ✅ (Feature 5.16).
 
 ### Feature 5.8: Spin to Detangle (roadmap)
 * **Description**: A mode that rotates the world (the gravity direction sweeps around) so large tangled webs and interlocked molecules shake apart. The goal is a stable result: steady orbits or a static mesh, which the player can then capture as a saved view (Feature 5.9).
@@ -159,6 +159,21 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
 * [ ] **Task 5.15.3**: Molecule–molecule repulsion; measure with the cluster-separation experiment (molecules as ground-truth groups) against the grouped model.
 * [ ] **Task 5.15.4**: Visuals: molecule halo size by mass, orbit trails for satellites, a flash on accretion.
 * **Exit criteria**: satellites orbit a molecule for ≥ 10 s without bonding or escaping (unrelated words), related words accrete within 10 s of contact, and molecule systems keep silhouette ≥ 0.6 on the grouped boards.
+
+### Feature 5.16: Focus & Board Analogies (shipped 2026-09-23)
+* **Description**: A new word draws the eye, and every analogy on the board is one click from being seen again, in 2D and 3D.
+* **User Stories**:
+  * **Story 5.16.1**: *As a player, when a word joins the world, I want the view to show me where it landed.*
+    * [x] **Task 5.16.1.1**: `WordWorld.focusWords(words)`; spawn requests carry `focus` (player-added words and analogy answers).
+    * [x] **Task 5.16.1.2**: 3D: `CameraDirector` (extracted from `SpaceWorld`) flies to the focused words and tracks them for 2.8 s while they settle; fits all of them in view, never closer than the pixel-matched distance (a single word shows at its 2D size with its neighbours). Focused labels glow (thread-colour stroke) and pulse. Focus hands the camera to the player (no auto-framing afterwards; double-click resets).
+    * [x] **Task 5.16.1.3**: 2D: focused boxes get a pulsing ring for 2.8 s (`Box.focusUntil`). 2D has no camera yet; panning to off-screen words waits for Task 5.7.1.
+  * **Story 5.16.2**: *As a player, I want the analogy in the HUD to be links, so I can find its words on the board.*
+    * [x] **Task 5.16.2.1**: HUD words a, b, c and the answer are focus links; ⌖ focuses the whole analogy.
+  * **Story 5.16.3**: *As a player, I want a list of the analogies I created on this board, each one a link that focuses it.*
+    * [x] **Task 5.16.3.1**: `MenuStore.boardAnalogies` (newest first, capped at 50, pure rules in `src/game/boardAnalogies.ts` with tests); survives 2D ↔ 3D switches; cleared by a fresh board and by a new timed round.
+    * [x] **Task 5.16.3.2**: Menu toggle (list icon, word views only) opens "Analogies on this board": each row focuses its analogy, each word chip focuses that word.
+    * [ ] **Task 5.16.3.3**: Persist board analogies with saved views (Feature 5.9); a global "all my analogies" browser from IndexedDB (Epic 2).
+* **Result (2026-09-23)** ✅ Verified in the running app (Playwright via `window.__lexical`). 3D: the orbit target ends within 1–29 units of the focused word(s) for the HUD link, a panel row, a panel chip, and a dropped word. 2D: a panel row pulses exactly {man, king, woman, queen}, the pulse expires after 2.8 s, the HUD link and dropped words pulse. The list survives the 3D → 2D switch. Found and fixed during verification: a 420-unit minimum made a single focused label ~2× its 2D size, and a new answer drifted after a 1.8 s fly (now tracked for the whole glow).
 
 ### Feature 5.5: Verification & Polish (Phase 5)
 * [ ] **Task 5.5.1**: 3D fidelity ≤ −0.7 on the families set; 60 fps with 40 words.
