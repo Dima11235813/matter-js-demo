@@ -21,6 +21,9 @@ export class WorldContainer {
             this.sketch.remove();
         }
         deps.p = undefined;
+        const world = this.sketchHandler?.customWorld;
+        if (world?.runner) Matter.Runner.stop(world.runner);
+        if (deps.activeWorld === world) deps.activeWorld = undefined;
         if (deps.engine) {
             Matter.World.clear(deps.engine.world, false);
             Matter.Engine.clear(deps.engine);

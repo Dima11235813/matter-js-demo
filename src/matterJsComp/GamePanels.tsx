@@ -4,7 +4,7 @@ import { GameStore } from "../stores/GameStore";
 import { RootStore } from "../stores/RootStore";
 import { nextRewardAt } from "../game/timedGame";
 import { startTimedRound } from "../services/timedGameController";
-import { toggleHintMode } from "../services/playground";
+import { toggleDimension, toggleHintMode, toggleLayout3d } from "../services/playground";
 import styles from "./AnalogyDashboard.module.scss";
 
 export const HintToggle = observer(({ stores }: { stores: RootStore }) => {
@@ -23,6 +23,44 @@ export const HintToggle = observer(({ stores }: { stores: RootStore }) => {
 });
 
 const countLabel = (n: number, singular: string, plural: string) => `${n} ${n === 1 ? singular : plural}`;
+
+/** 2D <-> 3D; 3D exists only in hint mode, so the pill hides when hints are off. */
+export const DimensionToggle = observer(({ stores }: { stores: RootStore }) => {
+  const { hintMode, dimension } = stores.gameStore;
+  if (!hintMode) return null;
+  const is3d = dimension === "3d";
+  return (
+    <button
+      type="button"
+      className={is3d ? styles.HintOn : styles.HintOff}
+      onClick={() => toggleDimension(stores)}
+      aria-pressed={is3d}
+      title={is3d ? "3D: drag to orbit, scroll to zoom, click words to select, double-click to reset" : "Switch to the 3D view"}
+    >
+      {is3d ? "3D" : "2D"}
+    </button>
+  );
+});
+
+/** 3D layout model: the board's embedding distances decide the shape, or the Phase 2 orbits. */
+export const LayoutToggle = observer(({ stores }: { stores: RootStore }) => {
+  const { spaceActive, layout3d } = stores.gameStore;
+  if (!spaceActive) return null;
+  const shape = layout3d === "shape";
+  return (
+    <button
+      type="button"
+      className={shape ? styles.HintOn : styles.HintOff}
+      onClick={() => toggleLayout3d(stores)}
+      aria-pressed={shape}
+      title={shape
+        ? "Shape: the board's own embedding distances decide the 3D shape (lines, rings, clusters). Click for orbits."
+        : "Orbits: related words orbit their core word. Click for the embedding-shaped layout."}
+    >
+      {shape ? "Shape" : "Orbits"}
+    </button>
+  );
+});
 
 const formatClock = (ms: number) => {
   const total = Math.ceil(ms / 1000);

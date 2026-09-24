@@ -19,13 +19,13 @@ export function installDevtools(): void {
         deps,
         stores,
         semanticEngine,
+        /** Word positions in canvas pixels (3D: projected through the camera), for clicking. */
         wordBoxes: (): WordBoxProbe[] =>
-            (deps.activeWorld?.shapesFac.boxes ?? [])
-                .filter(box => box.embedding && box.body)
-                .map(box => ({ text: box.text, x: box.body!.position.x, y: box.body!.position.y })),
+            (deps.activeWorld?.wordProbes() ?? []).map(({ text, x, y }) => ({ text, x, y })),
+        /** Fidelity in the world's own space: 2D pixels or 3D world units. */
         layoutFidelity: (): LayoutFidelity => {
-            const boxes = handle.wordBoxes()
-            return layoutFidelity(boxes.map(b => [b.x, b.y]), boxes.map(b => semanticEngine.lookup(b.text)!))
+            const probes = deps.activeWorld?.wordProbes() ?? []
+            return layoutFidelity(probes.map(p => p.position), probes.map(p => semanticEngine.lookup(p.text)!))
         },
     };
     (window as unknown as { __lexical: typeof handle }).__lexical = handle;

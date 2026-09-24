@@ -11,6 +11,10 @@ export default defineConfig({
       },
     }),
   ],
+  optimizeDeps: {
+    // three.js is only imported lazily (first 3D toggle); pre-bundle it so dev doesn't reload then.
+    include: ['three', 'three/examples/jsm/controls/OrbitControls.js'],
+  },
   server: {
     port: 3000,
     open: true,

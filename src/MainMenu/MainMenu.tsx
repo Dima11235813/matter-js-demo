@@ -25,10 +25,11 @@ import TimerIcon from "@material-ui/icons/Timer";
 import WbIncandescentIcon from "@material-ui/icons/WbIncandescent";
 import Brightness4Icon from "@material-ui/icons/Brightness4";
 import Brightness7Icon from "@material-ui/icons/Brightness7";
+import ThreeDRotationIcon from "@material-ui/icons/ThreeDRotation";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores } from "../stores";
-import { toggleHintMode, toggleTheme } from "../services/playground";
+import { toggleDimension, toggleHintMode, toggleTheme } from "../services/playground";
 import { AppModes } from "../matterJsComp/models/appMode";
 //https://material-ui.com/components/material-icons/#material-icons
 
@@ -85,7 +86,7 @@ const MainMenu = (props: MainMenuProps) => {
   }, [open]);
 
   const { setMode, mode, setView, view, theme } = props.menuStore!;
-  const { hintMode } = props.gameStore!;
+  const { hintMode, dimension } = props.gameStore!;
 
   const handleCreateMode = (event: React.MouseEvent<EventTarget>) => {
     logger.log("Create Mode");
@@ -117,6 +118,15 @@ const MainMenu = (props: MainMenuProps) => {
                 active={hintMode}
                 onClick={() => toggleHintMode(stores)}
                 icon={<WbIncandescentIcon />}
+              />
+            )}
+            {isWordView(view) && hintMode && (
+              <MenuButton
+                id="dimension-toggle"
+                tooltip={dimension === "3d" ? "3D view on: drag to orbit, scroll to zoom" : "Switch to the 3D view"}
+                active={dimension === "3d"}
+                onClick={() => toggleDimension(stores)}
+                icon={<ThreeDRotationIcon />}
               />
             )}
             <MenuButton

@@ -3,8 +3,9 @@ import { MenuStore } from "../stores/MenuStore";
 import { RootStore } from "../stores/RootStore";
 import { logger } from "../utils/logger";
 import { semanticEngine } from "./semanticEngine";
-import { recordRoundAnalogy } from "./timedGameController";
+import { isRoundRunning, recordRoundAnalogy } from "./timedGameController";
 import { applyTheme, saveThemePreference } from "../theme/palette";
+import { saveLayout3d } from "../physics/layoutPresets";
 
 /**
  * Use cases that connect the semantic engine, the MobX stores, and the physics world.
@@ -22,6 +23,7 @@ export async function bootSemanticPlayground(stores: RootStore): Promise<void> {
     try {
         await semanticEngine.start();
         gameStore.setHintMode(semanticEngine.hintMode);
+        gameStore.setDimension(semanticEngine.dimension);
         gameStore.setBestScore(await semanticEngine.bestGameScore());
         await refreshStats(menuStore);
         menuStore.setEngineStatus("ready");
@@ -63,6 +65,45 @@ export async function submitPlayerWord(store: MenuStore, input: string): Promise
         default:
             store.setWordInputMessage(outcome.reason);
     }
+}
+
+/**
+ * Word selection shared by the 2D and 3D worlds: free in the sandbox, only while the clock runs
+ * in a timed round. The third selection completes "a is to b as c is to ?". Returns whether the
+ * click was consumed by selection.
+ */
+export function selectWordForAnalogy(stores: RootStore, id: number, text: string): boolean {
+    const { menuStore } = stores;
+    const canSelect = menuStore.view === "fountain" || (menuStore.view === "game" && isRoundRunning(stores));
+    if (!canSelect) return false;
+    menuStore.toggleWordSelection(id, text);
+    if (menuStore.selectedWordTexts.length === 3) {
+        const [a, b, c] = menuStore.selectedWordTexts;
+        menuStore.clearWordSelection();
+        void playAnalogy(stores, a, b, c);
+    }
+    return true;
+}
+
+/** Takes the words handed over by the previous world if it showed the same view. */
+export function takeHandoff(view: string) {
+    const handoff = deps.worldHandoff;
+    deps.worldHandoff = undefined;
+    return handoff && handoff.view === view && handoff.words.length > 0 ? handoff.words : undefined;
+}
+
+/** 2D <-> 3D; only meaningful with hint mode on. Persisted per device like hint mode. */
+export function toggleDimension(stores: RootStore): void {
+    const next = stores.gameStore.dimension === "3d" ? "2d" : "3d";
+    stores.gameStore.setDimension(next);
+    if (semanticEngine.isReady) void semanticEngine.setDimension(next);
+}
+
+/** 3D layout: embedding-shaped ("shape") vs the Phase 2 orbital model ("orbits"). Per device. */
+export function toggleLayout3d(stores: RootStore): void {
+    const next = stores.gameStore.layout3d === "shape" ? "orbits" : "shape";
+    stores.gameStore.setLayout3d(next);
+    saveLayout3d(next);
 }
 
 export async function playAnalogy(stores: RootStore, a: string, b: string, c: string): Promise<void> {

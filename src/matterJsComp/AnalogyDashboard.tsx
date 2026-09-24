@@ -4,7 +4,7 @@ import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores as rootStores } from "../stores";
 import { submitPlayerWord } from "../services/playground";
-import { CompactClock, GameHud, GameOverCard, HintToggle } from "./GamePanels";
+import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle } from "./GamePanels";
 import { useDashboardPlacement } from "./useDashboardPlacement";
 import styles from "./AnalogyDashboard.module.scss";
 
@@ -112,6 +112,8 @@ const AnalogyDashboardComponent = (props: AnalogyDashboardProps) => {
         <div className={styles.TopControls}>
           {collapsed && isGame && <CompactClock gameStore={gameStore} />}
           <HintToggle stores={rootStores} />
+          <DimensionToggle stores={rootStores} />
+          <LayoutToggle stores={rootStores} />
           <div className={styles.ScoreCard}>
             <span className={styles.ScoreLabel}>{isGame ? "ROUND" : "SCORE"}</span>
             <span className={styles.ScoreValue}>{score}</span>

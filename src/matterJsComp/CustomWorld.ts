@@ -10,7 +10,8 @@ import { CollisionHandler } from "./CollisionHandler";
 import { stores } from "../stores";
 import { AppModes } from "./models/appMode";
 import { semanticEngine } from "../services/semanticEngine";
-import { playAnalogy } from "../services/playground";
+import { selectWordForAnalogy, takeHandoff } from "../services/playground";
+import { WordProbe, WordWorld } from "./wordWorld";
 import { isRoundRunning, startTimedRound } from "../services/timedGameController";
 import { isWordView } from "../stores/MenuStore";
 import { SemanticPhysics } from "./SemanticPhysics";
@@ -23,7 +24,8 @@ export enum EventClickType {
 }
 
 
-export class CustomWorld {
+export class CustomWorld implements WordWorld {
+    readonly dimension = "2d" as const
     static readonly initialWordCount = 8
     static readonly maxSpawnsPerFrame = 2
     shapesFac: ShapesFactory;
@@ -31,6 +33,7 @@ export class CustomWorld {
     typographyDisplay: TypographyDisplay;
     semanticPhysics: SemanticPhysics;
     semanticOverlay: SemanticOverlay;
+    runner: Matter.Runner | undefined;
     //TODO Move to interaction store
     clickType: EventClickType = EventClickType.CREATE_LETTER_BOX
     constructor() {
@@ -78,12 +81,16 @@ export class CustomWorld {
         deps.activeWorld = this
         const { view } = stores.menuStore
         if (isWordView(view)) {
+            // Words handed over by a 3D world of the same view keep their on-screen positions.
+            const handoff = takeHandoff(view)
+            handoff?.forEach(({ word, x, y, color }) => deps.pendingWordSpawns.push({ word, x, y, color }))
+            stores.menuStore.clearWordSelection()
             // StrictMode mounts twice; only the world whose engine is still live may seed words.
             semanticEngine.start()
                 .then(() => {
-                    if (deps.engine !== engine) return
+                    if (deps.engine !== engine || handoff) return
                     if (view === "game") {
-                        startTimedRound(stores)
+                        if (!isRoundRunning(stores)) startTimedRound(stores)
                     } else {
                         semanticEngine.randomWords(CustomWorld.initialWordCount)
                             .forEach(word => deps.pendingWordSpawns.push({ word }))
@@ -92,8 +99,8 @@ export class CustomWorld {
                 .catch(() => { /* status surfaced by bootSemanticPlayground */ })
         }
 
-        // run the engine
-        Engine.run(deps.engine);
+        // run the engine; the runner is stopped in WorldContainer.destroy()
+        this.runner = Matter.Runner.run(deps.engine)
     }
     // setMouseMoveCoordinates = (x: number, y: number) => {
     //     this.mouseX
@@ -102,13 +109,9 @@ export class CustomWorld {
         const { mode, view } = stores.menuStore!
 
         let clickedOnWordBox = false
-        const canSelect = view === "fountain" || (view === "game" && isRoundRunning(stores))
-        if (canSelect) {
+        if (isWordView(view)) {
             const box = this.shapesFac.boxes.find(b => b.embedding !== undefined && this.checkLocationIsInBox(b, x, y))
-            if (box) {
-                clickedOnWordBox = true
-                this.selectWordForAnalogy(box)
-            }
+            if (box) clickedOnWordBox = selectWordForAnalogy(stores, box.matterId, box.text)
         }
 
         let clickedOnPreviewBox = false
@@ -134,14 +137,11 @@ export class CustomWorld {
             this.clickType = EventClickType.CREATE_LETTER_BOX
         }
     }
-    /** Third selection completes "a is to b as c is to ?" and spawns the answer. */
-    selectWordForAnalogy = (box: Box) => {
-        const { menuStore } = stores
-        menuStore.toggleWordSelection(box.matterId, box.text)
-        if (menuStore.selectedWordTexts.length < 3) return
-        const [wordA, wordB, wordC] = menuStore.selectedWordTexts
-        menuStore.clearWordSelection()
-        playAnalogy(stores, wordA, wordB, wordC)
+    /** Word boxes with canvas positions (hand-off, devtools, e2e). */
+    wordProbes = (): WordProbe[] => {
+        return this.shapesFac.boxes
+            .filter(b => b.embedding !== undefined && b.body)
+            .map(b => ({ text: b.text, x: b.body!.position.x, y: b.body!.position.y, position: [b.body!.position.x, b.body!.position.y], color: b.color }))
     }
     /** Texts of the embedding word boxes currently in the world. */
     wordTexts = (): string[] => {
@@ -158,10 +158,15 @@ export class CustomWorld {
         const { width, height } = deps.browserInfo
         const batch = deps.pendingWordSpawns.splice(0, CustomWorld.maxSpawnsPerFrame)
         const onBoard = new Set(this.wordTexts())
-        batch.forEach(({ word, x, y }) => {
+        batch.forEach(({ word, x, y, color }) => {
             if (onBoard.has(word)) return
-            const [rx, ry] = x !== undefined && y !== undefined ? [x, y] : this.openSpawnPoint(width, height)
-            this.shapesFac.createWordBox(word, rx, ry)
+            // Handed-over positions can sit on the canvas edge (projected from 3D); a box spawned
+            // there overlaps a wall, gets pushed outside, and is deleted, so keep it inside.
+            const [rx, ry] = x !== undefined && y !== undefined
+                ? [Math.min(Math.max(x, 80), width - 80), Math.min(Math.max(y, 60), height - 60)]
+                : this.openSpawnPoint(width, height)
+            const box = this.shapesFac.createWordBox(word, rx, ry)
+            if (color) box.setColor(color)
         })
     }
     /** Hover reveals the similarity numbers of the word under the pointer. */

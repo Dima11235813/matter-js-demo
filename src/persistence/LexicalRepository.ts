@@ -44,6 +44,15 @@ export class LexicalRepository {
         await this.db.put("profile", this.profile);
     }
 
+    get dimension(): "2d" | "3d" {
+        return this.profile.dimension ?? "2d";
+    }
+
+    async setDimension(dimension: "2d" | "3d"): Promise<void> {
+        this.profile = { ...this.profile, dimension, ...this.touch(this.profile) };
+        await this.db.put("profile", this.profile);
+    }
+
     async addScore(points: number): Promise<number> {
         this.profile = { ...this.profile, score: this.profile.score + points, ...this.touch(this.profile) };
         await this.db.put("profile", this.profile);

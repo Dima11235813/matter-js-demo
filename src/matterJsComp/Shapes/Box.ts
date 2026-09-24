@@ -16,7 +16,11 @@ export class Box {
     outOfBounds: boolean = false
     color: string = getRandomColor()
     /** Black or white, whichever meets WCAG AA contrast against this box's fill. */
-    readonly textColor: string = readableTextColor(this.color)
+    textColor: string = readableTextColor(this.color)
+    setColor = (color: string) => {
+        this.color = color
+        this.textColor = readableTextColor(color)
+    }
     public matterId: number = -1
     /** Centered, normalized vector from the semantic engine; undefined for non-words. */
     public embedding?: Float32Array

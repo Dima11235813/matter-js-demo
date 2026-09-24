@@ -2,6 +2,7 @@ import { action, computed, makeObservable, observable } from 'mobx';
 import { CommonStore } from './CommonStore';
 import { RootStore } from './RootStore';
 import { defaultTimedRules, remainingMs, TimedGameRules, TimedGameState } from '../game/timedGame';
+import { Layout3d, loadLayout3d } from '../physics/layoutPresets';
 
 /**
  * UI state for the embedding modes: the hint-mode flag (shared by sandbox and timed game) and
@@ -9,6 +10,9 @@ import { defaultTimedRules, remainingMs, TimedGameRules, TimedGameState } from '
  */
 export class GameStore extends CommonStore {
     hintMode = true
+    dimension: "2d" | "3d" = "2d"
+    /** 3D layout model: "shape" (embedding-shaped, default) or "orbits" (Phase 2 model). */
+    layout3d: Layout3d = loadLayout3d()
     game: TimedGameState | null = null
     now = Date.now()
     bestScore = 0
@@ -20,6 +24,11 @@ export class GameStore extends CommonStore {
         super(store)
         makeObservable(this, {
             hintMode: observable,
+            dimension: observable,
+            layout3d: observable,
+            setLayout3d: action,
+            spaceActive: computed,
+            setDimension: action,
             game: observable.ref,
             now: observable,
             bestScore: observable,
@@ -32,6 +41,20 @@ export class GameStore extends CommonStore {
             setBestScore: action,
             setLastRoundPoints: action,
         })
+    }
+
+    /** 3D renders only in word views with hint mode on (Epic 5 decision). */
+    get spaceActive(): boolean {
+        const { view } = this.store.menuStore
+        return this.dimension === "3d" && this.hintMode && (view === "fountain" || view === "game")
+    }
+
+    setDimension = (dimension: "2d" | "3d") => {
+        this.dimension = dimension
+    }
+
+    setLayout3d = (layout: Layout3d) => {
+        this.layout3d = layout
     }
 
     get remainingMs(): number {

@@ -112,6 +112,14 @@ export class SemanticEngine {
         return this.require().repo.setHintMode(hintMode);
     }
 
+    get dimension(): "2d" | "3d" {
+        return this.loaded ? this.loaded.repo.dimension : "2d";
+    }
+
+    setDimension(dimension: "2d" | "3d"): Promise<void> {
+        return this.require().repo.setDimension(dimension);
+    }
+
     saveGame(result: GameResult): Promise<GameRecord> {
         return this.require().repo.saveGame(result);
     }

@@ -44,6 +44,8 @@ export interface ProfileRecord extends SyncStamp {
     score: number;
     /** Low-gravity semantic orbits; undefined means the default (on). */
     hintMode?: boolean;
+    /** Hint view dimension; undefined means 2D. */
+    dimension?: "2d" | "3d";
 }
 
 export interface GameRecord extends SyncStamp {
