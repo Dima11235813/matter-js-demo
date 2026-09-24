@@ -4,7 +4,8 @@ import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores as rootStores } from "../stores";
 import { submitPlayerWord } from "../services/playground";
-import { GameHud, GameOverCard, HintToggle } from "./GamePanels";
+import { CompactClock, GameHud, GameOverCard, HintToggle } from "./GamePanels";
+import { useDashboardPlacement } from "./useDashboardPlacement";
 import styles from "./AnalogyDashboard.module.scss";
 
 interface AnalogyDashboardProps {
@@ -94,25 +95,47 @@ const WordForm = observer(({ store }: { store: MenuStore }) => {
 const AnalogyDashboardComponent = (props: AnalogyDashboardProps) => {
   const store = props.menuStore!;
   const gameStore = props.gameStore!;
+  const placement = useDashboardPlacement(store.view);
   if (!isWordView(store.view)) return null;
   const isGame = store.view === "game";
   const score = isGame ? gameStore.game?.score ?? 0 : store.score;
+  const { collapsed } = placement;
 
   return (
-    <div className={styles.DashboardRoot}>
+    <div ref={placement.rootRef} className={collapsed ? styles.DashboardCollapsed : styles.DashboardRoot} style={placement.style}>
       <div className={styles.TopRow}>
-        <div className={styles.Logo}>
-          Lexical Fountain
+        <div className={styles.DragHandle} {...placement.handleProps} title="Drag to move · double-click to reset">
+          <span className={styles.Grip} aria-hidden="true">⠿</span>
+          <span className={styles.Logo}>Lexical Fountain</span>
           <span className={styles.ModeTag}>{isGame ? "Timed" : "Sandbox"}</span>
         </div>
         <div className={styles.TopControls}>
+          {collapsed && isGame && <CompactClock gameStore={gameStore} />}
           <HintToggle stores={rootStores} />
           <div className={styles.ScoreCard}>
             <span className={styles.ScoreLabel}>{isGame ? "ROUND" : "SCORE"}</span>
             <span className={styles.ScoreValue}>{score}</span>
           </div>
+          <button
+            type="button"
+            className={styles.CollapseButton}
+            onClick={placement.toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expand dashboard" : "Minimize dashboard"}
+            title={collapsed ? "Expand dashboard" : "Minimize dashboard"}
+          >
+            {collapsed ? "▾" : "▴"}
+          </button>
         </div>
       </div>
+      {!collapsed && <DashboardBody store={store} gameStore={gameStore} isGame={isGame} />}
+    </div>
+  );
+};
+
+const DashboardBody = observer(({ store, gameStore, isGame }: { store: MenuStore; gameStore: GameStore; isGame: boolean }) => {
+  return (
+    <>
       {isGame ? <GameHud gameStore={gameStore} /> : <StatusLine store={store} />}
       <GameOverCard stores={rootStores} />
       <div className={styles.AnalogyRow}>
@@ -120,8 +143,8 @@ const AnalogyDashboardComponent = (props: AnalogyDashboardProps) => {
       </div>
       <LastPlayCard store={store} />
       {!isGame && <WordForm store={store} />}
-    </div>
+    </>
   );
-};
+});
 
 export const AnalogyDashboard = inject("menuStore", "gameStore")(observer(AnalogyDashboardComponent));

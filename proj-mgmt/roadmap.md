@@ -38,6 +38,11 @@ The project is deconstructed into four key Epics. Click each file link to explor
 * **Core Tech**: Vite, React 18+, MobX 6, MUI 5+, Strict TypeScript.
 * **Key Features**: Migrate from CRA to Vite, Upgrade p5/Matter-js bindings, Resolve MobX experimental decorators, Strict type safety.
 
+### 🪐 [Epic 5: 3D Semantic Space](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/epic-5-3d-semantic-space.md)
+* **Goal**: Lift the hint-mode orbital layout into an explorable 3D space where distance mirrors meaning.
+* **Core Tech**: three.js (lazy-loaded), custom 3D integrator, all-pairs similarity layout.
+* **Key Features**: All-pairs layout (2D first), 3D orbits, raycast selection, 2D ↔ 3D toggle gated on hint mode.
+
 ---
 
 ## 🚀 Execution Strategy

@@ -4,6 +4,7 @@ import { RootStore } from "./RootStore";
 import { AppModes } from '../matterJsComp/models/appMode';
 import { Neighbor } from '../embeddings/VectorIndex';
 import { CorpusStats } from '../services/semanticEngine';
+import { loadThemePreference, ThemeName } from '../theme/palette';
 
 export type EngineStatus = "loading" | "ready" | "error"
 export type AppView = "sandbox" | "fountain" | "game"
@@ -30,6 +31,7 @@ export class MenuStore extends CommonStore {
     corpusStats: CorpusStats | null = null
     lastPlay: LastPlay | null = null
     wordInputMessage: string = ""
+    theme: ThemeName = loadThemePreference()
 
     mode: AppModes
     view: AppView
@@ -78,7 +80,9 @@ export class MenuStore extends CommonStore {
             setCorpusStats: action,
             setLastPlay: action,
             clearLastPlay: action,
-            setWordInputMessage: action
+            setWordInputMessage: action,
+            theme: observable,
+            setTheme: action
         });
     }
     setMode = (newMode: AppModes) => {
@@ -135,5 +139,8 @@ export class MenuStore extends CommonStore {
     }
     setWordInputMessage = (message: string) => {
         this.wordInputMessage = message
+    }
+    setTheme = (theme: ThemeName) => {
+        this.theme = theme
     }
 }

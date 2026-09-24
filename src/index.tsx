@@ -8,11 +8,13 @@ import { Provider } from "mobx-react";
 import { stores } from "./stores";
 import { bootSemanticPlayground } from "./services/playground";
 import { installDevtools } from "./devtools";
+import { applyTheme } from "./theme/palette";
 
 Sentry.init({
   dsn: "https://a21df14579c147e3b7aff794b0bc763a@sentry.io/5172530",
 });
 
+applyTheme(stores.menuStore.theme);
 bootSemanticPlayground(stores);
 if (import.meta.env.DEV) installDevtools();
 

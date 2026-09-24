@@ -29,6 +29,13 @@ const formatClock = (ms: number) => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
 
+/** Minimal countdown for the collapsed dashboard. */
+export const CompactClock = observer(({ gameStore }: { gameStore: GameStore }) => {
+  const { game, remainingMs } = gameStore;
+  if (!game || game.phase !== "running") return null;
+  return <span className={styles.Clock} aria-label="Time left">{formatClock(remainingMs)}</span>;
+});
+
 /** Countdown, word-supply progress, and best score for the running round. */
 export const GameHud = observer(({ gameStore }: { gameStore: GameStore }) => {
   const { game, rules, remainingMs, bestScore } = gameStore;

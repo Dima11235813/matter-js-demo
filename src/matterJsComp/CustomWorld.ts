@@ -14,6 +14,9 @@ import { playAnalogy } from "../services/playground";
 import { isRoundRunning, startTimedRound } from "../services/timedGameController";
 import { isWordView } from "../stores/MenuStore";
 import { SemanticPhysics } from "./SemanticPhysics";
+import { SemanticOverlay } from "./SemanticOverlay";
+import { insideKeepOut } from "../physics/orbitalForces";
+import { palettes } from "../theme/palette";
 
 export enum EventClickType {
     CREATE_LETTER_BOX, DRAG_BOX, SELECT_LETTER
@@ -27,6 +30,7 @@ export class CustomWorld {
     collisionHandler: CollisionHandler;
     typographyDisplay: TypographyDisplay;
     semanticPhysics: SemanticPhysics;
+    semanticOverlay: SemanticOverlay;
     //TODO Move to interaction store
     clickType: EventClickType = EventClickType.CREATE_LETTER_BOX
     constructor() {
@@ -69,6 +73,7 @@ export class CustomWorld {
             });
 
         this.semanticPhysics = new SemanticPhysics(this.shapesFac, engine!)
+        this.semanticOverlay = new SemanticOverlay(this.semanticPhysics, this.shapesFac)
         deps.pendingWordSpawns = []
         deps.activeWorld = this
         const { view } = stores.menuStore
@@ -155,11 +160,23 @@ export class CustomWorld {
         const onBoard = new Set(this.wordTexts())
         batch.forEach(({ word, x, y }) => {
             if (onBoard.has(word)) return
-            // Spawn below the dashboard overlay so new words are never hidden behind it.
-            const rx = x ?? 100 + Math.random() * Math.max(1, width - 200)
-            const ry = y ?? 280 + Math.random() * Math.max(1, height - 360)
+            const [rx, ry] = x !== undefined && y !== undefined ? [x, y] : this.openSpawnPoint(width, height)
             this.shapesFac.createWordBox(word, rx, ry)
         })
+    }
+    /** Hover reveals the similarity numbers of the word under the pointer. */
+    handleHover = (x: number, y: number) => {
+        const box = this.shapesFac.boxes.find(b => b.embedding !== undefined && this.checkLocationIsInBox(b, x, y))
+        this.semanticOverlay.setHovered(box)
+    }
+    /** A random point that is not under the dashboard overlay, wherever it has been moved. */
+    openSpawnPoint = (width: number, height: number): [number, number] => {
+        let point: [number, number] = [width / 2, height / 2]
+        for (let attempt = 0; attempt < 20; attempt++) {
+            point = [100 + Math.random() * Math.max(1, width - 200), 100 + Math.random() * Math.max(1, height - 180)]
+            if (!deps.overlayRect || !insideKeepOut(point, deps.overlayRect, 60)) break
+        }
+        return point
     }
     moveBoxIfOneSelected = (x: number, y: number) => {
         if (deps.boxLastClicked && deps.boxLastClicked.body) {
@@ -211,18 +228,18 @@ export class CustomWorld {
     draw = () => {
         const { p } = deps
         if (p) {
-            p.background("#0c0c0e")
+            p.background(palettes[stores.menuStore.theme].canvas)
             
             const { view } = stores.menuStore
             if (isWordView(view)) {
                 this.spawnQueuedWords()
-                this.semanticPhysics.drawThreads(p)
+                this.semanticOverlay.drawThreads(p)
             }
             
             this.shapesFac.hardBodies.forEach(body => body && body.show())
             this.shapesFac.boxes = this.shapesFac.boxes.filter((box: Box) => box && box.body && !box.outOfBounds)
             this.shapesFac.boxes.forEach(box => box.show())
-            if (isWordView(view)) this.semanticPhysics.drawThreadLabels(p)
+            if (isWordView(view)) this.semanticOverlay.drawThreadLabels(p)
             
             if (view === "sandbox") {
                 this.shapesFac.previewBoxes.forEach(previewBox => previewBox.show())

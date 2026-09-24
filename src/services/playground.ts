@@ -4,6 +4,7 @@ import { RootStore } from "../stores/RootStore";
 import { logger } from "../utils/logger";
 import { semanticEngine } from "./semanticEngine";
 import { recordRoundAnalogy } from "./timedGameController";
+import { applyTheme, saveThemePreference } from "../theme/palette";
 
 /**
  * Use cases that connect the semantic engine, the MobX stores, and the physics world.
@@ -35,6 +36,14 @@ export function toggleHintMode(stores: RootStore): void {
     const next = !stores.gameStore.hintMode;
     stores.gameStore.setHintMode(next);
     if (semanticEngine.isReady) void semanticEngine.setHintMode(next);
+}
+
+/** Dark/light theme: a per-device UI preference, applied to CSS variables and the p5 canvas. */
+export function toggleTheme(stores: RootStore): void {
+    const next = stores.menuStore.theme === "dark" ? "light" : "dark";
+    stores.menuStore.setTheme(next);
+    applyTheme(next);
+    saveThemePreference(next);
 }
 
 export async function submitPlayerWord(store: MenuStore, input: string): Promise<void> {

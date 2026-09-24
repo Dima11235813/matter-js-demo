@@ -1,7 +1,8 @@
 import Matter, { IEventCollision, Engine } from 'matter-js'
 import { BoxOptions, HardBodyOptions, ShapeTypes } from '../models/boxOptions';
 import deps from '../Deps';
-import { getRandomColor } from '../../utils/colorUtils';
+import { getRandomColor, readableTextColor } from '../../utils/colorUtils';
+import { palettes } from '../../theme/palette';
 import { getRandomLetterOrSpace } from '../../utils/textUtils';
 import { stores } from '../../stores';
 import { AppModes } from '../models/appMode';
@@ -14,6 +15,8 @@ export class Box {
     previewBox: boolean = false
     outOfBounds: boolean = false
     color: string = getRandomColor()
+    /** Black or white, whichever meets WCAG AA contrast against this box's fill. */
+    readonly textColor: string = readableTextColor(this.color)
     public matterId: number = -1
     /** Centered, normalized vector from the semantic engine; undefined for non-words. */
     public embedding?: Float32Array
@@ -77,10 +80,12 @@ export class Box {
             //Rect options
             //https://p5js.org/reference/#/p5/rectMode
             const isSelected = stores.menuStore.selectedWordIds.includes(this.matterId)
+            const palette = palettes[stores.menuStore.theme]
             if (isSelected) {
-                p.stroke("#ff007f")
+                p.stroke(palette.selection)
                 p.strokeWeight(Box.border + 3)
             } else {
+                p.stroke(palette.boxStroke)
                 p.strokeWeight(Box.border)
             }
             p.fill(this.color)
@@ -98,7 +103,8 @@ export class Box {
                 p.rect(0, 0, w - Box.border, h - Box.border)
             }
 
-            p.fill(255)
+            p.noStroke()
+            p.fill(this.textColor)
 
             if (this.boxOptions.type !== ShapeTypes.FLOOR) {
                 const textOptions = this.boxOptions as BoxOptions

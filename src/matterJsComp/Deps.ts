@@ -9,6 +9,14 @@ export interface BrowserInfo {
 }
 
 
+/** A screen overlay (the dashboard) in canvas coordinates; words are kept out from under it. */
+export interface OverlayRect {
+    left: number
+    top: number
+    right: number
+    bottom: number
+}
+
 export interface WordSpawnRequest {
     word: string
     x?: number
@@ -22,6 +30,7 @@ class Deps {
     public pendingWordSpawns: WordSpawnRequest[] = []
     /** The world currently driven by p5; replaced when the view changes. */
     public activeWorld: CustomWorld | undefined
+    public overlayRect: OverlayRect | undefined
     browserInfo: BrowserInfo
     p: p5 | undefined
     engine: Matter.Engine | undefined

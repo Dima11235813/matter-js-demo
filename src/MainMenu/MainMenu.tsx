@@ -2,14 +2,13 @@ import { inject, observer } from "mobx-react";
 import React from "react";
 import { logger } from "../utils/logger";
 
-// import { inject, observer } from "mobx-react";
-
 //Material UI
-
 import ClickAwayListener from "@material-ui/core/ClickAwayListener";
 import Paper from "@material-ui/core/Paper";
 import MenuItem from "@material-ui/core/MenuItem";
 import MenuList from "@material-ui/core/MenuList";
+import Divider from "@material-ui/core/Divider";
+import Tooltip from "@material-ui/core/Tooltip";
 
 import styles from "./MainMenu.module.scss";
 
@@ -24,34 +23,48 @@ import PersonIcon from "@material-ui/icons/Person";
 import PersonOutlineIcon from "@material-ui/icons/PersonOutline";
 import TimerIcon from "@material-ui/icons/Timer";
 import WbIncandescentIcon from "@material-ui/icons/WbIncandescent";
+import Brightness4Icon from "@material-ui/icons/Brightness4";
+import Brightness7Icon from "@material-ui/icons/Brightness7";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores } from "../stores";
-import { toggleHintMode } from "../services/playground";
+import { toggleHintMode, toggleTheme } from "../services/playground";
 import { AppModes } from "../matterJsComp/models/appMode";
 //https://material-ui.com/components/material-icons/#material-icons
-
-const menuBackgroundPrimary = "blue";
 
 interface MainMenuProps {
   menuStore?: MenuStore;
   gameStore?: GameStore;
 }
 
-const inactiveIconStyle = { color: "rgba(255, 255, 255, 0.5)" };
-// function MainMenu() {
+interface MenuButtonProps {
+  id?: string;
+  tooltip: string;
+  active: boolean;
+  onClick: (event: React.MouseEvent<EventTarget>) => void;
+  icon: React.ReactElement;
+}
+
+/**
+ * One icon button with a tooltip and an accessible name. Colors come from the MUI theme
+ * (primary = active, action = inactive), so icons stay visible in both dark and light mode.
+ */
+const MenuButton = ({ id, tooltip, active, onClick, icon }: MenuButtonProps) => (
+  <Tooltip title={tooltip} placement="right" arrow>
+    <MenuItem id={id} aria-label={tooltip} aria-pressed={active} selected={active} onClick={onClick}>
+      {React.cloneElement(icon, { color: active ? "primary" : "action" })}
+    </MenuItem>
+  </Tooltip>
+);
+
 const MainMenu = (props: MainMenuProps) => {
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef<HTMLButtonElement>(null);
 
   const handleClose = (event: React.MouseEvent<EventTarget>) => {
-    if (
-      anchorRef.current &&
-      anchorRef.current.contains(event.target as HTMLElement)
-    ) {
+    if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) {
       return;
     }
-
     setOpen(false);
   };
 
@@ -66,105 +79,53 @@ const MainMenu = (props: MainMenuProps) => {
   const prevOpen = React.useRef(open);
   React.useEffect(() => {
     if (prevOpen.current === true && open === false) {
-      anchorRef.current!.focus();
+      anchorRef.current?.focus();
     }
-
     prevOpen.current = open;
   }, [open]);
 
-  const { setMode, mode, setView, view } = props.menuStore!;
+  const { setMode, mode, setView, view, theme } = props.menuStore!;
   const { hintMode } = props.gameStore!;
 
-  const handleCreateMode = (
-    event: React.MouseEvent<EventTarget, MouseEvent>
-  ) => {
+  const handleCreateMode = (event: React.MouseEvent<EventTarget>) => {
     logger.log("Create Mode");
     setMode(AppModes.CREATE);
     handleClose(event);
   };
-  const handleDragMode = (event: React.MouseEvent<EventTarget, MouseEvent>) => {
+  const handleDragMode = (event: React.MouseEvent<EventTarget>) => {
     logger.log("Drag Mode");
     setMode(AppModes.MOVE);
     handleClose(event);
   };
+
   return (
     <div className={styles.MenuRoot}>
       <Paper>
         <ClickAwayListener onClickAway={handleClose}>
-          <MenuList
-            autoFocusItem={open}
-            id="menu-list-grow"
-            onKeyDown={handleListKeyDown}
-          >
-            {
-              (mode === AppModes.CREATE ? (
-                <MenuItem onClick={handleCreateMode}>
-                  <AddIcon 
-                   color="primary"
-                   htmlColor={menuBackgroundPrimary}
-                  />
-                </MenuItem>
-              ) : (
-                <MenuItem onClick={handleCreateMode}>
-                  <AddIcon />
-                </MenuItem>
-              ))
-            }
-            {
-              (mode === AppModes.MOVE ? (
-                <MenuItem onClick={handleDragMode}>
-                  <PanToolIcon 
-                   color="primary"
-                   htmlColor={menuBackgroundPrimary}
-                  />
-                </MenuItem>
-              ) : (
-                <MenuItem onClick={handleDragMode}>
-                  <PanToolIcon />
-                </MenuItem>
-              ))
-            }
-            <hr style={{ margin: "8px 0", border: "none", borderTop: "1px solid rgba(255, 255, 255, 0.12)" }} />
-            {
-              (view === "fountain" ? (
-                <MenuItem id="fountain-toggle" onClick={() => setView("fountain")}>
-                  <BubbleChartIcon 
-                   color="primary"
-                   htmlColor={menuBackgroundPrimary}
-                  />
-                </MenuItem>
-              ) : (
-                <MenuItem id="fountain-toggle" onClick={() => setView("fountain")}>
-                  <BubbleChartIcon style={{ color: "rgba(255, 255, 255, 0.5)" }} />
-                </MenuItem>
-              ))
-            }
-            {
-              (view === "sandbox" ? (
-                <MenuItem id="sandbox-toggle" onClick={() => setView("sandbox")}>
-                  <ExtensionIcon 
-                   color="primary"
-                   htmlColor={menuBackgroundPrimary}
-                  />
-                </MenuItem>
-              ) : (
-                <MenuItem id="sandbox-toggle" onClick={() => setView("sandbox")}>
-                  <ExtensionIcon style={{ color: "rgba(255, 255, 255, 0.5)" }} />
-                </MenuItem>
-              ))
-            }
-            <MenuItem id="game-toggle" title="Timed game" onClick={() => setView("game")}>
-              {view === "game"
-                ? <TimerIcon color="primary" htmlColor={menuBackgroundPrimary} />
-                : <TimerIcon style={inactiveIconStyle} />}
-            </MenuItem>
+          <MenuList autoFocusItem={open} id="menu-list-grow" onKeyDown={handleListKeyDown}>
+            <MenuButton tooltip="Create: click the canvas to add words" active={mode === AppModes.CREATE} onClick={handleCreateMode} icon={<AddIcon />} />
+            <MenuButton tooltip="Move: drag words around" active={mode === AppModes.MOVE} onClick={handleDragMode} icon={<PanToolIcon />} />
+            <Divider />
+            <MenuButton id="fountain-toggle" tooltip="Sandbox: free play with any word and analogies" active={view === "fountain"} onClick={() => setView("fountain")} icon={<BubbleChartIcon />} />
+            <MenuButton id="sandbox-toggle" tooltip="Letters: drop letters that combine into words" active={view === "sandbox"} onClick={() => setView("sandbox")} icon={<ExtensionIcon />} />
+            <MenuButton id="game-toggle" tooltip="Timed game: 2 minutes, dealt words" active={view === "game"} onClick={() => setView("game")} icon={<TimerIcon />} />
+            <Divider />
             {isWordView(view) && (
-              <MenuItem id="hint-toggle" title={hintMode ? "Hint mode on" : "Hint mode off"} onClick={() => toggleHintMode(stores)}>
-                {hintMode
-                  ? <WbIncandescentIcon htmlColor="#ffb020" />
-                  : <WbIncandescentIcon style={inactiveIconStyle} />}
-              </MenuItem>
+              <MenuButton
+                id="hint-toggle"
+                tooltip={hintMode ? "Hint mode on: related words orbit each other" : "Hint mode off: turn on to see related words orbit"}
+                active={hintMode}
+                onClick={() => toggleHintMode(stores)}
+                icon={<WbIncandescentIcon />}
+              />
             )}
+            <MenuButton
+              id="theme-toggle"
+              tooltip={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              active={false}
+              onClick={() => toggleTheme(stores)}
+              icon={theme === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
+            />
           </MenuList>
         </ClickAwayListener>
       </Paper>

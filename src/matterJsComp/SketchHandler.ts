@@ -44,8 +44,9 @@ export class SketchHandler {
                 this.conditionallyHandleClickOrDrag(p!.mouseX, p!.mouseY)
             }
         }
-        p!.mouseMoved = () => {
-            // Check hover states or dynamic tooltips if needed
+        p!.mouseMoved = (event?: MouseEvent) => {
+            if (!this.isCanvasEvent(event)) return
+            this.customWorld?.handleHover(p!.mouseX, p!.mouseY)
         }
         p!.mouseReleased = () => {
             const { mode } = stores.menuStore

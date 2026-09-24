@@ -1,6 +1,6 @@
 .App {
   text-align: center;
-  background-color: #0c0c0e;
+  background-color: var(--canvas, #0c0c0e);
   height: 100vh;
   width: 100vw;
   display: flex;
