@@ -87,3 +87,36 @@ Turn the physics prototype into an engaging, addictive educational game. Players
 * [ ] **Task 2.7.4**: Timed-game rule: voice selects dealt words instead of spawning.
 * [ ] **Task 2.7.5** (stretch): voice commands for analogies and focus.
 * **Exit criteria**: spoken single words from the vocabulary appear on the board within 1.5 s (Web Speech) or 3 s (local) with ≥ 90% word accuracy on the test script; the microphone is released when the toggle is off (browser indicator gone); profanity policy applies identically to voice and typing; works in 2D and 3D.
+
+### Feature 2.8: Text & Website Import (roadmap · idea 2026-09-24)
+* **Description**: Today a player can only type one word at a time. The input will also accept a pasted block of text (a paragraph, an article, lyrics), and its most meaningful words land on the board, so a whole text becomes a map of its ideas. Importing a website by URL comes later, through the backend (Epic 3 · Story 3.2.3).
+* **Design sketch**
+  * **One input, three behaviours**: a single word keeps today's path (`submitPlayerWord`: embed, add to the corpus, spawn with focus); an expression with `+`/`−` plays an analogy (Feature 2.9); multi-line or long input switches to import (the field grows into a text area and the button reads "Import").
+  * **Choosing words** (a pure function shared with voice input, Task 2.7.2): lowercase, split into tokens, drop stopwords, numbers, and words the profanity policy blocks. Then score keywords by in-text frequency × rarity (vocabulary rank as an IDF proxy), so "photosynthesis" beats "people". Merge inflections with the existing stem rules (`sharesStem`) and take the top N (default 12, adjustable, capped by board size).
+  * **Preview before spawning**: the chosen words appear as removable chips with a count ("12 of 340 distinct words"). The player confirms, removes words, or asks for more. Words outside the vocabulary are marked "new" and go through the live encoder; they join the player corpus only when confirmed.
+  * **Spawning**: stagger spawns through the existing spawn queue (4 per frame) so words land one after another, then focus the whole imported set (Feature 5.16), in 2D or 3D.
+  * **Modes**: sandbox only; a timed round keeps its dealt supply.
+  * **Provenance**: record each import (source "paste" or URL, title, time, chosen words) in IndexedDB, sync-ready like other records, so a board can say where its words came from. This later feeds saved views (Epic 5 · Feature 5.9).
+  * **Website import (needs the backend)**: paste a URL → `POST /api/import/url` (Epic 3 · Story 3.2.3) returns readable text → the same preview and spawn path. Until the backend exists, the URL option is hidden or says it needs the server.
+* [ ] **Task 2.8.1**: Pure `extractKeywords(text, { vocabRank, stopwords, profanity, max })` with unit tests (tokenizing, stopwords, inflection merge, ranking, profanity, cap); shared with voice input.
+* [ ] **Task 2.8.2** (MVP): The dashboard input accepts pasted blocks; keyword preview chips; confirm → staggered spawn with focus; works in 2D and 3D.
+* [ ] **Task 2.8.3**: Import provenance store (IndexedDB migration) and a "from: <source>" note on the board.
+* [ ] **Task 2.8.4**: URL import client, once Story 3.2.3 ships.
+* **Exit criteria (MVP)**: pasting a ~500-word article shows a preview in < 300 ms, with ≥ 8 of 12 keywords judged on-topic on three sample texts (science, sports, cooking); confirming spawns them in 2D and 3D with focus; single-word entry works exactly as before; the profanity policy applies to pasted text.
+
+### Feature 2.9: Analogy Expressions with + and − (roadmap · idea 2026-09-24)
+* **Description**: Type the arithmetic directly: `king - man + woman` plays the analogy "man is to king as woman is to ?" and the answer lands on the board. The operators make the embedding math visible, which is the point of the game. Today an analogy needs three clicks in the right order.
+* **Design sketch**
+  * **Grammar**: `term (('+' | '-') term)*`, where a term is a word; `−`, `–`, and `-` all count as minus. A minus needs spaces around it, so hyphenated words ("well-known") stay single terms. `a : b :: c : ?` and "a is to b as c is to" are accepted as the same analogy.
+  * **Three-term form** `b - a + c` maps to the existing solver (`solveAnalogy`, 3CosAdd with the stem filter): same answer, runner-ups, points, analogy collection, and board-analogies list (Feature 5.16) as a click-played analogy.
+  * **General form** (any number of terms, e.g. `paris - france + italy`, `ocean + desert`): sum the signed unit vectors, return the nearest words excluding the inputs and their inflections, labelled "nearest to the sum". Scored only when it is a valid three-term analogy.
+  * **Live preview**: while typing, show the parsed expression as chips (operands coloured + and −) and the current top answer with its similarity, before pressing Enter.
+  * **Spawning**: operands not yet on the board spawn too; the answer spawns with focus, and the whole expression is focused (Feature 5.16) in 2D or 3D. Unknown operands go through the live encoder, like typed player words.
+  * **Timed game**: operands must be dealt words on the board (typing replaces clicking); no free spawning of operands.
+  * **Visual (ties to Task 5.5.4)**: draw the offset as arrows (a → b copied onto c → answer) in 3D, and as a dashed parallelogram in 2D.
+  * **Voice**: voice commands (Task 2.7.5) reuse the same parser: "king minus man plus woman".
+* [ ] **Task 2.9.1**: Pure parser `parseExpression(input)` → terms with signs, or a single word, or an error with position; unit tests (unicode minus, hyphenated words, `a : b :: c`, empty terms, trailing operators).
+* [ ] **Task 2.9.2**: `semanticEngine.evaluateExpression(terms)`: three-term analogies route to `playAnalogy`; general sums return nearest words with the stem/inflection exclusion.
+* [ ] **Task 2.9.3**: Dashboard input: detect expressions, live preview chips and answer, Enter plays; timed-game operand rule; help tooltip with examples.
+* [ ] **Task 2.9.4**: Offset arrows in 2D and 3D (with Task 5.5.4).
+* **Exit criteria**: `king - man + woman` returns the same answer, points, and list entry as clicking man → king → woman; preview updates within 100 ms of typing; hyphenated words are never split; works in 2D and 3D.

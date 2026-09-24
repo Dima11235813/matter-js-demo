@@ -29,6 +29,10 @@ Refactor the codebase from a single client-side project containing all vocabular
   * **Story 3.2.2**: *As a player, I want my high scores saved to a global leaderboard, so that I can compete with other word masters.*
     * [ ] **Task 3.2.2.1**: Set up a lightweight database storage (e.g., SQLite or PostgreSQL) with TypeORM or Prisma.
     * [ ] **Task 3.2.2.2**: Implement endpoints `/api/leaderboard` (GET) and `/api/leaderboard/submit` (POST).
+  * **Story 3.2.3** (roadmap · idea 2026-09-24): *As a player, I want to import a web page by URL, so its vocabulary lands on the board (Epic 2 · Feature 2.8).*
+    * [ ] **Task 3.2.3.1**: `POST /api/import/url` fetches the page server-side (the browser cannot, because of CORS) and extracts the readable text (Readability-style main content, without navigation, ads, or scripts). It returns plain text and a title, never raw HTML.
+    * [ ] **Task 3.2.3.2**: Safety: http(s) only; block private, loopback, and link-local addresses, including after redirects and DNS resolution (SSRF); a size cap (e.g. 2 MB), a timeout, and content-type checks; a per-user rate limit once auth exists; respect `robots.txt`.
+    * [ ] **Task 3.2.3.3**: Shared DTO (`ImportResult { url, title, text, truncated }`) in the Feature 3.1 module.
 
 ### Feature 3.3: Scalable Frontend Folder Organization
 * **Description**: Restructure the frontend directory to follow a feature-based, clean-architecture approach instead of throwing multiple files into `/src` and `/src/matterJsComp`.
