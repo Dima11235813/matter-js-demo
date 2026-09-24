@@ -176,6 +176,21 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
     * [ ] **Task 5.16.3.3**: Persist board analogies with saved views (Feature 5.9); a global "all my analogies" browser from IndexedDB (Epic 2).
 * **Result (2026-09-23)** ✅ Verified in the running app (Playwright via `window.__lexical`). 3D: the orbit target ends within 1–29 units of the focused word(s) for the HUD link, a panel row, a panel chip, and a dropped word. 2D: a panel row pulses exactly {man, king, woman, queen}, the pulse expires after 2.8 s, the HUD link and dropped words pulse. The list survives the 3D → 2D switch. Found and fixed during verification: a 420-unit minimum made a single focused label ~2× its 2D size, and a new answer drifted after a 1.8 s fly (now tracked for the whole glow).
 
+### Feature 5.17: Color Hint Mode (roadmap · idea 2026-09-24)
+* **Description**: A toggle that replaces random word colours with a semantic colour strategy: similar concepts get similar colours, so colour becomes a second hint about relationships, on top of distance. It is aware of the board's structure: words in the same similarity group share a hue family, and the members of a molecule share one hue. Works in 2D and 3D.
+* **Design sketch**
+  * Hue from meaning: project the board's vectors to 2D (PCA or classical MDS, from Task 5.10.2) and map the angle around the centroid to hue in a perceptual space (OKLCH), so nearby meanings get nearby hues and unrelated groups land far apart on the wheel.
+  * Structure-aware: groups (`similarityGroups`, the grouped layout's clusters) get distinct hue families spread around the wheel. Words within a group vary lightness and chroma by similarity to the group's core word. A molecule takes one hue, and its halo (Task 5.6.3) matches.
+  * Stability: colours must not flicker when a word joins or leaves. Procrustes-align each new projection to the previous one, and ease hue changes over ~500 ms.
+  * Accessibility: label text keeps `readableTextColor` (≥ 4.5:1). Keep lightness within ranges that read in both themes. Check that hue families stay distinguishable under common colour-vision deficiencies, and fall back to lightness steps where they do not.
+  * One colour source for both worlds: a pure `semanticColors(words, vectors, groups, molecules, previous)` in `src/physics/` (or `src/theme/`), used by `CustomWorld` and `SpaceWorld`, so colours carry across the 2D ↔ 3D hand-off.
+  * Toggle: a flag in `GameStore`, persisted in the profile, with a menu button and a tooltip. Available in 2D and 3D. Open question: also allowed in gravity mode, or only with hints on?
+* [ ] **Task 5.17.1**: Research note in `docs/research/`: projection → hue mapping options (PCA angle vs MDS vs group-first palette), measured by Spearman between colour distance (OKLab ΔE) and cosine similarity, plus hue separation between groups.
+* [ ] **Task 5.17.2**: Pure `semanticColors` with tests: determinism, group hue separation, molecule hue sharing, stability when one word is added, contrast guarantee.
+* [ ] **Task 5.17.3**: Flag, menu toggle, and wiring into both worlds (spawn colours, recolouring on toggle, hand-off, molecule halos).
+* [ ] **Task 5.17.4**: Screenshot comparison (random vs semantic colours) on the families board in 2D and 3D.
+* **Exit criteria**: colour-distance vs similarity Spearman ≤ −0.5 on the families board; words in different groups differ by ≥ 60° of hue on boards with ≤ 6 groups; no colour change larger than ΔE 10 on existing words when a word is added; all label text ≥ 4.5:1.
+
 ### Feature 5.5: Verification & Polish (Phase 5)
 * [ ] **Task 5.5.1**: 3D fidelity ≤ −0.7 on the families set; 60 fps with 40 words.
 * [ ] **Task 5.5.2**: Mobile: orbit-drag vs tap-select disambiguation.
