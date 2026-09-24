@@ -1,0 +1,766 @@
+{
+  "vocabVersion": "2d0798c49b2c",
+  "boards": {
+    "families15": [
+      "dog",
+      "puppy",
+      "cat",
+      "kitten",
+      "king",
+      "queen",
+      "prince",
+      "ocean",
+      "sea",
+      "wave",
+      "doctor",
+      "nurse",
+      "hospital",
+      "guitar",
+      "piano"
+    ],
+    "dense24": [
+      "dog",
+      "puppy",
+      "cat",
+      "kitten",
+      "wolf",
+      "fox",
+      "king",
+      "queen",
+      "prince",
+      "princess",
+      "castle",
+      "crown",
+      "ocean",
+      "sea",
+      "wave",
+      "beach",
+      "doctor",
+      "nurse",
+      "hospital",
+      "medicine",
+      "guitar",
+      "piano",
+      "drum",
+      "song"
+    ],
+    "random30": [
+      "cell",
+      "magic",
+      "driver",
+      "pay",
+      "robbery",
+      "centre",
+      "quite",
+      "extraordinary",
+      "office",
+      "count",
+      "sec",
+      "difference",
+      "military",
+      "wondering",
+      "thief",
+      "japan",
+      "challenge",
+      "pal",
+      "clue",
+      "horrible",
+      "small",
+      "gather",
+      "museum",
+      "understand",
+      "guard",
+      "sent",
+      "shopping",
+      "head",
+      "cook",
+      "foster"
+    ],
+    "numbers": [
+      "one",
+      "two",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+      "ten"
+    ],
+    "temperature": [
+      "freezing",
+      "cold",
+      "chilly",
+      "cool",
+      "mild",
+      "warm",
+      "hot",
+      "boiling",
+      "scorching"
+    ],
+    "sizes": [
+      "tiny",
+      "small",
+      "little",
+      "medium",
+      "large",
+      "big",
+      "huge",
+      "giant",
+      "enormous"
+    ],
+    "months": [
+      "january",
+      "february",
+      "march",
+      "april",
+      "june",
+      "july",
+      "august",
+      "september",
+      "october",
+      "november",
+      "december"
+    ],
+    "days": [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday"
+    ],
+    "structureMix": [
+      "one",
+      "two",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+      "ten",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+      "freezing",
+      "cold",
+      "chilly",
+      "cool",
+      "mild",
+      "warm",
+      "hot",
+      "boiling",
+      "scorching"
+    ]
+  },
+  "results": {
+    "families15": {
+      "mdsReference": {
+        "fidelity": -0.74,
+        "knn3": 0.87,
+        "radialCv": 0.21,
+        "anisotropy": 0.73
+      },
+      "orbitalBounded": {
+        "fidelity": -0.79,
+        "knn3": 0.86,
+        "radialCv": 0.1,
+        "anisotropy": 0.61
+      },
+      "orbitalUnbounded": {
+        "fidelity": -0.79,
+        "knn3": 0.86,
+        "radialCv": 0.1,
+        "anisotropy": 0.61
+      },
+      "metricStill": {
+        "fidelity": -0.57,
+        "knn3": 0.63,
+        "radialCv": 0.04,
+        "anisotropy": 0.9
+      },
+      "metricOrbiting": {
+        "fidelity": -0.57,
+        "knn3": 0.65,
+        "radialCv": 0.04,
+        "anisotropy": 0.91
+      },
+      "adaptiveStill": {
+        "fidelity": -0.61,
+        "knn3": 0.72,
+        "radialCv": 0.06,
+        "anisotropy": 0.82
+      },
+      "adaptiveOrbiting": {
+        "fidelity": -0.61,
+        "knn3": 0.72,
+        "radialCv": 0.06,
+        "anisotropy": 0.83
+      },
+      "rankStill": {
+        "fidelity": -0.88,
+        "knn3": 0.9,
+        "radialCv": 0.27,
+        "anisotropy": 0.19
+      },
+      "rankOrbiting": {
+        "fidelity": -0.88,
+        "knn3": 0.9,
+        "radialCv": 0.27,
+        "anisotropy": 0.19
+      }
+    },
+    "dense24": {
+      "mdsReference": {
+        "fidelity": -0.55,
+        "knn3": 0.85,
+        "radialCv": 0.27,
+        "anisotropy": 0.84
+      },
+      "orbitalBounded": {
+        "fidelity": -0.74,
+        "knn3": 0.83,
+        "radialCv": 0.12,
+        "anisotropy": 0.82
+      },
+      "orbitalUnbounded": {
+        "fidelity": -0.74,
+        "knn3": 0.83,
+        "radialCv": 0.12,
+        "anisotropy": 0.82
+      },
+      "metricStill": {
+        "fidelity": -0.59,
+        "knn3": 0.56,
+        "radialCv": 0.06,
+        "anisotropy": 0.92
+      },
+      "metricOrbiting": {
+        "fidelity": -0.6,
+        "knn3": 0.56,
+        "radialCv": 0.06,
+        "anisotropy": 0.93
+      },
+      "adaptiveStill": {
+        "fidelity": -0.57,
+        "knn3": 0.64,
+        "radialCv": 0.09,
+        "anisotropy": 0.9
+      },
+      "adaptiveOrbiting": {
+        "fidelity": -0.6,
+        "knn3": 0.64,
+        "radialCv": 0.09,
+        "anisotropy": 0.92
+      },
+      "rankStill": {
+        "fidelity": -0.84,
+        "knn3": 0.86,
+        "radialCv": 0.25,
+        "anisotropy": 0.49
+      },
+      "rankOrbiting": {
+        "fidelity": -0.84,
+        "knn3": 0.86,
+        "radialCv": 0.25,
+        "anisotropy": 0.49
+      }
+    },
+    "random30": {
+      "mdsReference": {
+        "fidelity": -0.53,
+        "knn3": 0.39,
+        "radialCv": 0.36,
+        "anisotropy": 0.75
+      },
+      "orbitalBounded": {
+        "fidelity": -0.56,
+        "knn3": 0.5,
+        "radialCv": 0.16,
+        "anisotropy": 0.86
+      },
+      "orbitalUnbounded": {
+        "fidelity": -0.56,
+        "knn3": 0.5,
+        "radialCv": 0.16,
+        "anisotropy": 0.86
+      },
+      "metricStill": {
+        "fidelity": -0.43,
+        "knn3": 0.25,
+        "radialCv": 0.04,
+        "anisotropy": 0.95
+      },
+      "metricOrbiting": {
+        "fidelity": -0.44,
+        "knn3": 0.27,
+        "radialCv": 0.04,
+        "anisotropy": 0.94
+      },
+      "adaptiveStill": {
+        "fidelity": -0.54,
+        "knn3": 0.39,
+        "radialCv": 0.13,
+        "anisotropy": 0.88
+      },
+      "adaptiveOrbiting": {
+        "fidelity": -0.54,
+        "knn3": 0.39,
+        "radialCv": 0.13,
+        "anisotropy": 0.88
+      },
+      "rankStill": {
+        "fidelity": -0.64,
+        "knn3": 0.53,
+        "radialCv": 0.28,
+        "anisotropy": 0.5
+      },
+      "rankOrbiting": {
+        "fidelity": -0.64,
+        "knn3": 0.54,
+        "radialCv": 0.27,
+        "anisotropy": 0.49
+      }
+    },
+    "numbers": {
+      "mdsReference": {
+        "fidelity": -0.97,
+        "knn3": 0.87,
+        "radialCv": 0.28,
+        "anisotropy": 0.39,
+        "structure": 0.98
+      },
+      "orbitalBounded": {
+        "fidelity": -0.86,
+        "knn3": 0.67,
+        "radialCv": 0.43,
+        "anisotropy": 0.12,
+        "structure": 0.83
+      },
+      "orbitalUnbounded": {
+        "fidelity": -0.86,
+        "knn3": 0.67,
+        "radialCv": 0.43,
+        "anisotropy": 0.12,
+        "structure": 0.83
+      },
+      "metricStill": {
+        "fidelity": -0.8,
+        "knn3": 0.72,
+        "radialCv": 0.15,
+        "anisotropy": 0.63,
+        "structure": 0.7
+      },
+      "metricOrbiting": {
+        "fidelity": -0.8,
+        "knn3": 0.77,
+        "radialCv": 0.15,
+        "anisotropy": 0.59,
+        "structure": 0.68
+      },
+      "adaptiveStill": {
+        "fidelity": -0.98,
+        "knn3": 0.98,
+        "radialCv": 0.29,
+        "anisotropy": 0.17,
+        "structure": 0.96
+      },
+      "adaptiveOrbiting": {
+        "fidelity": -0.98,
+        "knn3": 0.98,
+        "radialCv": 0.3,
+        "anisotropy": 0.13,
+        "structure": 0.93
+      },
+      "rankStill": {
+        "fidelity": -0.98,
+        "knn3": 0.98,
+        "radialCv": 0.34,
+        "anisotropy": 0.07,
+        "structure": 0.96
+      },
+      "rankOrbiting": {
+        "fidelity": -0.98,
+        "knn3": 0.99,
+        "radialCv": 0.33,
+        "anisotropy": 0.06,
+        "structure": 0.94
+      }
+    },
+    "temperature": {
+      "mdsReference": {
+        "fidelity": -0.87,
+        "knn3": 0.78,
+        "radialCv": 0.32,
+        "anisotropy": 0.67,
+        "structure": 0.67
+      },
+      "orbitalBounded": {
+        "fidelity": -0.93,
+        "knn3": 0.77,
+        "radialCv": 0.44,
+        "anisotropy": 0.43,
+        "structure": 0.43
+      },
+      "orbitalUnbounded": {
+        "fidelity": -0.93,
+        "knn3": 0.8,
+        "radialCv": 0.46,
+        "anisotropy": 0.45,
+        "structure": 0.33
+      },
+      "metricStill": {
+        "fidelity": -0.62,
+        "knn3": 0.68,
+        "radialCv": 0.14,
+        "anisotropy": 0.77,
+        "structure": 0.47
+      },
+      "metricOrbiting": {
+        "fidelity": -0.57,
+        "knn3": 0.63,
+        "radialCv": 0.13,
+        "anisotropy": 0.79,
+        "structure": 0.46
+      },
+      "adaptiveStill": {
+        "fidelity": -0.79,
+        "knn3": 0.64,
+        "radialCv": 0.27,
+        "anisotropy": 0.59,
+        "structure": 0.39
+      },
+      "adaptiveOrbiting": {
+        "fidelity": -0.79,
+        "knn3": 0.69,
+        "radialCv": 0.27,
+        "anisotropy": 0.59,
+        "structure": 0.47
+      },
+      "rankStill": {
+        "fidelity": -0.97,
+        "knn3": 0.88,
+        "radialCv": 0.53,
+        "anisotropy": 0.43,
+        "structure": 0.13
+      },
+      "rankOrbiting": {
+        "fidelity": -0.96,
+        "knn3": 0.86,
+        "radialCv": 0.53,
+        "anisotropy": 0.43,
+        "structure": 0.16
+      }
+    },
+    "sizes": {
+      "mdsReference": {
+        "fidelity": -0.97,
+        "knn3": 0.93,
+        "radialCv": 0.35,
+        "anisotropy": 0.37,
+        "structure": 0.78
+      },
+      "orbitalBounded": {
+        "fidelity": -0.88,
+        "knn3": 0.73,
+        "radialCv": 0.52,
+        "anisotropy": 0.11,
+        "structure": 0.77
+      },
+      "orbitalUnbounded": {
+        "fidelity": -0.86,
+        "knn3": 0.73,
+        "radialCv": 0.52,
+        "anisotropy": 0.1,
+        "structure": 0.82
+      },
+      "metricStill": {
+        "fidelity": -0.91,
+        "knn3": 0.84,
+        "radialCv": 0.25,
+        "anisotropy": 0.49,
+        "structure": 0.83
+      },
+      "metricOrbiting": {
+        "fidelity": -0.89,
+        "knn3": 0.85,
+        "radialCv": 0.26,
+        "anisotropy": 0.46,
+        "structure": 0.8
+      },
+      "adaptiveStill": {
+        "fidelity": -0.98,
+        "knn3": 0.93,
+        "radialCv": 0.35,
+        "anisotropy": 0.34,
+        "structure": 0.83
+      },
+      "adaptiveOrbiting": {
+        "fidelity": -0.97,
+        "knn3": 0.9,
+        "radialCv": 0.36,
+        "anisotropy": 0.3,
+        "structure": 0.78
+      },
+      "rankStill": {
+        "fidelity": -0.99,
+        "knn3": 0.96,
+        "radialCv": 0.43,
+        "anisotropy": 0.22,
+        "structure": 0.85
+      },
+      "rankOrbiting": {
+        "fidelity": -0.99,
+        "knn3": 0.95,
+        "radialCv": 0.43,
+        "anisotropy": 0.14,
+        "structure": 0.84
+      }
+    },
+    "months": {
+      "mdsReference": {
+        "fidelity": -0.79,
+        "knn3": 0.64,
+        "radialCv": 0.2,
+        "anisotropy": 0.7,
+        "structure": 0.64
+      },
+      "orbitalBounded": {
+        "fidelity": -0.08,
+        "knn3": 0.36,
+        "radialCv": 0.31,
+        "anisotropy": 0.75,
+        "structure": 0.33
+      },
+      "orbitalUnbounded": {
+        "fidelity": -0.13,
+        "knn3": 0.36,
+        "radialCv": 0.31,
+        "anisotropy": 0.72,
+        "structure": 0.24
+      },
+      "metricStill": {
+        "fidelity": -0.7,
+        "knn3": 0.6,
+        "radialCv": 0.11,
+        "anisotropy": 0.79,
+        "structure": 0.45
+      },
+      "metricOrbiting": {
+        "fidelity": -0.63,
+        "knn3": 0.56,
+        "radialCv": 0.1,
+        "anisotropy": 0.76,
+        "structure": 0.39
+      },
+      "adaptiveStill": {
+        "fidelity": -0.81,
+        "knn3": 0.67,
+        "radialCv": 0.2,
+        "anisotropy": 0.53,
+        "structure": 0.55
+      },
+      "adaptiveOrbiting": {
+        "fidelity": -0.79,
+        "knn3": 0.63,
+        "radialCv": 0.2,
+        "anisotropy": 0.52,
+        "structure": 0.52
+      },
+      "rankStill": {
+        "fidelity": -0.77,
+        "knn3": 0.72,
+        "radialCv": 0.25,
+        "anisotropy": 0.44,
+        "structure": 0.48
+      },
+      "rankOrbiting": {
+        "fidelity": -0.77,
+        "knn3": 0.7,
+        "radialCv": 0.25,
+        "anisotropy": 0.43,
+        "structure": 0.48
+      }
+    },
+    "days": {
+      "mdsReference": {
+        "fidelity": -0.91,
+        "knn3": 0.76,
+        "radialCv": 0.1,
+        "anisotropy": 0.43,
+        "structure": 1
+      },
+      "orbitalBounded": {
+        "fidelity": -0.04,
+        "knn3": 0.6,
+        "radialCv": 0.14,
+        "anisotropy": 0.5,
+        "structure": 0.29
+      },
+      "orbitalUnbounded": {
+        "fidelity": -0.07,
+        "knn3": 0.59,
+        "radialCv": 0.15,
+        "anisotropy": 0.48,
+        "structure": 0.29
+      },
+      "metricStill": {
+        "fidelity": -0.82,
+        "knn3": 0.78,
+        "radialCv": 0.07,
+        "anisotropy": 0.66,
+        "structure": 1
+      },
+      "metricOrbiting": {
+        "fidelity": -0.84,
+        "knn3": 0.78,
+        "radialCv": 0.07,
+        "anisotropy": 0.58,
+        "structure": 1
+      },
+      "adaptiveStill": {
+        "fidelity": -0.93,
+        "knn3": 0.81,
+        "radialCv": 0.17,
+        "anisotropy": 0,
+        "structure": 1
+      },
+      "adaptiveOrbiting": {
+        "fidelity": -0.93,
+        "knn3": 0.79,
+        "radialCv": 0.16,
+        "anisotropy": 0.02,
+        "structure": 1
+      },
+      "rankStill": {
+        "fidelity": -0.94,
+        "knn3": 0.76,
+        "radialCv": 0.18,
+        "anisotropy": 0,
+        "structure": 1
+      },
+      "rankOrbiting": {
+        "fidelity": -0.94,
+        "knn3": 0.78,
+        "radialCv": 0.17,
+        "anisotropy": 0.02,
+        "structure": 1
+      }
+    },
+    "structureMix": {
+      "mdsReference": {
+        "fidelity": -0.69,
+        "knn3": 0.64,
+        "radialCv": 0.18,
+        "anisotropy": 0.33
+      },
+      "orbitalBounded": {
+        "fidelity": -0.85,
+        "knn3": 0.68,
+        "radialCv": 0.18,
+        "anisotropy": 0.4
+      },
+      "orbitalUnbounded": {
+        "fidelity": -0.85,
+        "knn3": 0.68,
+        "radialCv": 0.18,
+        "anisotropy": 0.41
+      },
+      "metricStill": {
+        "fidelity": -0.69,
+        "knn3": 0.68,
+        "radialCv": 0.11,
+        "anisotropy": 0.78
+      },
+      "metricOrbiting": {
+        "fidelity": -0.69,
+        "knn3": 0.67,
+        "radialCv": 0.12,
+        "anisotropy": 0.75
+      },
+      "adaptiveStill": {
+        "fidelity": -0.75,
+        "knn3": 0.79,
+        "radialCv": 0.12,
+        "anisotropy": 0.65
+      },
+      "adaptiveOrbiting": {
+        "fidelity": -0.73,
+        "knn3": 0.79,
+        "radialCv": 0.12,
+        "anisotropy": 0.64
+      },
+      "rankStill": {
+        "fidelity": -0.91,
+        "knn3": 0.71,
+        "radialCv": 0.28,
+        "anisotropy": 0.21
+      },
+      "rankOrbiting": {
+        "fidelity": -0.91,
+        "knn3": 0.71,
+        "radialCv": 0.28,
+        "anisotropy": 0.21
+      }
+    }
+  },
+  "additions": {
+    "families15": "lion",
+    "dense24": "harp",
+    "random30": "bear",
+    "numbers": "hundred",
+    "days": "weekend"
+  },
+  "stabilityAfterAddingAWord": {
+    "families15": {
+      "calibrated": 0.99,
+      "rank": 0.98
+    },
+    "dense24": {
+      "calibrated": 0.96,
+      "rank": 0.99
+    },
+    "random30": {
+      "calibrated": 0.93,
+      "rank": 1
+    },
+    "numbers": {
+      "calibrated": 0.89,
+      "rank": 0.99
+    },
+    "days": {
+      "calibrated": 0.51,
+      "rank": 0.99
+    }
+  },
+  "fidelity2dPinned": {
+    "families15": {
+      "calibrated": -0.75,
+      "rank": -0.85
+    },
+    "dense24": {
+      "calibrated": -0.66,
+      "rank": -0.71
+    },
+    "random30": {
+      "calibrated": -0.46,
+      "rank": -0.11
+    },
+    "numbers": {
+      "calibrated": -0.81,
+      "rank": -0.98
+    },
+    "days": {
+      "calibrated": -0.03,
+      "rank": -0.94
+    }
+  }
+}

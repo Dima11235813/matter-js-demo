@@ -42,6 +42,8 @@ The project is deconstructed into four key Epics. Click each file link to explor
 * **Goal**: Lift the hint-mode orbital layout into an explorable 3D space where distance mirrors meaning.
 * **Core Tech**: three.js (lazy-loaded), custom 3D integrator, all-pairs similarity layout.
 * **Key Features**: All-pairs layout (2D first), 3D orbits, raycast selection, 2D ↔ 3D toggle gated on hint mode.
+* **Shipped**: embedding-shaped 3D layout ([research](file:///D:/GDrive/Dev/matter-js-demo/docs/research/embedding-shape.md)): lines, rings, and clusters from the board's own embedding distances.
+* **Next**: cross-dimension continuity without re-rendering ([research](file:///D:/GDrive/Dev/matter-js-demo/docs/research/cross-dimension-continuity.md)), selection metadata HUD, live drag with physics, Create mode in 3D, zoom, spin to detangle, saved views.
 
 ---
 

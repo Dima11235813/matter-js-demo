@@ -45,23 +45,30 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
 * **Description**: A pure, renderer-agnostic 3D integrator for word bodies.
 * **User Stories**:
   * **Story 5.2.1**: *As a player, I want related words to orbit their core word in tilted planes, so clusters look and feel like atoms.*
-    * [ ] **Task 5.2.1.1**: `SpaceSimulation`: damped integration, soft collisions sized by label, spherical bounds.
-    * [ ] **Task 5.2.1.2**: Deterministic per-word orbit axes; tests for stability and energy decay.
+    * [x] **Task 5.2.1.1**: `SpaceSimulation`: damped integration, soft collisions sized by label, spherical bounds.
+    * [x] **Task 5.2.1.2**: Deterministic per-word orbit axes; tests for stability and energy decay.
+    * [x] **Task 5.2.1.3**: Seed from a 2D layout (flat start, deterministic depth jitter) so the Phase 4 toggle is continuous.
+  * **Exit criteria** (headless, real vocabulary): families set ≤ −0.70 and dense set ≤ −0.65 layout fidelity; kinetic energy decays without links and stays bounded with orbits (no NaN); deterministic; a flat start spreads into depth; one step with 40 words < 1 ms.
+  * **Result (2026-09-23)** ✅ `src/physics/spaceSimulation.ts`, measured headless in `tests/spaceFidelity.test.ts` (mean of 3 flat starts, 1,500 steps): families **−0.79** (2D: −0.62), dense **−0.72** (2D: −0.42); depth spread ~190 units from a ±20 start; energy decays without links and stays bounded with orbits; deterministic; 40-word step < 1 ms.
+  * **Deferred to Phase 4**: molecules in 3D (the `MoleculeGraph` bookkeeping is dimension-agnostic, but overlap relaxation and containment are 2D box-based).
 
 ### Feature 5.3: three.js Renderer (Phase 3)
 * **User Stories**:
   * **Story 5.3.1**: *As a player, I want to rotate and zoom the semantic space and click words in 3D, so I can explore and still play analogies.*
-    * [ ] **Task 5.3.1.1**: Lazy-loaded scene: perspective camera, OrbitControls, depth fog.
-    * [ ] **Task 5.3.1.2**: Camera-facing word labels; relation threads with strength-based opacity and similarity labels.
-    * [ ] **Task 5.3.1.3**: Raycast selection feeding the existing analogy flow; selection highlight.
+    * [x] **Task 5.3.1.1**: Lazy-loaded scene: perspective camera, OrbitControls, depth fog.
+    * [x] **Task 5.3.1.2**: Camera-facing word labels; relation threads with strength-based opacity and similarity labels.
+    * [x] **Task 5.3.1.3**: Raycast selection feeding the existing analogy flow; selection highlight.
+  * **Result (2026-09-23)** ✅ `src/space/` (`SpaceWorld`, `SpaceScene`, `labelTexture`, `handoff`). three.js ships only in the lazy `SpaceWorld` chunk (549 KB, loaded on first 3D toggle). 40 words at 61 fps. Auto-framing keeps every word in view below the docked dashboard until the player takes the camera; double-click resets. Click-vs-drag disambiguation (6 px slop) keeps orbiting and selecting apart.
 
 ### Feature 5.4: World Abstraction & Toggle (Phase 4)
 * **User Stories**:
   * **Story 5.4.1**: *As a player, I want to switch between 2D and 3D without losing my board, so the toggle feels like changing perspective, not restarting.*
-    * [ ] **Task 5.4.1.1**: Extract a `WordWorld` interface (word texts, clear, spawn, select) implemented by the 2D and 3D worlds.
-    * [ ] **Task 5.4.1.2**: `dimension` flag in `GameStore`, persisted in the profile; only offered with hints on.
-    * [ ] **Task 5.4.1.3**: Continuity: 2D → 3D starts flat facing the camera, then inflates into depth; 3D → 2D projects onto the view plane.
-    * [ ] **Task 5.4.1.4**: Timed game works unchanged in 3D.
+    * [x] **Task 5.4.1.1**: Extract a `WordWorld` interface (word texts, clear, spawn, select) implemented by the 2D and 3D worlds.
+    * [x] **Task 5.4.1.2**: `dimension` flag in `GameStore`, persisted in the profile; only offered with hints on.
+    * [x] **Task 5.4.1.3**: Continuity: 2D → 3D starts flat facing the camera, then inflates into depth; 3D → 2D projects onto the view plane.
+    * [x] **Task 5.4.1.4**: Timed game works unchanged in 3D.
+    * [ ] **Task 5.4.1.5**: Molecules in 3D (sphere-based overlap relaxation and containment); today molecules dissolve when entering 3D and re-form in 2D.
+  * **Result (2026-09-23)** ✅ Switch in ~155 ms; words, colours, and positions carry over (median on-screen drift 50 px at 0.4 s); 3D fidelity −0.73 in the app vs −0.62 for the same 2D board. Round trips keep 20/20 words even when 8 were projected off-screen. A timed round survives both switches (same round, same hand, clock running) and scores analogies played in 3D. Hints off returns to 2D and hides the 3D toggle; hints on restores 3D. Also fixed: every 2D world leaked a running Matter runner on teardown (now `Runner.run`/`Runner.stop`).
 
 ### Feature 5.6: Word Molecules (shipped with Phase 1)
 * **Description**: In hint mode, when two related words (a p99 link) are pulled into contact, they bond into a rigid "logic molecule". The word is the unit of build-up (whatever its token count); molecules are the first step toward phrases (Epic 2, Feature 2.5 sentence mode).
@@ -73,8 +80,9 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
 
 ### Feature 5.7: Zoom & Camera (roadmap)
 * **Description**: There is no way to make more room on a crowded canvas. In 2D this is a zoom/pan view transform (canvas ↔ world coordinates for input, keep-out, and spawning); in 3D it is camera manipulation (dolly, orbit, focus-on-word), so it lands naturally with the three.js camera work in Phase 3.
-* [ ] **Task 5.7.1**: 2D view transform (wheel/pinch zoom, drag-pan in Move mode) with correct hit-testing and dashboard keep-out in world coordinates.
-* [ ] **Task 5.7.2**: 3D camera controls: dolly/zoom limits, focus-on-word, reset view.
+* **Input (decided 2026-09-23)**: the scroll wheel zooms in both 2D and 3D, toward the pointer; pinch does the same on touch.
+* [ ] **Task 5.7.1**: 2D view transform: scroll-wheel/pinch zoom toward the pointer, drag-pan in Move mode, with correct hit-testing, dashboard keep-out, and spawning in world coordinates.
+* [~] **Task 5.7.2**: 3D camera controls: scroll-wheel dolly toward the pointer with zoom limits ✅, reset view (double-click) ✅, focus-on-word ⬜.
 
 ### Feature 5.8: Spin to Detangle (roadmap)
 * **Description**: A mode that rotates the world (the gravity direction sweeps around) so large tangled webs and interlocked molecules shake apart. The goal is a stable result: steady orbits or a static mesh, which the player can then capture as a saved view (Feature 5.9).
@@ -87,6 +95,56 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
 * [ ] **Task 5.9.1**: `views` store (IndexedDB v3 migration): `{ id, name, createdAt, updatedAt, syncState, deviceId, thumbnail (PNG blob), words, positions, molecules, hintMode, dimension, camera, vocabVersion }`.
 * [ ] **Task 5.9.2**: Save dialog (name + canvas thumbnail), views gallery, restore (respawn words at saved positions, rebuild molecules).
 * [ ] **Task 5.9.3**: Server sync + auth (Epic 3): push pending views, pull by account, conflict rule last-writer-wins per view id.
+
+### Feature 5.10: Cross-Dimension Continuity (roadmap · research complete)
+* **Description**: Switching 2D ↔ 3D should feel like changing perspective on the *same* board, not a re-render. Driven by [docs/research/cross-dimension-continuity.md](../docs/research/cross-dimension-continuity.md) (PCA, classical MDS, stress lift, Procrustes; reproducible with `yarn research:cross-dim`).
+* **Key findings**: seeding with target-MDS is meaningful from frame 1 and settles in ~2 s instead of ~25 s (fidelity −0.68 vs −0.62); for 2D → 3D, solving only for depth (stress lift) with a 3 s decaying anchor keeps the player's arrangement exact for 2 s (preservation 1.00) with the best fidelity; for 3D → 2D, the camera projection keeps familiarity but loses meaning edge-on (−0.41), while the PCA best-fit plane keeps meaning (−0.61) but looks different, so rotate to the PC3 view *visibly*, then flatten.
+* **Stage A: better hand-off (current two-engine architecture)**
+  * [ ] **Task 5.10.1**: Word-keyed scene state (selection, pins, molecules, colours) that both worlds hydrate from; selection survives the switch.
+  * [ ] **Task 5.10.2**: Productionize `pca`/`classicalMds`/`procrustes2d` from `docs/research/experiments/linalg.ts` into `src/physics/` with unit tests.
+  * [ ] **Task 5.10.3**: Seed fresh 3D boards and dealt hands with target-MDS positions, Procrustes-aligned to the previous layout when one exists.
+  * [ ] **Task 5.10.4**: 2D → 3D: stress-lift depth + 3 s decaying x/y anchor (replaces hash jitter).
+  * [ ] **Task 5.10.5**: 3D → 2D: animate the camera to look along the layout's third principal axis (≤ 800 ms), then hand off the flattened view.
+  * **Exit criteria (Stage A)**: in the running app, preservation ≥ 0.95 at 2 s after a switch; fidelity at 10 s ≥ today's (2D → 3D ≥ −0.62, 3D → 2D ≥ −0.60); selection and molecule membership survive 10 consecutive round trips.
+* **Stage B: no re-render (one renderer, one simulation for hint mode)**
+  * [ ] **Task 5.10.6**: Hint mode runs on `SpaceSimulation` in both dimensions (2D = z constraint ramped in); box-aware collisions for 2D labels.
+  * [ ] **Task 5.10.7**: three.js draws the 2D hint view with an orthographic camera; the switch morphs orthographic ↔ perspective while the z constraint ramps in or out.
+  * [ ] **Task 5.10.8**: Port 2D-only hint features to the unified view: molecules and halos, dashboard keep-out, hover numbers, theme.
+  * **Exit criteria (Stage B)**: zero-pop transitions (max per-word screen jump between consecutive frames ≤ 2 px during a switch); velocities and orbit phase carried; 60 fps with 40 words. Gravity mode and the letters sandbox stay on Matter (re-render on *hint* toggle is acceptable).
+
+### Feature 5.11: Selection Metadata in the HUD (roadmap)
+* **Description**: Selecting a word shows what the embedding space knows about it, so every click teaches something.
+* [ ] **Task 5.11.1**: Inspector panel in the dashboard for the selected word(s): frequency rank, base vocabulary vs player-added (and when), nearest neighbours with similarity bars, molecule membership.
+* [ ] **Task 5.11.2**: With 2–3 words selected: pairwise similarity and percentile ("more related than 97% of word pairs"), and the analogy offset b − a before the third pick.
+* [ ] **Task 5.11.3**: Works identically in 2D and 3D (reads word-keyed state from Task 5.10.1); collapses with the dashboard.
+
+### Feature 5.12: Live Drag with Physics (roadmap)
+* **Description**: Dragging a word keeps the semantic physics running, so related words and molecules are tugged along through their links and unrelated words make way. You *feel* the relationships instead of only seeing them.
+* [ ] **Task 5.12.1**: 2D: drag as a kinematic body (not static) so springs, orbits, and repulsion keep acting on neighbours; a dragged molecule moves as one unit.
+* [ ] **Task 5.12.2**: 3D: drag in the camera-facing plane through the picked word (raycast), orbit controls suspended while dragging.
+* [ ] **Task 5.12.3**: Visual tension: threads brighten and thicken with stretch while dragging; optional pin-on-drop that survives the dimension switch (Task 5.10.1).
+* [ ] **Task 5.12.4**: Available in gravity mode too (2D and, with Stage B, 3D) so dragging against gravity shows which words cling together.
+
+### Feature 5.13: Create (+) Mode in 3D (roadmap)
+* **Description**: The + menu mode works in 3D: clicking empty space adds a word where you clicked.
+* [ ] **Task 5.13.1**: Click on empty space (not a word, not an orbit drag) spawns a random word on the camera-facing plane through the orbit target at the click point.
+* [ ] **Task 5.13.2**: Same rules as 2D: sandbox only (timed rounds keep their scarce, dealt supply); Move mode (hand) maps to Feature 5.12 dragging.
+
+### Feature 5.14: Embedding-Shaped 3D Layout (MVP shipped · research complete)
+* **Description**: The 3D configuration is decided by the board's own embedding distances, so the layout is itself a visualization: ordered words form lines, cycles form rings, families form clusters or sheets. Driven by [docs/research/embedding-shape.md](../docs/research/embedding-shape.md).
+* **Key findings**: the sphere came from the forces, not the container. The calibrated model saturates (days of the week: fidelity −0.04, ring lost); raw embedding distance makes it worse, because in 384 dimensions unrelated words are all ~√2 apart. Board-relative **rank** targets fix both: best fidelity on 8 of 9 boards (families −0.79 → −0.88, days −0.04 → −0.94, numbers −0.86 → −0.98), distinct shapes (numbers anisotropy 0.07 = a line, days 0.00 = a flat ring), and the most stable when a word joins (0.98–1.00).
+* **MVP (2026-09-23)**
+  * [x] **Task 5.14.1**: `targetModel` in `orbitalForces` ("calibrated" | "metric" | "adaptive" | "rank") with stress-majorization forces; board targets cached per similarity matrix.
+  * [x] **Task 5.14.2**: `layoutPresets`: 3D defaults to **Shape** (rank, container 1,400); **Orbits** keeps the Phase 2 model. Dashboard pill (3D only), live switch without moving bodies, remembered per device.
+  * [x] **Task 5.14.3**: Nearest-neighbour skeleton threads (k = 2) in Shape mode, so chains and loops are readable.
+  * [x] **Task 5.14.4**: Best-view camera: look along the least-variance principal axis (`src/physics/principalAxes.ts`); 0.86–0.99 of the layout's variance visible on screen.
+  * [x] **Task 5.14.5**: Headless exit criteria in `tests/spaceFidelity.test.ts` (families ≤ −0.85, dense ≤ −0.80, days ≤ −0.90, numbers ≤ −0.95) and unit tests for every target model.
+* **Next (roadmap)**
+  * [ ] **Task 5.14.6**: 2D rank model: local formulation (k-nearest ranks or local stress) that does not collapse random boards (2D rank today: random30 −0.11 vs −0.46 calibrated).
+  * [ ] **Task 5.14.7**: Curved-structure measures (principal curves) so antonym-bent gradients (temperature's horseshoe) are scored fairly; surface "this scale bends because the model treats hot and cold as related" in the HUD (Feature 5.11).
+  * [ ] **Task 5.14.8**: Focus on a cluster: double-click a group to re-run the layout on just those words, revealing internal shape that mixed boards compress.
+  * [ ] **Task 5.14.9**: Seed shape layouts with classical MDS (Feature 5.10 finding: meaningful at frame 1, settled in ~2 s) instead of random starts.
+  * [ ] **Task 5.14.10**: Shape legend: name the detected structure ("line", "ring", "clusters") from anisotropy, radial spread, and skeleton topology, as a learning cue.
 
 ### Feature 5.5: Verification & Polish (Phase 5)
 * [ ] **Task 5.5.1**: 3D fidelity ≤ −0.7 on the families set; 60 fps with 40 words.
@@ -102,4 +160,4 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
 * [x] **Menu tooltips and accessible names** for every menu item; menu icons now visible in both themes (inactive icons were white-on-white).
 * [x] **Movable, collapsible dashboard**: drag by the header, double-click to reset, collapse to a compact bar (with the clock in timed rounds); remembered per device. Its rectangle feeds the physics keep-out so words never hide under it, wherever it sits.
 * [x] **Hover-only similarity numbers**: threads stay visible, numbers appear for the hovered word's links (labelling every link covered words on dense boards).
-
+* [x] **Profanity defaults (2026-09-23)**: production always filters; local dev shows the unfiltered space by default (`VITE_PROFANITY_FILTER=on` previews the player view). `data/vocab/profanity-extra.txt` supplements the base list with common terms it missed (e.g. "dick", which reached a dealt hand); ambiguous everyday words (kill, suicide, screw, butt, hoe, nazi) are deliberately not listed.
