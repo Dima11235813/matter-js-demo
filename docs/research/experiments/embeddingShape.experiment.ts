@@ -61,6 +61,7 @@ const VARIANTS: Record<string, Variant> = {
   adaptiveOrbiting: { tuning: { ...defaultOrbitalTuning, targetModel: 'adaptive' }, config: { ...defaultSpaceConfig, boundsRadius: 5000 } },
   rankStill: { tuning: { ...defaultOrbitalTuning, targetModel: 'rank', metricSwirlShare: 0 }, config: { ...defaultSpaceConfig, boundsRadius: 5000 } },
   rankOrbiting: { tuning: { ...defaultOrbitalTuning, targetModel: 'rank' }, config: { ...defaultSpaceConfig, boundsRadius: 5000 } },
+  groupedOrbiting: { tuning: { ...defaultOrbitalTuning, targetModel: 'grouped', shapeFar: 1100, shapeWeightPower: 0 }, config: { ...defaultSpaceConfig, boundsRadius: 5000 } },
 };
 
 const vectorsOf = (words: string[]) => words.map(w => index.getVector(w)!);

@@ -1,6 +1,6 @@
 # Embedding Shape: Letting Embedding Distances Decide the 3D Configuration
 
-**Status**: research complete, MVP shipped (3D "Shape" layout), plan in [Epic 5 · Feature 5.14](../../proj-mgmt/epic-5-3d-semantic-space.md) · **Date**: 2026-09-23 · **Reproduce**: `yarn research:cross-dim` (all research experiments; this report's data is [`experiments/results/embedding-shape.json`](experiments/results/embedding-shape.json))
+**Status**: research complete, MVP shipped (3D "Shape" layout, revised after player feedback, see section 5), plan in [Epic 5 · Features 5.14–5.15](../../proj-mgmt/epic-5-3d-semantic-space.md) · **Date**: 2026-09-23 · **Reproduce**: `yarn research:cross-dim` (all research experiments; this report's data is [`experiments/results/embedding-shape.json`](experiments/results/embedding-shape.json))
 
 ## 1. Question
 
@@ -91,14 +91,45 @@ Two board-relative models were tested: **adaptive** (the board's chord distances
 3. **Orient the camera to the best view**: look along the layout's least-variance principal axis (the same insight as the cross-dimension research), so shapes are seen face-on. Shape mode holds that view instead of auto-rotating.
 4. **Give the shape layout a larger container** (1,400) so bounds only catch strays.
 
-## 5. Limitations and open questions
+## 5. Player feedback: "still a ball of stuff" → cluster separation
+
+**Feedback (2026-09-23)**: the 3D Shape view still looked like one ball; related groups should repel each other so the current cluster configuration is visible instead of a sphere.
+
+**Diagnosis**: the rank model maximized fidelity but *under-separated groups*. Its stress weights (1/target²) make far-pair springs ~27× weaker than near ones, and its even rank spacing spreads within-group pairs across the whole range, so group boundaries never become gaps. Measured with the **silhouette** of known groups (1 = tight, well-separated groups) on four grouped boards ([`experiments/clusterSeparation.experiment.ts`](experiments/clusterSeparation.experiment.ts), [results](experiments/results/cluster-separation.json)):
+
+| Model (mean of 4 boards × 3 starts) | Separation (silhouette ↑) | Fidelity (↓) | Label clutter (↓) |
+|---|---|---|---|
+| Orbits (calibrated) | 0.60 | −0.77 | 0.06 |
+| Rank (first Shape MVP) | **0.45** | −0.86 | 0.04 |
+| Rank + weaker weighting and/or separation push (best variant) | 0.51 | −0.87 | 0.03 |
+| Local rank, curved, far (UMAP-style neighbourhoods) | 0.55 | −0.76 | 0.02 |
+| **Grouped** (clusters, then rank within / gap between), unweighted, roomy, ~p97 grouping | **0.63** | **−0.85** | **0.02** |
+
+* "Repel more" alone is not enough: stronger far springs or a separation push lift separation only to 0.51.
+* **The layout needs to know the groups.** The grouped model clusters the board (average linkage, merging while mean similarity exceeds ~p97, the midpoint of calibrated p95 and p99), rank-spaces pairs *inside* a group over a short range (170–480) and pairs *between* groups over a far range (780–1,300). Every between-group distance exceeds every within-group one, so groups are separate formations, while within-group shape (rings, lines) and between-group meaning (related groups closer) are kept. Days still form a ring (1.00), numbers keep their order (0.94).
+* **Grouping threshold matters**: at p99 related words stay apart (hand / foot+knee / head as three groups); at p95 colours and fruits merge; at ~p97 the six-group board is recovered almost exactly (colours, fruits, vehicles, weather, happy+sad+lonely, hand+foot+knee), with *apple*, *angry*, and *head* alone, words MiniLM genuinely places between groups.
+* **Threads stay inside groups**: cross-group nearest-neighbour threads visually tied the separated groups back into one ball.
+
+In the app, between-group distances average 2.6–3.7× within-group ones, and 0–1 of the group pairs overlap on screen:
+
+![Six semantic groups as separate formations](img/grouped-six-groups.png)
+
+*Six groups: colours beside fruits, weather beside vehicles, emotions and body parts apart; ambiguous words float between groups.*
+
+![Mixed board as four formations](img/grouped-mixed.png)
+
+*Pets, royalty, days, and numbers (split into one–four and five–ten) as four formations.*
+
+## 6. Limitations and open questions
 
 * **Antonym bending**: MiniLM places *hot* and *cold* close (antonyms share contexts), so the temperature scale bends into a horseshoe, the classic "arch effect" of MDS and PCA on gradients. The straight-axis order score (0.13) undercounts a curved order; a principal-curve score would measure it fairly, and the embedding model itself is the root cause.
 * **Global vs local**: on mixed boards the rank model places related groups (days, numbers) near each other and compresses each group's internal shape; a per-group view (focus on a cluster) would show both.
 * Results come from 9 boards with 3 starts each and one embedding model (all-MiniLM-L6-v2).
 * 2D rank needs a different formulation (e.g. only the k nearest ranks, or local stress) before it can replace the calibrated 2D model.
+* One camera cannot show every group face-on: a tight group (the days) can be seen edge-on in the whole-board best view. Scroll to zoom, or "focus on a cluster" (Task 5.14.8).
+* Groups are recomputed when the board changes; a word joining can split or merge groups (not yet measured for stability like the rank model was).
 
-## 6. References
+## 7. References
 
 * Torgerson, W. S. (1952). Multidimensional scaling: I. Theory and method. *Psychometrika* 17.
 * Kruskal, J. B. (1964). Nonmetric multidimensional scaling: a numerical method. *Psychometrika* 29.

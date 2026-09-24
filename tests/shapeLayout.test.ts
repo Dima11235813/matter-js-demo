@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Calibration } from '../src/embeddings/calibration';
 import { normalizeInPlace } from '../src/embeddings/vectorMath';
-import { defaultOrbitalTuning, findLinks, metricTarget, neighborSkeleton, orbitalAccelerations, OrbitalBody, shapeTargets, similarityMatrix } from '../src/physics/orbitalForces';
+import { defaultOrbitalTuning, findLinks, metricTarget, neighborSkeleton, orbitalAccelerations, OrbitalBody, shapeTargets, similarityGroups, similarityMatrix } from '../src/physics/orbitalForces';
 import { layout3dConfig } from '../src/physics/layoutPresets';
 import { SpaceSimulation } from '../src/physics/spaceSimulation';
 
@@ -57,8 +57,8 @@ describe('shape target models', () => {
 });
 
 describe('3D layout presets', () => {
-  it('shape uses rank targets and a roomier container; orbits keeps Phase 2', () => {
-    expect(layout3dConfig('shape').tuning.targetModel).toBe('rank');
+  it('shape uses grouped targets and a roomier container; orbits keeps Phase 2', () => {
+    expect(layout3dConfig('shape').tuning.targetModel).toBe('grouped');
     expect(layout3dConfig('shape').boundsRadius).toBeGreaterThan(layout3dConfig('orbits').boundsRadius);
     expect(layout3dConfig('orbits').tuning.targetModel).toBe('calibrated');
   });
@@ -67,7 +67,7 @@ describe('3D layout presets', () => {
     const sim = new SpaceSimulation(cal, layout3dConfig('orbits'));
     const body = sim.add('a', vecs[0], 1, [10, 20, 30]);
     sim.setConfig(layout3dConfig('shape'));
-    expect(sim.config.tuning.targetModel).toBe('rank');
+    expect(sim.config.tuning.targetModel).toBe('grouped');
     expect(body.position).toEqual([10, 20, 30]);
   });
 });
@@ -85,5 +85,47 @@ describe('neighbour skeleton', () => {
     expect(new Set(edges.map(e => `${e.i}-${e.j}`)).size).toBe(edges.length);
     expect(Math.max(...edges.map(e => e.strength))).toBe(1);
     expect(Math.min(...edges.map(e => e.strength))).toBe(0);
+  });
+});
+
+describe('grouped model', () => {
+  // Two tight groups: {0,1,2} around x, {3,4} around y.
+  const groupVecs = [unit([1, 0.05, 0]), unit([1, 0.1, 0.05]), unit([1, 0, 0.1]), unit([0, 1, 0.05]), unit([0.05, 1, 0])];
+  const groupSims = similarityMatrix(groupVecs);
+
+  it('clusters words by average-linkage similarity', () => {
+    const label = similarityGroups(groupSims, 5, 0.5);
+    expect(label[0]).toBe(label[1]);
+    expect(label[1]).toBe(label[2]);
+    expect(label[3]).toBe(label[4]);
+    expect(label[0]).not.toBe(label[3]);
+  });
+
+  it('keeps every word apart when nothing clears the threshold', () => {
+    expect(new Set(similarityGroups(groupSims, 5, 0.9999)).size).toBe(5);
+  });
+
+  it('puts every between-group target beyond every within-group target', () => {
+    const tuning = { ...defaultOrbitalTuning, targetModel: 'grouped' as const, shapeFar: 1100, groupThreshold: 0.5 };
+    const t = shapeTargets(groupSims, 5, tuning);
+    const within = [t[0 * 5 + 1], t[0 * 5 + 2], t[1 * 5 + 2], t[3 * 5 + 4]];
+    const between = [0, 1, 2].flatMap(i => [3, 4].map(j => t[i * 5 + j]));
+    expect(Math.max(...within)).toBeLessThanOrEqual(tuning.groupWithinFar);
+    expect(Math.min(...between)).toBeGreaterThanOrEqual(tuning.groupBetweenNear);
+  });
+});
+
+describe('grouped skeleton', () => {
+  it('draws threads only inside groups', () => {
+    const vecsTwoGroups = [unit([1, 0.05, 0]), unit([1, 0.1, 0.05]), unit([1, 0, 0.1]), unit([0, 1, 0.05]), unit([0.05, 1, 0])];
+    const sim = new SpaceSimulation(cal, { ...layout3dConfig('shape'), tuning: { ...layout3dConfig('shape').tuning, groupThreshold: 0.5 } });
+    vecsTwoGroups.forEach((v, i) => sim.add(`w${i}`, v, i, [i * 50, 0, 0]));
+    const edges = sim.skeleton(3);
+    expect(edges.length).toBeGreaterThan(0);
+    const inFirst = (i: number) => i < 3;
+    edges.forEach(e => expect(inFirst(e.i)).toBe(inFirst(e.j)));
+    const orbits = new SpaceSimulation(cal, layout3dConfig('orbits'));
+    vecsTwoGroups.forEach((v, i) => orbits.add(`w${i}`, v, i, [i * 50, 0, 0]));
+    expect(orbits.skeleton(3).some(e => inFirst(e.i) !== inFirst(e.j))).toBe(true);
   });
 });

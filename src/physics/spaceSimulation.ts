@@ -1,7 +1,8 @@
 import { Calibration } from "../embeddings/calibration";
 import { layoutFidelity, LayoutFidelity } from "./layoutMetrics";
 import {
-    defaultOrbitalTuning, findLinks, neighborSkeleton, orbitalAccelerations, OrbitalBody, OrbitalLink, OrbitalTuning, Point, similarityMatrix,
+    defaultGroupThreshold, defaultOrbitalTuning, findLinks, neighborSkeleton, orbitalAccelerations, OrbitalBody, OrbitalLink, OrbitalTuning, Point, similarityGroups,
+    similarityMatrix,
 } from "./orbitalForces";
 
 /**
@@ -99,11 +100,25 @@ export class SpaceSimulation {
         return this.currentLinks;
     }
 
-    /** Each word's k nearest neighbours (cached per word set). Indices refer to `bodies`. */
+    /**
+     * Each word's k nearest neighbours (cached per word set). Indices refer to `bodies`. With the
+     * grouped model, only edges inside a group are kept: cross-group threads would visually tie the
+     * separated groups back into one ball.
+     */
     skeleton(k = 2): readonly OrbitalLink[] {
         const sims = this.similarities();
-        const key = `${this.simsKey}|${k}`;
-        if (this.skeletonCache?.key !== key) this.skeletonCache = { key, edges: neighborSkeleton(sims, this.bodies.length, k) };
+        const { tuning } = this.config;
+        const grouped = tuning.targetModel === "grouped";
+        const key = `${this.simsKey}|${k}|${grouped}`;
+        if (this.skeletonCache?.key !== key) {
+            const n = this.bodies.length;
+            let edges = neighborSkeleton(sims, n, k);
+            if (grouped) {
+                const label = similarityGroups(sims, n, tuning.groupThreshold || defaultGroupThreshold(this.cal));
+                edges = edges.filter(e => label[e.i] === label[e.j]);
+            }
+            this.skeletonCache = { key, edges };
+        }
         return this.skeletonCache.edges;
     }
 

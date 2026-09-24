@@ -24,13 +24,23 @@ import { dot } from "../embeddings/vectorMath";
  *     in 384 dimensions unrelated pairs are all ~sqrt(2) apart, so mixed boards become a shell.
  *   - "adaptive": the board's own chord distances stretched onto [near, far] (min-max per board).
  *   - "rank": pairs spaced by the rank of their dissimilarity within the board (non-metric MDS style).
+ *   - "localRank": pairs spaced by how highly each word ranks in the other's neighbour list, so only
+ *     mutual near neighbours stay close and everything else is pushed out (cluster separation,
+ *     in the spirit of UMAP/t-SNE neighbourhoods).
+ *   - "grouped": groups found by average-linkage clustering (merge while mean similarity is above
+ *     ~p97, the midpoint of calibrated p95 and p99: at p99 related words like hand/foot/knee stay
+ *     apart, at p95 colours and fruits merge);
+ *     rank-spaced over a short range inside a group and over a far range between groups, so every
+ *     between-group distance exceeds every within-group one and groups read as separate formations
+ *     while keeping their internal shape (docs/research/embedding-shape.md section 5).
+ * `shapeExponent` < 1 curves the rank mapping so most pairs sit far and only the closest stay near.
  * The three shape models use stress-majorization forces weighted by 1/target^2.
  *
  * Units are "px per physics step squared", independent of body mass; adapters convert to forces.
  */
 export type Point = number[];
 
-export type TargetModel = "calibrated" | "metric" | "adaptive" | "rank";
+export type TargetModel = "calibrated" | "metric" | "adaptive" | "rank" | "localRank" | "grouped";
 
 export interface OrbitalBody {
     position: Point;
@@ -83,6 +93,17 @@ export interface OrbitalTuning {
     /** Adaptive/rank models: distance for the board's most and least related pairs. */
     shapeNear: number;
     shapeFar: number;
+    /** Rank models: target = near + (far - near) * quantile^exponent (1 = even spacing). */
+    shapeExponent: number;
+    /** Shape models: stress weight = (reference / target)^power; 2 favours local shape, 0 treats all pairs equally. */
+    shapeWeightPower: number;
+    /** Shape models: unrelated pairs (below p99) closer than this are pushed apart with `repel` (0 = off). */
+    shapeSeparation: number;
+    /** Grouped model: farthest target inside a group; nearest target between groups (> within, the gap). */
+    groupWithinFar: number;
+    groupBetweenNear: number;
+    /** Grouped model: groups keep merging while their mean similarity exceeds this (0 = calibrated default). */
+    groupThreshold: number;
 }
 
 /** Axis-aligned region words should stay out of, in the same coordinates as positions (x, y). */
@@ -114,7 +135,46 @@ export const defaultOrbitalTuning: OrbitalTuning = {
     metricSwirlShare: 0.5,
     shapeNear: 110,
     shapeFar: 720,
+    shapeExponent: 1,
+    shapeWeightPower: 2,
+    shapeSeparation: 0,
+    groupWithinFar: 380,
+    groupBetweenNear: 640,
+    groupThreshold: 0,
 };
+
+/** Default grouping threshold: midpoint of calibrated p95 and p99 (~p97; 0.18 for MiniLM). */
+export function defaultGroupThreshold(cal: Calibration): number {
+    return (cal.p95 + cal.p99) / 2;
+}
+
+/**
+ * Average-linkage agglomerative clustering on similarity: repeatedly merge the two groups with the
+ * highest mean pairwise similarity while it exceeds `threshold`. Returns a group id per word.
+ * Average linkage avoids the chaining that plain connected components suffer on dense boards.
+ */
+export function similarityGroups(sims: Float32Array, n: number, threshold: number): number[] {
+    let groups = [...Array(n).keys()].map(i => [i]);
+    const meanSim = (a: number[], b: number[]) => {
+        let sum = 0;
+        for (const i of a) for (const j of b) sum += sims[i * n + j];
+        return sum / (a.length * b.length);
+    };
+    for (;;) {
+        let best = -Infinity, bi = -1, bj = -1;
+        for (let a = 0; a < groups.length; a++) {
+            for (let b = a + 1; b < groups.length; b++) {
+                const s = meanSim(groups[a], groups[b]);
+                if (s > best) { best = s; bi = a; bj = b; }
+            }
+        }
+        if (bi < 0 || best <= threshold) break;
+        groups = groups.filter((_, k) => k !== bi && k !== bj).concat([[...groups[bi], ...groups[bj]]]);
+    }
+    const label = new Array<number>(n).fill(0);
+    groups.forEach((g, k) => g.forEach(i => { label[i] = k; }));
+    return label;
+}
 
 /** Metric model target: the embedding (chord) distance between unit vectors, in world units. */
 export function metricTarget(similarity: number, tuning: OrbitalTuning = defaultOrbitalTuning): number {
@@ -222,7 +282,7 @@ export function orbitalAccelerations(
     if (keepOut) acc.forEach((a, i) => addScaled(a, keepOutAcceleration(bodies[i].position, keepOut, tuning, bounds), 1));
 
     if (tuning.targetModel !== "calibrated") {
-        applyShapeStress(bodies, acc, shapeTargets(sims, n, tuning), tuning, bonded);
+        applyShapeStress(bodies, acc, shapeTargets(sims, n, tuning, defaultGroupThreshold(cal)), sims, cal.p99, tuning, bonded);
         for (const link of links) if (!bonded(link.i, link.j)) applySwirl(bodies, acc, link, tuning.swirl * tuning.metricSwirlShare);
         return acc.map(a => clamp(a, tuning.maxAccel));
     }
@@ -297,8 +357,8 @@ const targetCache = new WeakMap<Float32Array, { key: string; targets: Float32Arr
  * Pair targets for the shape models, cached per similarity matrix (callers cache that matrix per
  * word set, so this runs once per board change, not per step).
  */
-export function shapeTargets(sims: Float32Array, n: number, tuning: OrbitalTuning = defaultOrbitalTuning): Float32Array {
-    const key = `${tuning.targetModel}|${tuning.metricScale}|${tuning.shapeNear}|${tuning.shapeFar}`;
+export function shapeTargets(sims: Float32Array, n: number, tuning: OrbitalTuning = defaultOrbitalTuning, groupThreshold = 0.18): Float32Array {
+    const key = `${tuning.targetModel}|${tuning.metricScale}|${tuning.shapeNear}|${tuning.shapeFar}|${tuning.shapeExponent}|${tuning.groupWithinFar}|${tuning.groupBetweenNear}|${tuning.groupThreshold || groupThreshold}`;
     const cached = targetCache.get(sims);
     if (cached && cached.key === key) return cached.targets;
     const targets = new Float32Array(n * n);
@@ -306,16 +366,36 @@ export function shapeTargets(sims: Float32Array, n: number, tuning: OrbitalTunin
     const pairs: Array<[number, number]> = [];
     for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) pairs.push([i, j]);
     const set = (i: number, j: number, t: number) => { targets[i * n + j] = t; targets[j * n + i] = t; };
-    const { shapeNear: near, shapeFar: far } = tuning;
+    const { shapeNear: near, shapeFar: far, shapeExponent: exponent } = tuning;
+    const fromQuantile = (q: number) => near + (far - near) * Math.pow(Math.min(1, Math.max(0, q)), exponent);
     if (tuning.targetModel === "metric") {
         for (const [i, j] of pairs) set(i, j, metricTarget(sims[i * n + j], tuning));
     } else if (tuning.targetModel === "adaptive") {
         const d = pairs.map(([i, j]) => chord(sims[i * n + j]));
         const [lo, hi] = [Math.min(...d), Math.max(...d)];
         pairs.forEach(([i, j], k) => set(i, j, near + (far - near) * (hi > lo ? (d[k] - lo) / (hi - lo) : 0.5)));
+    } else if (tuning.targetModel === "grouped") {
+        const label = similarityGroups(sims, n, tuning.groupThreshold || groupThreshold);
+        const within = pairs.filter(([i, j]) => label[i] === label[j]);
+        const between = pairs.filter(([i, j]) => label[i] !== label[j]);
+        const spread = (list: Array<[number, number]>, lo: number, hi: number) => {
+            const order = list.map((p, k) => k).sort((a, b) => sims[list[b][0] * n + list[b][1]] - sims[list[a][0] * n + list[a][1]]);
+            order.forEach((k, rank) => set(list[k][0], list[k][1], lo + (hi - lo) * (order.length > 1 ? rank / (order.length - 1) : 0.5)));
+        };
+        spread(within, near, tuning.groupWithinFar);
+        spread(between, tuning.groupBetweenNear, far);
+    } else if (tuning.targetModel === "localRank") {
+        // rankOf[i][j]: position of j in i's neighbour list (0 = i's most similar word).
+        const rankOf = [...Array(n).keys()].map(i => {
+            const order = [...Array(n).keys()].filter(j => j !== i).sort((a, b) => sims[i * n + b] - sims[i * n + a]);
+            const r = new Array<number>(n).fill(0);
+            order.forEach((j, k) => { r[j] = k; });
+            return r;
+        });
+        for (const [i, j] of pairs) set(i, j, fromQuantile(n > 2 ? Math.min(rankOf[i][j], rankOf[j][i]) / (n - 2) : 0.5));
     } else {
         const order = pairs.map((p, k) => k).sort((a, b) => sims[pairs[b][0] * n + pairs[b][1]] - sims[pairs[a][0] * n + pairs[a][1]]);
-        order.forEach((k, rank) => set(pairs[k][0], pairs[k][1], near + (far - near) * (order.length > 1 ? rank / (order.length - 1) : 0.5)));
+        order.forEach((k, rank) => set(pairs[k][0], pairs[k][1], fromQuantile(order.length > 1 ? rank / (order.length - 1) : 0.5)));
     }
     targetCache.set(sims, { key, targets });
     return targets;
@@ -330,6 +410,8 @@ function applyShapeStress(
     bodies: readonly OrbitalBody[],
     acc: Point[],
     targets: Float32Array,
+    sims: Float32Array,
+    linkThreshold: number,
     tuning: OrbitalTuning,
     bonded: (i: number, j: number) => boolean
 ): void {
@@ -341,8 +423,12 @@ function applyShapeStress(
             const { unit, dist } = direction(bodies[i].position, bodies[j].position);
             if (dist < 1) continue;
             const target = Math.max(1, targets[i * n + j]);
-            const weight = Math.min(9, (reference / target) ** 2);
-            const pull = tuning.metricStress * weight * (dist - target);
+            const weight = Math.min(9, (reference / target) ** tuning.shapeWeightPower);
+            let pull = tuning.metricStress * weight * (dist - target);
+            // Firm separation between unrelated words, so distinct groups read as distinct in 3D.
+            if (tuning.shapeSeparation > 0 && dist < tuning.shapeSeparation && sims[i * n + j] <= linkThreshold) {
+                pull -= tuning.repel * (1 - dist / tuning.shapeSeparation);
+            }
             addScaled(acc[i], unit, pull);
             addScaled(acc[j], unit, -pull);
         }

@@ -1,0 +1,550 @@
+{
+  "vocabVersion": "2d0798c49b2c",
+  "boards": {
+    "families15": {
+      "pets": [
+        "dog",
+        "puppy",
+        "cat",
+        "kitten"
+      ],
+      "royalty": [
+        "king",
+        "queen",
+        "prince"
+      ],
+      "sea": [
+        "ocean",
+        "sea",
+        "wave"
+      ],
+      "medical": [
+        "doctor",
+        "nurse",
+        "hospital"
+      ],
+      "music": [
+        "guitar",
+        "piano"
+      ]
+    },
+    "dense24": {
+      "pets": [
+        "dog",
+        "puppy",
+        "cat",
+        "kitten",
+        "wolf",
+        "fox"
+      ],
+      "royalty": [
+        "king",
+        "queen",
+        "prince",
+        "princess",
+        "castle",
+        "crown"
+      ],
+      "sea": [
+        "ocean",
+        "sea",
+        "wave",
+        "beach"
+      ],
+      "medical": [
+        "doctor",
+        "nurse",
+        "hospital",
+        "medicine"
+      ],
+      "music": [
+        "guitar",
+        "piano",
+        "drum",
+        "song"
+      ]
+    },
+    "mixed24": {
+      "numbers": [
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six",
+        "seven",
+        "eight",
+        "nine",
+        "ten"
+      ],
+      "days": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday"
+      ],
+      "pets": [
+        "dog",
+        "puppy",
+        "cat",
+        "kitten"
+      ],
+      "royalty": [
+        "king",
+        "queen",
+        "prince"
+      ]
+    },
+    "sixGroups24": {
+      "colors": [
+        "red",
+        "blue",
+        "green",
+        "yellow"
+      ],
+      "fruits": [
+        "apple",
+        "banana",
+        "grape",
+        "cherry"
+      ],
+      "vehicles": [
+        "car",
+        "truck",
+        "bus",
+        "train"
+      ],
+      "emotions": [
+        "happy",
+        "sad",
+        "angry",
+        "lonely"
+      ],
+      "body": [
+        "hand",
+        "foot",
+        "head",
+        "knee"
+      ],
+      "weather": [
+        "rain",
+        "snow",
+        "storm",
+        "wind"
+      ]
+    }
+  },
+  "results": {
+    "families15": {
+      "orbits": {
+        "silhouette": 0.68,
+        "labelOverlap": 0.07,
+        "fidelity": -0.81
+      },
+      "rankW1": {
+        "silhouette": 0.44,
+        "labelOverlap": 0.04,
+        "fidelity": -0.9
+      },
+      "rankW0": {
+        "silhouette": 0.39,
+        "labelOverlap": 0.03,
+        "fidelity": -0.91
+      },
+      "rankSep": {
+        "silhouette": 0.48,
+        "labelOverlap": 0.04,
+        "fidelity": -0.86
+      },
+      "rankW1Sep": {
+        "silhouette": 0.47,
+        "labelOverlap": 0.03,
+        "fidelity": -0.89
+      },
+      "rankW1SepFar": {
+        "silhouette": 0.51,
+        "labelOverlap": 0.02,
+        "fidelity": -0.88
+      },
+      "rankW0SepFar": {
+        "silhouette": 0.41,
+        "labelOverlap": 0.02,
+        "fidelity": -0.91
+      },
+      "grouped": {
+        "silhouette": 0.65,
+        "labelOverlap": 0.02,
+        "fidelity": -0.84
+      },
+      "groupedW1": {
+        "silhouette": 0.65,
+        "labelOverlap": 0.02,
+        "fidelity": -0.84
+      },
+      "groupedW0": {
+        "silhouette": 0.66,
+        "labelOverlap": 0.02,
+        "fidelity": -0.86
+      },
+      "groupedW0Roomy": {
+        "silhouette": 0.64,
+        "labelOverlap": 0.02,
+        "fidelity": -0.86
+      },
+      "groupedRoomyP97": {
+        "silhouette": 0.64,
+        "labelOverlap": 0.02,
+        "fidelity": -0.86
+      },
+      "groupedRoomyP95": {
+        "silhouette": 0.64,
+        "labelOverlap": 0.02,
+        "fidelity": -0.86
+      },
+      "rank": {
+        "silhouette": 0.46,
+        "labelOverlap": 0.03,
+        "fidelity": -0.87
+      },
+      "rankFar": {
+        "silhouette": 0.51,
+        "labelOverlap": 0.02,
+        "fidelity": -0.86
+      },
+      "rankCurved": {
+        "silhouette": 0.42,
+        "labelOverlap": 0.04,
+        "fidelity": -0.83
+      },
+      "rankCurvedFar": {
+        "silhouette": 0.46,
+        "labelOverlap": 0.02,
+        "fidelity": -0.84
+      },
+      "localRank": {
+        "silhouette": 0.42,
+        "labelOverlap": 0.03,
+        "fidelity": -0.85
+      },
+      "localRankFar": {
+        "silhouette": 0.49,
+        "labelOverlap": 0.03,
+        "fidelity": -0.84
+      },
+      "localRankCurvedFar": {
+        "silhouette": 0.63,
+        "labelOverlap": 0.01,
+        "fidelity": -0.81
+      }
+    },
+    "dense24": {
+      "orbits": {
+        "silhouette": 0.56,
+        "labelOverlap": 0.04,
+        "fidelity": -0.75
+      },
+      "rankW1": {
+        "silhouette": 0.45,
+        "labelOverlap": 0.04,
+        "fidelity": -0.86
+      },
+      "rankW0": {
+        "silhouette": 0.41,
+        "labelOverlap": 0.05,
+        "fidelity": -0.86
+      },
+      "rankSep": {
+        "silhouette": 0.46,
+        "labelOverlap": 0.04,
+        "fidelity": -0.84
+      },
+      "rankW1Sep": {
+        "silhouette": 0.46,
+        "labelOverlap": 0.04,
+        "fidelity": -0.86
+      },
+      "rankW1SepFar": {
+        "silhouette": 0.5,
+        "labelOverlap": 0.03,
+        "fidelity": -0.85
+      },
+      "rankW0SepFar": {
+        "silhouette": 0.44,
+        "labelOverlap": 0.02,
+        "fidelity": -0.86
+      },
+      "grouped": {
+        "silhouette": 0.56,
+        "labelOverlap": 0.02,
+        "fidelity": -0.75
+      },
+      "groupedW1": {
+        "silhouette": 0.57,
+        "labelOverlap": 0.02,
+        "fidelity": -0.79
+      },
+      "groupedW0": {
+        "silhouette": 0.6,
+        "labelOverlap": 0.02,
+        "fidelity": -0.82
+      },
+      "groupedW0Roomy": {
+        "silhouette": 0.59,
+        "labelOverlap": 0.02,
+        "fidelity": -0.82
+      },
+      "groupedRoomyP97": {
+        "silhouette": 0.59,
+        "labelOverlap": 0.02,
+        "fidelity": -0.82
+      },
+      "groupedRoomyP95": {
+        "silhouette": 0.67,
+        "labelOverlap": 0.02,
+        "fidelity": -0.83
+      },
+      "rank": {
+        "silhouette": 0.44,
+        "labelOverlap": 0.04,
+        "fidelity": -0.83
+      },
+      "rankFar": {
+        "silhouette": 0.5,
+        "labelOverlap": 0.03,
+        "fidelity": -0.83
+      },
+      "rankCurved": {
+        "silhouette": 0.39,
+        "labelOverlap": 0.02,
+        "fidelity": -0.81
+      },
+      "rankCurvedFar": {
+        "silhouette": 0.42,
+        "labelOverlap": 0.01,
+        "fidelity": -0.81
+      },
+      "localRank": {
+        "silhouette": 0.45,
+        "labelOverlap": 0.06,
+        "fidelity": -0.77
+      },
+      "localRankFar": {
+        "silhouette": 0.5,
+        "labelOverlap": 0.05,
+        "fidelity": -0.76
+      },
+      "localRankCurvedFar": {
+        "silhouette": 0.55,
+        "labelOverlap": 0.02,
+        "fidelity": -0.72
+      }
+    },
+    "mixed24": {
+      "orbits": {
+        "silhouette": 0.72,
+        "labelOverlap": 0.08,
+        "fidelity": -0.84
+      },
+      "rankW1": {
+        "silhouette": 0.53,
+        "labelOverlap": 0.05,
+        "fidelity": -0.93
+      },
+      "rankW0": {
+        "silhouette": 0.55,
+        "labelOverlap": 0.05,
+        "fidelity": -0.93
+      },
+      "rankSep": {
+        "silhouette": 0.53,
+        "labelOverlap": 0.05,
+        "fidelity": -0.92
+      },
+      "rankW1Sep": {
+        "silhouette": 0.54,
+        "labelOverlap": 0.06,
+        "fidelity": -0.93
+      },
+      "rankW1SepFar": {
+        "silhouette": 0.59,
+        "labelOverlap": 0.04,
+        "fidelity": -0.93
+      },
+      "rankW0SepFar": {
+        "silhouette": 0.59,
+        "labelOverlap": 0.02,
+        "fidelity": -0.94
+      },
+      "grouped": {
+        "silhouette": 0.69,
+        "labelOverlap": 0.04,
+        "fidelity": -0.91
+      },
+      "groupedW1": {
+        "silhouette": 0.7,
+        "labelOverlap": 0.04,
+        "fidelity": -0.93
+      },
+      "groupedW0": {
+        "silhouette": 0.72,
+        "labelOverlap": 0.03,
+        "fidelity": -0.94
+      },
+      "groupedW0Roomy": {
+        "silhouette": 0.7,
+        "labelOverlap": 0.03,
+        "fidelity": -0.94
+      },
+      "groupedRoomyP97": {
+        "silhouette": 0.7,
+        "labelOverlap": 0.03,
+        "fidelity": -0.94
+      },
+      "groupedRoomyP95": {
+        "silhouette": 0.7,
+        "labelOverlap": 0.03,
+        "fidelity": -0.94
+      },
+      "rank": {
+        "silhouette": 0.52,
+        "labelOverlap": 0.05,
+        "fidelity": -0.92
+      },
+      "rankFar": {
+        "silhouette": 0.57,
+        "labelOverlap": 0.04,
+        "fidelity": -0.92
+      },
+      "rankCurved": {
+        "silhouette": 0.43,
+        "labelOverlap": 0.04,
+        "fidelity": -0.88
+      },
+      "rankCurvedFar": {
+        "silhouette": 0.46,
+        "labelOverlap": 0.03,
+        "fidelity": -0.88
+      },
+      "localRank": {
+        "silhouette": 0.46,
+        "labelOverlap": 0.05,
+        "fidelity": -0.85
+      },
+      "localRankFar": {
+        "silhouette": 0.51,
+        "labelOverlap": 0.03,
+        "fidelity": -0.84
+      },
+      "localRankCurvedFar": {
+        "silhouette": 0.49,
+        "labelOverlap": 0.02,
+        "fidelity": -0.84
+      }
+    },
+    "sixGroups24": {
+      "orbits": {
+        "silhouette": 0.45,
+        "labelOverlap": 0.03,
+        "fidelity": -0.67
+      },
+      "rankW1": {
+        "silhouette": 0.4,
+        "labelOverlap": 0.06,
+        "fidelity": -0.86
+      },
+      "rankW0": {
+        "silhouette": 0.41,
+        "labelOverlap": 0.04,
+        "fidelity": -0.86
+      },
+      "rankSep": {
+        "silhouette": 0.4,
+        "labelOverlap": 0.04,
+        "fidelity": -0.82
+      },
+      "rankW1Sep": {
+        "silhouette": 0.42,
+        "labelOverlap": 0.06,
+        "fidelity": -0.85
+      },
+      "rankW1SepFar": {
+        "silhouette": 0.45,
+        "labelOverlap": 0.03,
+        "fidelity": -0.84
+      },
+      "rankW0SepFar": {
+        "silhouette": 0.42,
+        "labelOverlap": 0.03,
+        "fidelity": -0.86
+      },
+      "grouped": {
+        "silhouette": 0.5,
+        "labelOverlap": 0.01,
+        "fidelity": -0.68
+      },
+      "groupedW1": {
+        "silhouette": 0.54,
+        "labelOverlap": 0.02,
+        "fidelity": -0.78
+      },
+      "groupedW0": {
+        "silhouette": 0.59,
+        "labelOverlap": 0.03,
+        "fidelity": -0.78
+      },
+      "groupedW0Roomy": {
+        "silhouette": 0.52,
+        "labelOverlap": 0.02,
+        "fidelity": -0.78
+      },
+      "groupedRoomyP97": {
+        "silhouette": 0.58,
+        "labelOverlap": 0.01,
+        "fidelity": -0.77
+      },
+      "groupedRoomyP95": {
+        "silhouette": 0.51,
+        "labelOverlap": 0.02,
+        "fidelity": -0.79
+      },
+      "rank": {
+        "silhouette": 0.39,
+        "labelOverlap": 0.04,
+        "fidelity": -0.83
+      },
+      "rankFar": {
+        "silhouette": 0.43,
+        "labelOverlap": 0.03,
+        "fidelity": -0.82
+      },
+      "rankCurved": {
+        "silhouette": 0.34,
+        "labelOverlap": 0.02,
+        "fidelity": -0.77
+      },
+      "rankCurvedFar": {
+        "silhouette": 0.39,
+        "labelOverlap": 0.02,
+        "fidelity": -0.8
+      },
+      "localRank": {
+        "silhouette": 0.42,
+        "labelOverlap": 0.04,
+        "fidelity": -0.73
+      },
+      "localRankFar": {
+        "silhouette": 0.46,
+        "labelOverlap": 0.03,
+        "fidelity": -0.73
+      },
+      "localRankCurvedFar": {
+        "silhouette": 0.53,
+        "labelOverlap": 0.02,
+        "fidelity": -0.68
+      }
+    }
+  }
+}

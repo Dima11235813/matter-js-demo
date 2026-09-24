@@ -139,12 +139,26 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
   * [x] **Task 5.14.3**: Nearest-neighbour skeleton threads (k = 2) in Shape mode, so chains and loops are readable.
   * [x] **Task 5.14.4**: Best-view camera: look along the least-variance principal axis (`src/physics/principalAxes.ts`); 0.86–0.99 of the layout's variance visible on screen.
   * [x] **Task 5.14.5**: Headless exit criteria in `tests/spaceFidelity.test.ts` (families ≤ −0.85, dense ≤ −0.80, days ≤ −0.90, numbers ≤ −0.95) and unit tests for every target model.
+  * [x] **Task 5.14.5b (player feedback: "still a ball of stuff")**: Shape switched from rank to the **grouped** model: similarity clusters (average linkage at ~p97), rank-spaced within groups (170–480) and between groups (780–1,300), unweighted; threads kept inside groups. Group separation 0.45 → 0.63 (orbits 0.60) at fidelity −0.85; between-group distances 2.6–3.7× within-group in the app. See [embedding-shape.md §5](../docs/research/embedding-shape.md).
 * **Next (roadmap)**
   * [ ] **Task 5.14.6**: 2D rank model: local formulation (k-nearest ranks or local stress) that does not collapse random boards (2D rank today: random30 −0.11 vs −0.46 calibrated).
   * [ ] **Task 5.14.7**: Curved-structure measures (principal curves) so antonym-bent gradients (temperature's horseshoe) are scored fairly; surface "this scale bends because the model treats hot and cold as related" in the HUD (Feature 5.11).
   * [ ] **Task 5.14.8**: Focus on a cluster: double-click a group to re-run the layout on just those words, revealing internal shape that mixed boards compress.
   * [ ] **Task 5.14.9**: Seed shape layouts with classical MDS (Feature 5.10 finding: meaningful at frame 1, settled in ~2 s) instead of random starts.
   * [ ] **Task 5.14.10**: Shape legend: name the detected structure ("line", "ring", "clusters") from anisotropy, radial spread, and skeleton topology, as a learning cue.
+
+### Feature 5.15: Molecule Gravity & Accretion (roadmap · idea from play-testing)
+* **Description**: Word molecules become gravity wells. A molecule's pull grows with its size; related words orbit it and may join when their relationship pulls them into contact, while words that do not belong are held off by repulsion and keep orbiting instead of bonding. Molecules repel other molecules, so the board settles into distinct systems that visualize the current cluster configuration rather than a sphere.
+* **Design sketch**
+  * A molecule is a body with mass = sum of member masses, positioned at its centre of mass; its pull on a word scales with that mass and with the word's strongest similarity to any member.
+  * Stable orbits: attraction outside an orbit radius (a function of relatedness and molecule size), firm repulsion inside it for words below the bonding threshold, plus the existing tangential swirl, so unrelated-but-nearby words circle instead of colliding.
+  * Accretion: a word linked (p99) to a member that touches the molecule bonds and joins (the 2D rule, Feature 5.6), up to the size cap.
+  * Molecule–molecule repulsion scaled by both masses and by (1 − similarity between the molecules' mean vectors): unrelated systems push far apart, related ones sit as neighbours. This is the grouped model's between-group gap, driven by molecules the player built instead of computed clusters.
+* [ ] **Task 5.15.1**: Molecules in 3D (Task 5.4.1.5 prerequisite): sphere-based overlap relaxation and containment for `MoleculeGraph`.
+* [ ] **Task 5.15.2**: Mass-scaled attraction and orbit-radius repulsion in `orbitalForces` (pure, unit-tested), for 2D and 3D.
+* [ ] **Task 5.15.3**: Molecule–molecule repulsion; measure with the cluster-separation experiment (molecules as ground-truth groups) against the grouped model.
+* [ ] **Task 5.15.4**: Visuals: molecule halo size by mass, orbit trails for satellites, a flash on accretion.
+* **Exit criteria**: satellites orbit a molecule for ≥ 10 s without bonding or escaping (unrelated words), related words accrete within 10 s of contact, and molecule systems keep silhouette ≥ 0.6 on the grouped boards.
 
 ### Feature 5.5: Verification & Polish (Phase 5)
 * [ ] **Task 5.5.1**: 3D fidelity ≤ −0.7 on the families set; 60 fps with 40 words.
