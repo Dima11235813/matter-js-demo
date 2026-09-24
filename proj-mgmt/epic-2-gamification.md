@@ -67,3 +67,23 @@ Turn the physics prototype into an engaging, addictive educational game. Players
   * [ ] **Task 2.6.4** (roadmap): Discovery-style targets (Feature 2.1) on top of the timed game; combo multipliers (Task 2.3.1.2).
 * **Relation to Feature 2.5**: word molecules (Epic 5 · Features 5.6, 5.15) are the first step of the word → phrase build-up that Sentence Mode describes.
 
+
+### Feature 2.7: Voice Input (roadmap · idea 2026-09-24)
+* **Description**: A microphone toggle in the menu. While it is on, speech is transcribed to text and the spoken words appear on the board as word blocks, in 2D or 3D, exactly as if typed into "Add a word" (they take focus, Feature 5.16). Speaking becomes a way to explore the space hands-free: say "ocean, river, desert" and watch where they land.
+* **Design sketch**
+  * **Speech-to-text engine**, with two options behind one `SpeechSource` interface:
+    * **Web Speech API** (`SpeechRecognition`): zero download and streaming partial results. Chrome and Edge send audio to a cloud service, Safari support is partial, and Firefox has none. Fine as a quick first version, but it breaks the local-first promise.
+    * **Local Whisper** (transformers.js, e.g. `whisper-tiny.en` / `whisper-base.en`, WebGPU with a WASM fallback): runs on-device and offline, and matches how MiniLM already runs in the browser. Costs a ~40–150 MB one-time model download and higher latency. Voice activity detection chunks the audio into utterances.
+    * Recommendation to research: Web Speech for the MVP where available, local Whisper as the privacy/offline path, chosen automatically or in settings.
+  * **Transcript → words**: lowercase, split into tokens, drop stopwords and filler ("um", "the"), apply the profanity policy (same as typed words), and de-duplicate against the board. Known vocabulary words spawn directly; unknown words go through the live encoder like typed player words. Only final results spawn: partial results show as a live caption in the dashboard.
+  * **Rate limit**: cap spawns per utterance (e.g. 5) so a long sentence does not flood the board.
+  * **Modes**: sandbox spawns freely. A timed round keeps its scarce, dealt supply, so voice there *selects* words already on the board (saying a dealt word selects it; three selections play the analogy), with no free spawning.
+  * **Stretch: voice commands**: "king minus man plus woman" or "man is to king as woman is to …" plays the analogy directly; "focus queen" focuses a word.
+  * **Toggle and permissions**: a mic button in the menu with tooltip and accessible name; `getUserMedia` permission prompt on first use; a clear recording indicator while listening. Turning it off stops the stream and releases the microphone. Off by default and never auto-started; the preference is stored per device, but it never auto-starts after a reload.
+  * **Privacy**: say in the tooltip or settings whether audio leaves the device (cloud Web Speech) or not (local Whisper). No audio is stored.
+* [ ] **Task 2.7.1**: Research note in `docs/research/`: Web Speech vs local Whisper. Measure word accuracy on a spoken word-list script, latency to spawn, download size, and browser coverage.
+* [ ] **Task 2.7.2**: Pure `transcriptToWords(text, { stopwords, profanity, onBoard, max })` with unit tests.
+* [ ] **Task 2.7.3**: `SpeechSource` implementations, the mic toggle in `MainMenu`, a listening indicator, and a live caption in the dashboard; spawns via the existing player-word path (`submitPlayerWord`), so 2D and 3D both work.
+* [ ] **Task 2.7.4**: Timed-game rule: voice selects dealt words instead of spawning.
+* [ ] **Task 2.7.5** (stretch): voice commands for analogies and focus.
+* **Exit criteria**: spoken single words from the vocabulary appear on the board within 1.5 s (Web Speech) or 3 s (local) with ≥ 90% word accuracy on the test script; the microphone is released when the toggle is off (browser indicator gone); profanity policy applies identically to voice and typing; works in 2D and 3D.

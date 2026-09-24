@@ -27,6 +27,7 @@ The project is deconstructed into five key Epics. Click each file link to explor
 * **Goal**: Formulate engaging game loops, objectives, scoring systems, and feedback systems to make learning embeddings fun.
 * **Core Tech**: Matter.js bodies, custom UI overlays, visual effects (p5), connection graphs.
 * **Key Features**: Discovery Mode, Survival Mode, Word Attraction Visualizer, Semantic High-Scores, Interactive Concept Tree.
+* **Roadmap**: voice input: a mic toggle turns speech into word blocks in 2D and 3D (Feature 2.7).
 
 ### 🏢 [Epic 3: Enterprise Architecture & Backend Transition](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/epic-3-enterprise-architecture.md)
 * **Goal**: Scale the monolithic frontend to a clean, DRY monorepo structure with a backend service, shared type definitions, and proper state management.
