@@ -120,3 +120,25 @@ Turn the physics prototype into an engaging, addictive educational game. Players
 * [ ] **Task 2.9.3**: Dashboard input: detect expressions, live preview chips and answer, Enter plays; timed-game operand rule; help tooltip with examples.
 * [ ] **Task 2.9.4**: Offset arrows in 2D and 3D (with Task 5.5.4).
 * **Exit criteria**: `king - man + woman` returns the same answer, points, and list entry as clicking man → king → woman; preview updates within 100 ms of typing; hyphenated words are never split; works in 2D and 3D.
+
+### Feature 2.10: Connect-All Puzzles (roadmap · idea 2026-09-24)
+* **Description**: A puzzle version of the 3D board. The board starts with loose words, and the HUD shows how many words are well connected: "14 of 20 connected (70%)". A word counts as connected when it has **at least two** connections; words with one connection (dangling) or none (free-floating) are highlighted. Add words (typed, `+`/`−` expressions, imports) until every word has two or more connections. At 100%, you win. Added words are nodes too, so each one must also end with two connections: a bridge word has to belong on both sides.
+* **Why**: the goal is to iterate on the rules until the puzzle is balanced, meaning no single strategy dominates. In game-theory terms that is a stable, Nash-equilibrium-like design where the player's best move depends on the board. From that stable rule set, permutations of the board generate many distinct puzzles that are fun, not only solvable.
+* **Design sketch**
+  * **Connection**: a pair of board words with similarity ≥ the link threshold (the calibrated p99 links the hint layout already draws). Degree = number of connections. Metric = share of words with degree ≥ 2. Works in 2D; designed for 3D, where the web of connections is easiest to read.
+  * **Moves and scoring**: each added word is a move. **Par** = the fewest words the solver needs; score by moves vs par (golf-style), with an optional timer. Removing a word is allowed and costs a move.
+  * **Dominant strategy to design out**: generic hub words ("thing", "person", "stuff") that link to everything. Levers to balance it:
+    * a stricter link threshold for common words (threshold by frequency rank);
+    * a cap on how many connections one added word can create;
+    * a word budget;
+    * banning the most frequent N words as moves.
+  * **Solver** (also the par and the hint system): greedy set cover over the vocabulary. Candidate words are scored by how many under-connected words they would lift to degree 2, while ending at degree ≥ 2 themselves. Beam search on top of it tightens par.
+  * **Balance harness** (the "equilibrium" test): simulate bot strategies on many puzzles: greedy-hub bot, nearest-neighbour bot, random bot, and the solver. The rules are balanced when no bot dominates across puzzles, and the solver's par spreads into distinct difficulty bands. Results go into a `docs/research/` report that is updated at each rule iteration.
+  * **Puzzle generation by permutation**: start from a solved template (clusters plus bridges), then permute it. Swap each seed word for a neighbour in the same similarity band, so the connection graph keeps its shape but the words change. Keep variants whose par and difficulty band match the template. Seeds are deterministic, so puzzles are shareable ("puzzle #1042") and a daily puzzle is possible.
+  * **Visuals**: highlight dangling and free-floating words (pulse or ring, with Color hint mode 5.17 optional). Brighten a word's connections as it reaches degree 2. Play a completion burst at 100%.
+* [ ] **Task 2.10.1**: Pure `connectionStats(words, similarity, threshold)` → degree per word, dangling/free lists, ratio; unit tests.
+* [ ] **Task 2.10.2**: Solver (greedy + beam) and par; hub-word levers as rule parameters; tests on fixture boards.
+* [ ] **Task 2.10.3**: Balance harness: bots × rule sets × generated puzzles → a research report (`docs/research/connect-all-balance.md`) with the chosen rule set.
+* [ ] **Task 2.10.4**: Generator: templates, permutation by similarity band, deterministic seeds, par/difficulty filter.
+* [ ] **Task 2.10.5**: Puzzle mode UI: HUD ratio, loose-word highlighting (2D and 3D), move counter vs par, win state, next puzzle; results persisted like timed games.
+* **Exit criteria**: every generated puzzle is solvable within par by the solver; in the harness no strategy beats the others by more than 20% on moves-over-par across 200 puzzles; three difficulty bands with ≥ 50 puzzles each; play-test: the user finds a puzzle fun, not just solvable.
