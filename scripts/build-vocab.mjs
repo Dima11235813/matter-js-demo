@@ -177,7 +177,10 @@ function calibrate(vectors, count, dim) {
 }
 
 function loadProfanity() {
-    return new Set(readDictKeys(path.join(DICT_DIR, 'corporaExplitives.js')));
+    return new Set([
+        ...readDictKeys(path.join(DICT_DIR, 'corporaExplitives.js')),
+        ...readListFile(path.join(ROOT, 'data', 'vocab', 'profanity-extra.txt')),
+    ]);
 }
 
 async function main() {

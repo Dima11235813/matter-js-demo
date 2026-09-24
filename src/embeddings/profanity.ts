@@ -1,19 +1,29 @@
 import profanityList from "../utils/Dictionary/corporaExplitives";
+import extraList from "../../data/vocab/profanity-extra.txt?raw";
 
 export interface ProfanityPolicy {
     readonly enabled: boolean;
     isAllowed(word: string): boolean;
 }
 
-const listedWords: ReadonlySet<string> = new Set(Object.keys(profanityList).map(w => w.toLowerCase()));
+/** Parses a one-word-per-line list with # comments. */
+export function parseWordList(text: string): string[] {
+    return text.split(/\r?\n/).map(l => l.trim().toLowerCase()).filter(l => l && !l.startsWith("#"));
+}
+
+const listedWords: ReadonlySet<string> = new Set([
+    ...Object.keys(profanityList).map(w => w.toLowerCase()),
+    ...parseWordList(extraList),
+]);
 
 /**
- * The filter is always on in production builds. In local development it can be switched off with
- * VITE_PROFANITY_FILTER=off (e.g. in .env.local) to inspect the full, unfiltered embedding space.
+ * Production builds always filter profanity. Local development shows the full, unfiltered
+ * embedding space by default; set VITE_PROFANITY_FILTER=on (e.g. in .env.local) to preview
+ * what players will see.
  */
 export function isProfanityFilterEnabled(env: { DEV?: boolean; VITE_PROFANITY_FILTER?: string } = import.meta.env): boolean {
     if (!env.DEV) return true;
-    return env.VITE_PROFANITY_FILTER !== "off";
+    return env.VITE_PROFANITY_FILTER === "on";
 }
 
 /** `flagged` adds vocabulary words the build script marked profane to the shipped list. */

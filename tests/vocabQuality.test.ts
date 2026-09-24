@@ -38,6 +38,7 @@ describe.skipIf(!present)('built vocabulary quality', () => {
   it('flags profanity instead of dropping it', () => {
     const flagged = manifest.profane.map(i => manifest.words[i]);
     expect(flagged).toContain('fuck');
+    expect(flagged).toContain('dick'); // from data/vocab/profanity-extra.txt
   });
 
   it.each([

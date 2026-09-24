@@ -53,13 +53,21 @@ describe('profanity policy', () => {
     expect(policy.isAllowed('kitten')).toBe(true);
   });
 
+  it('includes the supplementary list (terms the base list misses)', () => {
+    const policy = createProfanityPolicy(true);
+    expect(policy.isAllowed('dick')).toBe(false);
+    expect(policy.isAllowed('rapist')).toBe(false);
+    expect(policy.isAllowed('screw')).toBe(true); // ambiguous everyday words are left alone
+  });
+
   it('allows everything when disabled', () => {
     expect(createProfanityPolicy(false).isAllowed('fuck')).toBe(true);
   });
 
-  it('can only be turned off in dev builds', () => {
+  it('always filters in production; dev shows everything unless opted in', () => {
+    expect(isProfanityFilterEnabled({ DEV: false })).toBe(true);
     expect(isProfanityFilterEnabled({ DEV: false, VITE_PROFANITY_FILTER: 'off' })).toBe(true);
-    expect(isProfanityFilterEnabled({ DEV: true, VITE_PROFANITY_FILTER: 'off' })).toBe(false);
-    expect(isProfanityFilterEnabled({ DEV: true })).toBe(true);
+    expect(isProfanityFilterEnabled({ DEV: true })).toBe(false);
+    expect(isProfanityFilterEnabled({ DEV: true, VITE_PROFANITY_FILTER: 'on' })).toBe(true);
   });
 });

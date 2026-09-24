@@ -1,0 +1,26 @@
+# Supplements src/utils/Dictionary/corporaExplitives.js, which misses some common terms.
+# Used at vocab build time (flags words in vocab.json) and at runtime (player-entered words).
+# Ambiguous everyday words (kill, suicide, screw, butt, hoe, nazi) are intentionally not listed.
+dick
+dicks
+wank
+wanker
+boob
+boobs
+arse
+porn
+porno
+horny
+sexy
+sex
+anal
+orgasm
+erection
+masturbate
+masturbation
+nipple
+nipples
+crotch
+rape
+raped
+rapist
