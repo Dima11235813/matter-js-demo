@@ -31,7 +31,7 @@ Turn the physics prototype into an engaging, addictive educational game. Players
 * **Description**: Reward player creativity, rare word usage, and high-similarity combinations with points, visual banners, and combo multipliers.
 * **User Stories**:
   * **Story 2.3.1**: *As a player, I want points awarded when I merge words, with higher points for words that were far apart but had high semantic correlation, so I feel rewarded for clever associations.*
-    * [ ] **Task 2.3.1.1**: Define the score formula based on embedding similarity, word lengths, and difficulty.
+    * [x] **Task 2.3.1.1**: Define the score formula based on embedding similarity, word lengths, and difficulty. — ✅ `analogyPoints` in `src/game/timedGame.ts`: similarity × 100 (min 10), +25 for a new question in the sandbox; repeats score 0 within a timed round.
     * [ ] **Task 2.3.1.2**: Track multipliers for quick consecutive mergers (combos).
   * **Story 2.3.2**: *As a player, I want to see a floating "+500" or "Perfect Match!" text pop up on screen where the merger occurred, to provide sensory satisfaction.*
     * [ ] **Task 2.3.2.1**: Write a custom rendering utility in `TypographyDisplay.ts` to manage transient text particle animations.
@@ -41,7 +41,7 @@ Turn the physics prototype into an engaging, addictive educational game. Players
 * **Description**: Render an end-game overview visualizer showing how the player navigated the embedding space.
 * **User Stories**:
   * **Story 2.4.1**: *As a player, I want to see a history of all word mergers I made during the session, so I can review my conceptual path.*
-    * [ ] **Task 2.4.1.1**: Keep a transaction log in `stores/GameStore.ts` tracking: `{ parentA, parentB, result, similarity, score }`.
+    * [x] **Task 2.4.1.1**: Keep a transaction log in `stores/GameStore.ts` tracking: `{ parentA, parentB, result, similarity, score }`. — ✅ done as a persisted, sync-ready analogy collection (IndexedDB `analogies` store keyed by question, with answer, alternatives, similarity, times played) plus timed-round results (`games` store).
   * **Story 2.4.2**: *As a player, I want an interactive node graph at the game-over screen showing the branching tree of my word consolidations, so I can save/share my creation path.*
     * [ ] **Task 2.4.2.1**: Create a Canvas or SVG-based force-directed graph component representing the merge tree.
     * [ ] **Task 2.4.2.2**: Enable tooltips showing the similarity scores and vector distances on each edge of the graph.
@@ -58,4 +58,12 @@ Turn the physics prototype into an engaging, addictive educational game. Players
   * **Story 2.5.3**: *As a player in Paragraph Mode, I want sentences to cluster, merging physically into paragraphs that trace a thematic arc, so I can construct a structured narrative flow in the canvas.*
     * [ ] **Task 2.5.3.1**: Add support for multi-line paragraph block physics bodies that grow in size dynamically.
     * [ ] **Task 2.5.3.2**: Hook paragraph fusion outcomes into context-similarity checks (e.g. combining sentence themes).
+
+### Feature 2.6: Sandbox, Timed Game & Hint Mode (shipped 2026-09-22)
+* **Description**: The two play modes the game actually has today, plus the shared hint flag.
+  * [x] **Task 2.6.1**: **Sandbox** (the `fountain` view): free play, no timer, add any word, play analogies (select three words → answer spawns with ranked runner-ups).
+  * [x] **Task 2.6.2**: **Timed game**: 2-minute rounds, 10 dealt words in related pairs, +2 words per 150 points up to 30 (scarce by design), best score saved; pure rules in `src/game/timedGame.ts`, dealer in `src/game/dealer.ts`.
+  * [x] **Task 2.6.3**: **Hint mode**: low gravity and semantic orbits in both modes; per-device preference; enables the 3D view (Epic 5).
+  * [ ] **Task 2.6.4** (roadmap): Discovery-style targets (Feature 2.1) on top of the timed game; combo multipliers (Task 2.3.1.2).
+* **Relation to Feature 2.5**: word molecules (Epic 5 · Features 5.6, 5.15) are the first step of the word → phrase build-up that Sentence Mode describes.
 

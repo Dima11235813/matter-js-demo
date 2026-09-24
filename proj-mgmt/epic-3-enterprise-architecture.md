@@ -34,7 +34,7 @@ Refactor the codebase from a single client-side project containing all vocabular
 * **Description**: Restructure the frontend directory to follow a feature-based, clean-architecture approach instead of throwing multiple files into `/src` and `/src/matterJsComp`.
 * **User Stories**:
   * **Story 3.3.1**: *As a developer, I want files grouped by feature domain (e.g., game, physics, menu), so that I can easily locate and maintain modules.*
-    * [ ] **Task 3.3.1.1**: Propose and execute the folder layout restructure:
+    * [~] **Task 3.3.1.1**: Propose and execute the folder layout restructure: — partial (2026-09-22/23): domain folders added (`src/embeddings`, `src/physics`, `src/persistence`, `src/services`, `src/game`, `src/space`, `src/theme`); legacy `src/matterJsComp` remains.
       ```
       src/
       ├── assets/           # SVG, styles, static files
@@ -52,8 +52,16 @@ Refactor the codebase from a single client-side project containing all vocabular
 * **Description**: Consolidate scattered settings and variables into a single RootStore, and upgrade legacy decorator-based MobX syntax to modern standards.
 * **User Stories**:
   * **Story 3.4.1**: *As a developer, I want to use standard modern MobX 6 state actions and observables without relying on buggy experimental decorator warnings, so my code complies with future standards.*
-    * [ ] **Task 3.4.1.1**: Rewrite `MenuStore.ts` and `RootStore.ts` using `makeObservable` or `makeAutoObservable`.
-    * [ ] **Task 3.4.1.2**: Remove references to legacy decorator packages in `package.json` and disable `experimentalDecorators` checks if no longer needed.
+    * [x] **Task 3.4.1.1**: Rewrite `MenuStore.ts` and `RootStore.ts` using `makeObservable` or `makeAutoObservable`. — ✅ `MenuStore`, `GameStore`, `RootStore` use `makeObservable`.
+    * [~] **Task 3.4.1.2**: Remove references to legacy decorator packages in `package.json` and disable `experimentalDecorators` checks if no longer needed. — partial: no decorators in source; `vite.config.ts` still enables Babel `decorators-legacy`.
   * **Story 3.4.2**: *As a developer, I want all interaction events (clicks, drags, current tool mode) managed inside dedicated MobX stores instead of custom class properties in physics engine handlers.*
     * [ ] **Task 3.4.2.1**: Create `InteractionStore` and bind mouse coords, `clickType`, and selected body reference to MobX.
     * [ ] **Task 3.4.2.2**: Refactor `SketchHandler.ts` and `CustomWorld.ts` to consume variables directly from MobX stores.
+
+### Feature 3.5: Local-First Persistence, PWA & Sync (partly shipped)
+* **Description**: Player data lives on the device first and syncs to a server later. Decided 2026-09-22: IndexedDB now, progressive web app next, a sync server with auth when online.
+  * [x] **Task 3.5.1**: IndexedDB schema (`src/persistence/db.ts`) with sync metadata on every record (`syncState`, `deviceId`, timestamps) and append-only migrations (v1 → v2 tested): player words, analogy collection, profile, timed-game results.
+  * [x] **Task 3.5.2**: `LexicalRepository.pendingSyncCounts()` as the outbox hook for a future sync.
+  * [ ] **Task 3.5.3** (roadmap): PWA: service worker and web manifest; precache the app shell and `public/vocab/` (a single static asset) for offline play.
+  * [ ] **Task 3.5.4** (roadmap): Sync server + auth: push `pending` records, pull by account, merge by natural key (words by word, analogies by question, games by id); saved views (Epic 5 · Feature 5.9) sync the same way.
+

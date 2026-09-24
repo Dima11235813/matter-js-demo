@@ -16,7 +16,7 @@ By merging a **2D rigid-body physics engine (Matter.js + p5.js)** with **word em
 
 ## 🗺️ High-Level Roadmap (The Epics)
 
-The project is deconstructed into four key Epics. Click each file link to explore detailed features, user stories, and tasks:
+The project is deconstructed into five key Epics. Click each file link to explore detailed features, user stories, and tasks:
 
 ### 🧬 [Epic 1: Semantic Word Embeddings & Advanced Collision Engine](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/epic-1-embeddings-collision.md)
 * **Goal**: Transition from simple string concatenations to vector-based semantic similarity calculations.
@@ -57,6 +57,14 @@ graph TD
     C -->|Production Release| E[Enterprise Gamified App]
     D -->|Production Release| E
 ```
+
+### Status snapshot (2026-09-23)
+* **Phase 1 (Foundation)**: done (Epic 4 mostly complete; follow-ups in Feature 4.5).
+* **Phase 2 (Semantic Engine)**: done in a different shape than planned: MiniLM vocabulary + live encoder, analogy solver, calibrated similarity (Epic 1 status note).
+* **Phase 3 (Gameplay & UI)**: sandbox, timed game, hint mode, molecules, themes, accessible UI shipped (Epic 2 · Feature 2.6); the 3D semantic space (Epic 5) went beyond the original plan: toggle, embedding-shaped grouped layout, research-driven.
+* **Phase 4 (Backend Integration)**: local-first persistence shipped and sync-ready (Epic 3 · Feature 3.5); PWA and sync server not started.
+* **Next candidates**: molecule gravity & accretion (5.15, needs 3D molecules 5.4.1.5), cross-dimension continuity (5.10), 2D scroll zoom (5.7.1), selection metadata HUD (5.11), live drag with physics (5.12), PWA (3.5.3).
+* **Research that drives plans**: [docs/research/](file:///D:/GDrive/Dev/matter-js-demo/docs/research/README.md).
 
 ### Development Phases
 1. **Phase 1 (Foundation)**: Upgrade package dependencies and build systems (Vite, React 18, MobX 6) to establish a clean compiler environment.

@@ -1,0 +1,39 @@
+# Lexical Fountain (matter-js-demo)
+
+Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where screen distance mirrors meaning. Workspace rules in `D:\GDrive\AGENTS.md` also apply (never delete files; Google Drive sync).
+
+## Where things live
+
+- `src/embeddings/` vector math, index, analogy solver, calibration, profanity policy
+- `src/physics/` pure layout/physics models (orbital forces and target models, 3D simulation, molecules, metrics, PCA)
+- `src/space/` three.js 3D view; `src/matterJsComp/` 2D Matter/p5 world, dashboard, menu glue
+- `src/persistence/` IndexedDB (sync-ready records); `src/services/` use cases; `src/stores/` MobX
+- `proj-mgmt/` epics and roadmap (source of truth for plans); `docs/research/` reports + reproducible experiments that drive plans
+- `scripts/build-vocab.mjs` builds `public/vocab/` (gitignored; `yarn start`/`yarn build` build it if missing)
+
+## Commands
+
+- Type-check: `npx tsc --noEmit -p .` · Unit tests: `yarn test:unit` · Build: `yarn build`
+- Research experiments (kept out of the unit suite): `yarn research:cross-dim`
+- Rebuild vocabulary: `yarn vocab:build`
+- Dev server: `npx vite --port 3000 --strictPort --open false`
+- Dev handle in the browser console: `window.__lexical` (`wordBoxes()`, `layoutFidelity()`, `semanticEngine`, `stores`, `deps`)
+
+## Working agreements
+
+- Work in small, testable milestones; each ends with tests plus a measured number from the running app, recorded in the epic.
+- Complex features start with research in `docs/research/` (question, experiments, findings, decision), then a proj-mgmt plan, then an MVP. Measure before claiming; a metric that disagrees with a screenshot means the metric is incomplete.
+- Ideas the user raises mid-task go into proj-mgmt as `(roadmap)` items immediately, even when not built now.
+- Profanity: local dev is unfiltered by default (`VITE_PROFANITY_FILTER=on` previews); production always filters.
+
+## Lessons learned (environment and harness)
+
+- The repo is on Google Drive: folder locks make git fail mid-operation ("Permission denied"). Retry `git add` on lock errors. Never split or verify commits with `git stash --include-untracked`, `git restore --source=<commit> -- .`, or `git checkout -- .`; a partial tree as `--source` deletes every tracked file it lacks. Stage files explicitly; verify a commit by `git archive <sha>` into a scratch folder outside Drive with a `node_modules` junction.
+- Files written with LF show as modified after git rewrites them with CRLF (`core.autocrlf=true`); `git diff` empty means line endings only.
+- An occluded browser window throttles `requestAnimationFrame` to ~1 fps and silently freezes physics: bring the page to front (Playwright `page.bringToFront()`) and reject measurements below 50 fps.
+- Vite reloads the page the first time a lazily imported dependency is optimized; list such deps (three.js) in `optimizeDeps.include`.
+- Stopping an `npx vite` background task leaves the Vite node process holding port 3000: find the PID on the port and stop it before restarting.
+- q8 ONNX models quantize activations per batch: embed vocabulary words one at a time so build-time vectors match the browser's single-word encodes.
+- Matter.js clears forces after every step: apply custom forces in `Events.on(engine, "beforeUpdate")`, not in the p5 draw loop; start the engine with `Runner.run` and stop it with `Runner.stop` on teardown.
+- In 384-d embedding space unrelated words are all ~sqrt(2) apart: raw distances make layouts a sphere. Use board-relative targets (see `docs/research/embedding-shape.md`).
+- Patch scripts: write Python patch files to the scratchpad instead of shell heredocs (quotes and `\r\n` escapes get mangled); prefer the Edit tool for small edits.
