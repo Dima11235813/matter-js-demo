@@ -17,9 +17,20 @@ import { dot } from "../embeddings/vectorMath";
  * Why links start at the 99th percentile: at p95, incidental similarities (queen~nurse 0.19,
  * guitar~ocean 0.19) form links that glue every family into one blob.
  *
+ * Target models (see docs/research/embedding-shape.md):
+ *   - "calibrated" (default): the percentile mapping above, tuned for readable 2D orbits. Saturates
+ *     at both ends, so tightly related boards (days of the week) collapse into a blob.
+ *   - "metric": real embedding (chord) distance sqrt(2 - 2 cos) x metricScale. No saturation, but
+ *     in 384 dimensions unrelated pairs are all ~sqrt(2) apart, so mixed boards become a shell.
+ *   - "adaptive": the board's own chord distances stretched onto [near, far] (min-max per board).
+ *   - "rank": pairs spaced by the rank of their dissimilarity within the board (non-metric MDS style).
+ * The three shape models use stress-majorization forces weighted by 1/target^2.
+ *
  * Units are "px per physics step squared", independent of body mass; adapters convert to forces.
  */
 export type Point = number[];
+
+export type TargetModel = "calibrated" | "metric" | "adaptive" | "rank";
 
 export interface OrbitalBody {
     position: Point;
@@ -62,6 +73,16 @@ export interface OrbitalTuning {
     /** Extra clearance around the keep-out rectangle. */
     keepOutMargin: number;
     maxAccel: number;
+    targetModel: TargetModel;
+    /** Metric model: world units per unit of embedding distance (random pairs sit ~1.41 x this apart). */
+    metricScale: number;
+    /** Metric model: stiffness of the stress springs. */
+    metricStress: number;
+    /** Shape models: orbit swirl on p99 links, as a share of `swirl` (0 = a still, pure-shape layout). */
+    metricSwirlShare: number;
+    /** Adaptive/rank models: distance for the board's most and least related pairs. */
+    shapeNear: number;
+    shapeFar: number;
 }
 
 /** Axis-aligned region words should stay out of, in the same coordinates as positions (x, y). */
@@ -87,7 +108,18 @@ export const defaultOrbitalTuning: OrbitalTuning = {
     keepOutPush: 0.006,
     keepOutMargin: 24,
     maxAccel: 0.45,
+    targetModel: "calibrated",
+    metricScale: 300,
+    metricStress: 0.0008,
+    metricSwirlShare: 0.5,
+    shapeNear: 110,
+    shapeFar: 720,
 };
+
+/** Metric model target: the embedding (chord) distance between unit vectors, in world units. */
+export function metricTarget(similarity: number, tuning: OrbitalTuning = defaultOrbitalTuning): number {
+    return tuning.metricScale * Math.sqrt(Math.max(0, 2 - 2 * similarity));
+}
 
 /** Scales every length (not stiffness) so small viewports keep the same proportions. */
 export function scaleTuning(tuning: OrbitalTuning, scale: number): OrbitalTuning {
@@ -113,6 +145,30 @@ export function similarityMatrix(vectors: readonly Float32Array[]): Float32Array
         }
     }
     return out;
+}
+
+/**
+ * Nearest-neighbour skeleton: each word joined to its k most similar words on the board (union,
+ * no duplicates). Drawn instead of every p99 link in the shape layout, it reveals the structure
+ * the layout encodes: ordered words read as a chain, cycles as a loop, families as small stars.
+ * Strength is the similarity rescaled to the edges drawn (0 = weakest shown, 1 = strongest).
+ */
+export function neighborSkeleton(sims: Float32Array, n: number, k = 2): OrbitalLink[] {
+    const seen = new Set<number>();
+    const edges: OrbitalLink[] = [];
+    for (let i = 0; i < n; i++) {
+        const nearest = [...Array(n).keys()].filter(j => j !== i).sort((a, b) => sims[i * n + b] - sims[i * n + a]).slice(0, k);
+        for (const j of nearest) {
+            const [a, b] = i < j ? [i, j] : [j, i];
+            if (seen.has(a * n + b)) continue;
+            seen.add(a * n + b);
+            edges.push({ i: a, j: b, similarity: sims[a * n + b], strength: 0, core: a });
+        }
+    }
+    const values = edges.map(e => e.similarity);
+    const [lo, hi] = [Math.min(...values), Math.max(...values)];
+    edges.forEach(e => { e.strength = hi > lo ? (e.similarity - lo) / (hi - lo) : 1; });
+    return edges;
 }
 
 /** Pairs above the 99th-percentile similarity become links. */
@@ -164,6 +220,12 @@ export function orbitalAccelerations(
     const bonded = (i: number, j: number) => groups !== undefined && groups[i] >= 0 && groups[i] === groups[j];
     const acc = bodies.map(b => b.position.map((x, k) => (center[k] - x) * tuning.centerPull));
     if (keepOut) acc.forEach((a, i) => addScaled(a, keepOutAcceleration(bodies[i].position, keepOut, tuning, bounds), 1));
+
+    if (tuning.targetModel !== "calibrated") {
+        applyShapeStress(bodies, acc, shapeTargets(sims, n, tuning), tuning, bonded);
+        for (const link of links) if (!bonded(link.i, link.j)) applySwirl(bodies, acc, link, tuning.swirl * tuning.metricSwirlShare);
+        return acc.map(a => clamp(a, tuning.maxAccel));
+    }
 
     const linked = new Set(links.map(l => l.i * n + l.j));
     for (const link of links) if (!bonded(link.i, link.j)) applyLink(bodies, acc, link, tuning);
@@ -227,6 +289,73 @@ function applyLink(bodies: readonly OrbitalBody[], acc: Point[], link: OrbitalLi
     addScaled(acc[core], unit, -pull * tuning.coreShare);
     // Tangential push turns the spring into an orbit.
     addScaled(acc[satellite], orbitTangent(unit, bodies[satellite].orbitAxis), tuning.swirl * link.strength);
+}
+
+const targetCache = new WeakMap<Float32Array, { key: string; targets: Float32Array }>();
+
+/**
+ * Pair targets for the shape models, cached per similarity matrix (callers cache that matrix per
+ * word set, so this runs once per board change, not per step).
+ */
+export function shapeTargets(sims: Float32Array, n: number, tuning: OrbitalTuning = defaultOrbitalTuning): Float32Array {
+    const key = `${tuning.targetModel}|${tuning.metricScale}|${tuning.shapeNear}|${tuning.shapeFar}`;
+    const cached = targetCache.get(sims);
+    if (cached && cached.key === key) return cached.targets;
+    const targets = new Float32Array(n * n);
+    const chord = (s: number) => Math.sqrt(Math.max(0, 2 - 2 * s));
+    const pairs: Array<[number, number]> = [];
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) pairs.push([i, j]);
+    const set = (i: number, j: number, t: number) => { targets[i * n + j] = t; targets[j * n + i] = t; };
+    const { shapeNear: near, shapeFar: far } = tuning;
+    if (tuning.targetModel === "metric") {
+        for (const [i, j] of pairs) set(i, j, metricTarget(sims[i * n + j], tuning));
+    } else if (tuning.targetModel === "adaptive") {
+        const d = pairs.map(([i, j]) => chord(sims[i * n + j]));
+        const [lo, hi] = [Math.min(...d), Math.max(...d)];
+        pairs.forEach(([i, j], k) => set(i, j, near + (far - near) * (hi > lo ? (d[k] - lo) / (hi - lo) : 0.5)));
+    } else {
+        const order = pairs.map((p, k) => k).sort((a, b) => sims[pairs[b][0] * n + pairs[b][1]] - sims[pairs[a][0] * n + pairs[a][1]]);
+        order.forEach((k, rank) => set(pairs[k][0], pairs[k][1], near + (far - near) * (order.length > 1 ? rank / (order.length - 1) : 0.5)));
+    }
+    targetCache.set(sims, { key, targets });
+    return targets;
+}
+
+/**
+ * Stress majorization-style forces (Gansner, Koren & North 2004): every pair is a spring toward its
+ * target, weighted by 1/target^2 (normalized to the mid-range target) so near neighbours set the
+ * local shape and far pairs only set the overall scale.
+ */
+function applyShapeStress(
+    bodies: readonly OrbitalBody[],
+    acc: Point[],
+    targets: Float32Array,
+    tuning: OrbitalTuning,
+    bonded: (i: number, j: number) => boolean
+): void {
+    const n = bodies.length;
+    const reference = tuning.targetModel === "metric" ? tuning.metricScale * Math.SQRT2 : (tuning.shapeNear + tuning.shapeFar) / 2;
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            if (bonded(i, j)) continue;
+            const { unit, dist } = direction(bodies[i].position, bodies[j].position);
+            if (dist < 1) continue;
+            const target = Math.max(1, targets[i * n + j]);
+            const weight = Math.min(9, (reference / target) ** 2);
+            const pull = tuning.metricStress * weight * (dist - target);
+            addScaled(acc[i], unit, pull);
+            addScaled(acc[j], unit, -pull);
+        }
+    }
+}
+
+/** Tangential push on a link's satellite around its core (orbits without changing the target). */
+function applySwirl(bodies: readonly OrbitalBody[], acc: Point[], link: OrbitalLink, amount: number): void {
+    if (amount === 0) return;
+    const satellite = link.core === link.i ? link.j : link.i;
+    const { unit, dist } = direction(bodies[satellite].position, bodies[link.core].position);
+    if (dist < 1) return;
+    addScaled(acc[satellite], orbitTangent(unit, bodies[satellite].orbitAxis), amount * link.strength);
 }
 
 function applyUnlinked(bodies: readonly OrbitalBody[], acc: Point[], i: number, j: number, target: number, tuning: OrbitalTuning): void {
