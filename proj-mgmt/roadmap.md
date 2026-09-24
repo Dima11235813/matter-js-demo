@@ -42,7 +42,7 @@ The project is deconstructed into five key Epics. Click each file link to explor
 * **Goal**: Lift the hint-mode orbital layout into an explorable 3D space where distance mirrors meaning.
 * **Core Tech**: three.js (lazy-loaded), custom 3D integrator, all-pairs similarity layout.
 * **Key Features**: All-pairs layout (2D first), 3D orbits, raycast selection, 2D ↔ 3D toggle gated on hint mode.
-* **Shipped**: embedding-shaped 3D layout ([research](file:///D:/GDrive/Dev/matter-js-demo/docs/research/embedding-shape.md)): lines, rings, and clusters from the board's own embedding distances.
+* **Shipped**: embedding-shaped 3D layout ([research](file:///D:/GDrive/Dev/matter-js-demo/docs/research/embedding-shape.md)): lines, rings, and clusters from the board's own embedding distances; focus on new words, HUD analogy links, and an "Analogies on this board" menu that focuses in 2D and 3D (Feature 5.16).
 * **Next**: cross-dimension continuity without re-rendering ([research](file:///D:/GDrive/Dev/matter-js-demo/docs/research/cross-dimension-continuity.md)), selection metadata HUD, live drag with physics, Create mode in 3D, zoom, spin to detangle, saved views.
 
 ---
@@ -61,9 +61,9 @@ graph TD
 ### Status snapshot (2026-09-23)
 * **Phase 1 (Foundation)**: done (Epic 4 mostly complete; follow-ups in Feature 4.5).
 * **Phase 2 (Semantic Engine)**: done in a different shape than planned: MiniLM vocabulary + live encoder, analogy solver, calibrated similarity (Epic 1 status note).
-* **Phase 3 (Gameplay & UI)**: sandbox, timed game, hint mode, molecules, themes, accessible UI shipped (Epic 2 · Feature 2.6); the 3D semantic space (Epic 5) went beyond the original plan: toggle, embedding-shaped grouped layout, research-driven.
+* **Phase 3 (Gameplay & UI)**: sandbox, timed game, hint mode, molecules, themes, accessible UI shipped (Epic 2 · Feature 2.6); the 3D semantic space (Epic 5) went beyond the original plan: toggle, embedding-shaped grouped layout, research-driven, plus focus and board analogies (5.16).
 * **Phase 4 (Backend Integration)**: local-first persistence shipped and sync-ready (Epic 3 · Feature 3.5); PWA and sync server not started.
-* **Next candidates**: molecule gravity & accretion (5.15, needs 3D molecules 5.4.1.5), cross-dimension continuity (5.10), 2D scroll zoom (5.7.1), selection metadata HUD (5.11), live drag with physics (5.12), PWA (3.5.3).
+* **Next candidates**: molecule gravity & accretion (5.15, needs 3D molecules 5.4.1.5), cross-dimension continuity (5.10), 2D scroll zoom and pan (5.7.1, also lets 2D focus pan to off-screen words), selection metadata HUD (5.11), live drag with physics (5.12), PWA (3.5.3).
 * **Research that drives plans**: [docs/research/](file:///D:/GDrive/Dev/matter-js-demo/docs/research/README.md).
 
 ### Development Phases

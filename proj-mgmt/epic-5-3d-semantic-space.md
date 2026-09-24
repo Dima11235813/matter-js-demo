@@ -169,6 +169,7 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
     * [x] **Task 5.16.1.3**: 2D: focused boxes get a pulsing ring for 2.8 s (`Box.focusUntil`). 2D has no camera yet; panning to off-screen words waits for Task 5.7.1.
   * **Story 5.16.2**: *As a player, I want the analogy in the HUD to be links, so I can find its words on the board.*
     * [x] **Task 5.16.2.1**: HUD words a, b, c and the answer are focus links; ⌖ focuses the whole analogy.
+    * [ ] **Task 5.16.2.2** (roadmap): the HUD keeps the last analogy across reloads and fresh boards, where its words may not be on the board and the links do nothing. Dim off-board links and offer "drop onto board" instead.
   * **Story 5.16.3**: *As a player, I want a list of the analogies I created on this board, each one a link that focuses it.*
     * [x] **Task 5.16.3.1**: `MenuStore.boardAnalogies` (newest first, capped at 50, pure rules in `src/game/boardAnalogies.ts` with tests); survives 2D ↔ 3D switches; cleared by a fresh board and by a new timed round.
     * [x] **Task 5.16.3.2**: Menu toggle (list icon, word views only) opens "Analogies on this board": each row focuses its analogy, each word chip focuses that word.

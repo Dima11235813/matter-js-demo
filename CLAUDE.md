@@ -36,4 +36,8 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - q8 ONNX models quantize activations per batch: embed vocabulary words one at a time so build-time vectors match the browser's single-word encodes.
 - Matter.js clears forces after every step: apply custom forces in `Events.on(engine, "beforeUpdate")`, not in the p5 draw loop; start the engine with `Runner.run` and stop it with `Runner.stop` on teardown.
 - In 384-d embedding space unrelated words are all ~sqrt(2) apart: raw distances make layouts a sphere. Use board-relative targets (see `docs/research/embedding-shape.md`).
+- Run unit tests with `yarn test:unit`, not bare `vitest run`: bare vitest also picks up the Playwright spec `tests/gameplay.spec.ts` and reports a failed suite.
+- Browser checks in 3D: labels move while the camera eases, so read `wordBoxes()` right before each click, hover first (`mouse.move`, short wait), then `mouse.down`/`up`; confirm with `stores.menuStore.selectedWordTexts` instead of assuming the click landed.
+- Editing source during a browser check can make Vite fully reload the page (fresh random board, profile dimension restored): re-check the board state (`wordTexts()`) before measuring after any edit.
+- 3D camera scale: with `setViewOffset` at full frame size, one world unit is one pixel at `pixelMatchedDistance(fullHeight, FOV)`; use the full height, not the area below the dashboard.
 - Patch scripts: write Python patch files to the scratchpad instead of shell heredocs (quotes and `\r\n` escapes get mangled); prefer the Edit tool for small edits.
