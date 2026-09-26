@@ -14,7 +14,8 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 ## Commands
 
 - Type-check: `npx tsc --noEmit -p .` · Unit tests: `yarn test:unit` · Build: `yarn build`
-- Research experiments (kept out of the unit suite): `yarn research:cross-dim`
+- End-to-end: `yarn test:e2e` (Playwright, reuses the dev server on port 3000, runs serially; new specs use the `window.__lexical` handle for setup, including `focusedWords()`, and the real UI for the feature under test)
+- Research experiments (kept out of the unit suite): `yarn research:cross-dim` runs all of them; run one with `npx vitest run --config docs/research/experiments/vitest.research.config.ts <name>`
 - Rebuild vocabulary: `yarn vocab:build`
 - Dev server: `npx vite --port 3000 --strictPort --open false`
 - Dev handle in the browser console: `window.__lexical` (`wordBoxes()`, `layoutFidelity()`, `semanticEngine`, `stores`, `deps`)
@@ -36,6 +37,8 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - q8 ONNX models quantize activations per batch: embed vocabulary words one at a time so build-time vectors match the browser's single-word encodes.
 - Matter.js clears forces after every step: apply custom forces in `Events.on(engine, "beforeUpdate")`, not in the p5 draw loop; start the engine with `Runner.run` and stop it with `Runner.stop` on teardown.
 - In 384-d embedding space unrelated words are all ~sqrt(2) apart: raw distances make layouts a sphere. Use board-relative targets (see `docs/research/embedding-shape.md`).
+- Keep Playwright at one worker: parallel pages (three.js, 8 MB vocabulary, per-frame physics) time out on navigation against the dev server.
+- Game out scoring rules before building them: simulate populations (known-good plays, typical plays, exploit strategies, nonsense) and check that no strategy beats real play (see `docs/research/analogy-scoring.md`).
 - Run unit tests with `yarn test:unit`, not bare `vitest run`: bare vitest also picks up the Playwright spec `tests/gameplay.spec.ts` and reports a failed suite.
 - Browser checks in 3D: labels move while the camera eases, so read `wordBoxes()` right before each click, hover first (`mouse.move`, short wait), then `mouse.down`/`up`; confirm with `stores.menuStore.selectedWordTexts` instead of assuming the click landed.
 - Editing source during a browser check can make Vite fully reload the page (fresh random board, profile dimension restored): re-check the board state (`wordTexts()`) before measuring after any edit.

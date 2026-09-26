@@ -194,7 +194,8 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
 ### Feature 5.5: Verification & Polish (Phase 5)
 * [ ] **Task 5.5.1**: 3D fidelity ≤ −0.7 on the families set; 60 fps with 40 words.
 * [ ] **Task 5.5.2**: Mobile: orbit-drag vs tap-select disambiguation.
-* [ ] **Task 5.5.3**: e2e coverage for both dimensions via the dev handle.
+* [~] **Task 5.5.3**: e2e coverage for both dimensions via the dev handle. ✅ `tests/semanticPlayground.spec.ts` (2026-09-24): typed analogies, sums, pasted-text import, single words, focus, HUD links, the analogies panel (each in 2D and 3D), and board analogies across a 2D ↔ 3D switch; 11 tests, plus 4 legacy tests, 15/15 green twice in a row with `yarn test:e2e`. ⬜ Not yet covered: timed rounds, molecules, layout toggle.
+  * Found by e2e and fixed: switching dimension while spawns were still queued lost them (a fresh board kept 2 of 8 words; an answer played just before the switch would vanish). The hand-off now carries the spawn queue (`handoffQueue` in `src/space/handoff.ts`, unit-tested).
 * [ ] **Task 5.5.4** (stretch): Visualize an analogy as parallel arrows a→b and c→d in 3D.
 
 ---

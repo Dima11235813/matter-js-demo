@@ -1,0 +1,840 @@
+{
+  "vocabVersion": "2d0798c49b2c",
+  "linkThreshold": 0.2297,
+  "offsetMin": 0.25,
+  "byPopulation": {
+    "canonical": {
+      "n": 30,
+      "correct": 0.53,
+      "trivial": 0.37,
+      "meanCurrentPoints": 59.1,
+      "literal": {
+        "reward": 0.23,
+        "penalty": 0.77,
+        "neutral": 0
+      },
+      "nearest": {
+        "reward": 0.67,
+        "penalty": 0.33
+      },
+      "transfer": {
+        "reward": 0.5,
+        "penalty": 0.13,
+        "neutral": 0.37
+      },
+      "mean": {
+        "sAB": 0.491,
+        "sDA": 0.199,
+        "sDB": 0.413,
+        "sDC": 0.549,
+        "offsetCos": 0.37
+      }
+    },
+    "dealtPair": {
+      "n": 187,
+      "trivial": 0.73,
+      "meanCurrentPoints": 52.358,
+      "literal": {
+        "reward": 0.97,
+        "penalty": 0.02,
+        "neutral": 0.01
+      },
+      "nearest": {
+        "reward": 0.99,
+        "penalty": 0.01
+      },
+      "transfer": {
+        "reward": 0,
+        "penalty": 0,
+        "neutral": 1
+      },
+      "mean": {
+        "sAB": 0.629,
+        "sDA": -0.007,
+        "sDB": 0.02,
+        "sDC": 0.662,
+        "offsetCos": 0.025
+      }
+    },
+    "dealtAny": {
+      "n": 107,
+      "trivial": 0.38,
+      "meanCurrentPoints": 47.523,
+      "literal": {
+        "reward": 0.49,
+        "penalty": 0.51,
+        "neutral": 0
+      },
+      "nearest": {
+        "reward": 0.54,
+        "penalty": 0.46
+      },
+      "transfer": {
+        "reward": 0.29,
+        "penalty": 0.11,
+        "neutral": 0.6
+      },
+      "mean": {
+        "sAB": 0.153,
+        "sDA": -0.022,
+        "sDB": 0.349,
+        "sDC": 0.395,
+        "offsetCos": 0.201
+      }
+    },
+    "exploitSynonym": {
+      "n": 150,
+      "trivial": 0.66,
+      "meanCurrentPoints": 49.033,
+      "literal": {
+        "reward": 0.95,
+        "penalty": 0.05,
+        "neutral": 0
+      },
+      "nearest": {
+        "reward": 0.97,
+        "penalty": 0.03
+      },
+      "transfer": {
+        "reward": 0.02,
+        "penalty": 0.01,
+        "neutral": 0.97
+      },
+      "mean": {
+        "sAB": 0.625,
+        "sDA": -0.006,
+        "sDB": 0.033,
+        "sDC": 0.603,
+        "offsetCos": 0.056
+      }
+    },
+    "exploitNearB": {
+      "n": 150,
+      "trivial": 0.54,
+      "meanCurrentPoints": 55.007,
+      "literal": {
+        "reward": 0.01,
+        "penalty": 0.99,
+        "neutral": 0
+      },
+      "nearest": {
+        "reward": 0.71,
+        "penalty": 0.29
+      },
+      "transfer": {
+        "reward": 0,
+        "penalty": 0,
+        "neutral": 1
+      },
+      "mean": {
+        "sAB": 0.01,
+        "sDA": -0.023,
+        "sDB": 0.504,
+        "sDC": 0.604,
+        "offsetCos": -0.077
+      }
+    },
+    "random": {
+      "n": 150,
+      "trivial": 0.31,
+      "meanCurrentPoints": 41.833,
+      "literal": {
+        "reward": 0.47,
+        "penalty": 0.53,
+        "neutral": 0
+      },
+      "nearest": {
+        "reward": 0.53,
+        "penalty": 0.47
+      },
+      "transfer": {
+        "reward": 0.35,
+        "penalty": 0.1,
+        "neutral": 0.55
+      },
+      "mean": {
+        "sAB": 0.018,
+        "sDA": -0.033,
+        "sDB": 0.332,
+        "sDC": 0.358,
+        "offsetCos": 0.193
+      }
+    }
+  },
+  "grid": [
+    {
+      "rule": "sAB>=p95 sDC>=p95 off>=0.2",
+      "canonical": "70/7",
+      "dealtPair": "1/0",
+      "dealtAny": "0/37",
+      "exploitSynonym": "4/1",
+      "exploitNearB": "0/0",
+      "random": "1/35"
+    },
+    {
+      "rule": "sAB>=p95 sDC>=p95 off>=0.25",
+      "canonical": "70/7",
+      "dealtPair": "0/0",
+      "dealtAny": "0/37",
+      "exploitSynonym": "1/1",
+      "exploitNearB": "0/0",
+      "random": "0/35"
+    },
+    {
+      "rule": "sAB>=p95 sDC>=p95 off>=0.3",
+      "canonical": "63/7",
+      "dealtPair": "0/0",
+      "dealtAny": "0/37",
+      "exploitSynonym": "0/1",
+      "exploitNearB": "0/0",
+      "random": "0/35"
+    },
+    {
+      "rule": "sAB>=p95 sDC>=p95 off>=0.35",
+      "canonical": "53/7",
+      "dealtPair": "0/0",
+      "dealtAny": "0/37",
+      "exploitSynonym": "0/1",
+      "exploitNearB": "0/0",
+      "random": "0/35"
+    },
+    {
+      "rule": "sAB>=p95 sDC>=p99 off>=0.2",
+      "canonical": "67/13",
+      "dealtPair": "1/0",
+      "dealtAny": "0/41",
+      "exploitSynonym": "3/2",
+      "exploitNearB": "0/1",
+      "random": "1/41"
+    },
+    {
+      "rule": "sAB>=p95 sDC>=p99 off>=0.25",
+      "canonical": "67/13",
+      "dealtPair": "0/0",
+      "dealtAny": "0/41",
+      "exploitSynonym": "1/2",
+      "exploitNearB": "0/1",
+      "random": "0/41"
+    },
+    {
+      "rule": "sAB>=p95 sDC>=p99 off>=0.3",
+      "canonical": "60/13",
+      "dealtPair": "0/0",
+      "dealtAny": "0/41",
+      "exploitSynonym": "0/2",
+      "exploitNearB": "0/1",
+      "random": "0/41"
+    },
+    {
+      "rule": "sAB>=p95 sDC>=p99 off>=0.35",
+      "canonical": "50/13",
+      "dealtPair": "0/0",
+      "dealtAny": "0/41",
+      "exploitSynonym": "0/2",
+      "exploitNearB": "0/1",
+      "random": "0/41"
+    },
+    {
+      "rule": "sAB>=p99 sDC>=p95 off>=0.2",
+      "canonical": "70/7",
+      "dealtPair": "1/0",
+      "dealtAny": "0/37",
+      "exploitSynonym": "4/1",
+      "exploitNearB": "0/0",
+      "random": "0/35"
+    },
+    {
+      "rule": "sAB>=p99 sDC>=p95 off>=0.25",
+      "canonical": "70/7",
+      "dealtPair": "0/0",
+      "dealtAny": "0/37",
+      "exploitSynonym": "1/1",
+      "exploitNearB": "0/0",
+      "random": "0/35"
+    },
+    {
+      "rule": "sAB>=p99 sDC>=p95 off>=0.3",
+      "canonical": "63/7",
+      "dealtPair": "0/0",
+      "dealtAny": "0/37",
+      "exploitSynonym": "0/1",
+      "exploitNearB": "0/0",
+      "random": "0/35"
+    },
+    {
+      "rule": "sAB>=p99 sDC>=p95 off>=0.35",
+      "canonical": "53/7",
+      "dealtPair": "0/0",
+      "dealtAny": "0/37",
+      "exploitSynonym": "0/1",
+      "exploitNearB": "0/0",
+      "random": "0/35"
+    },
+    {
+      "rule": "sAB>=p99 sDC>=p99 off>=0.2",
+      "canonical": "67/13",
+      "dealtPair": "1/0",
+      "dealtAny": "0/41",
+      "exploitSynonym": "3/2",
+      "exploitNearB": "0/1",
+      "random": "0/41"
+    },
+    {
+      "rule": "sAB>=p99 sDC>=p99 off>=0.25",
+      "canonical": "67/13",
+      "dealtPair": "0/0",
+      "dealtAny": "0/41",
+      "exploitSynonym": "1/2",
+      "exploitNearB": "0/1",
+      "random": "0/41"
+    },
+    {
+      "rule": "sAB>=p99 sDC>=p99 off>=0.3",
+      "canonical": "60/13",
+      "dealtPair": "0/0",
+      "dealtAny": "0/41",
+      "exploitSynonym": "0/2",
+      "exploitNearB": "0/1",
+      "random": "0/41"
+    },
+    {
+      "rule": "sAB>=p99 sDC>=p99 off>=0.35",
+      "canonical": "50/13",
+      "dealtPair": "0/0",
+      "dealtAny": "0/41",
+      "exploitSynonym": "0/2",
+      "exploitNearB": "0/1",
+      "random": "0/41"
+    }
+  ],
+  "offsetDeciles": {
+    "canonical": [
+      0.09,
+      0.31,
+      0.39,
+      0.43,
+      0.54
+    ],
+    "dealtPair": [
+      -0.07,
+      -0.03,
+      0.02,
+      0.07,
+      0.14
+    ],
+    "dealtAny": [
+      -0.06,
+      0.03,
+      0.11,
+      0.4,
+      0.51
+    ],
+    "exploitSynonym": [
+      -0.05,
+      0.01,
+      0.06,
+      0.1,
+      0.14
+    ],
+    "exploitNearB": [
+      -0.19,
+      -0.13,
+      -0.06,
+      -0.02,
+      0.01
+    ],
+    "random": [
+      0,
+      0.04,
+      0.17,
+      0.34,
+      0.39
+    ]
+  },
+  "canonical": [
+    {
+      "question": "man : king :: woman",
+      "expected": "queen",
+      "answer": "queen",
+      "sim": 0.47,
+      "sDA": 0.02,
+      "sDB": 0.53,
+      "sDC": 0.22,
+      "offsetCos": 0.4,
+      "trivial": false,
+      "current": 47,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": 1
+    },
+    {
+      "question": "man : father :: woman",
+      "expected": "mother",
+      "answer": "mother",
+      "sim": 0.57,
+      "sDA": 0.01,
+      "sDB": 0.6,
+      "sDC": 0.36,
+      "offsetCos": 0.39,
+      "trivial": false,
+      "current": 57,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": 1
+    },
+    {
+      "question": "boy : girl :: brother",
+      "expected": "sister",
+      "answer": "sister",
+      "sim": 0.46,
+      "sDA": 0.23,
+      "sDB": 0.34,
+      "sDC": 0.46,
+      "offsetCos": 0.33,
+      "trivial": false,
+      "current": 46,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 1
+    },
+    {
+      "question": "husband : wife :: uncle",
+      "expected": "aunt",
+      "answer": "aunt",
+      "sim": 0.71,
+      "sDA": 0.17,
+      "sDB": 0.34,
+      "sDC": 0.62,
+      "offsetCos": 0.47,
+      "trivial": false,
+      "current": 71,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 1
+    },
+    {
+      "question": "prince : princess :: actor",
+      "expected": "actress",
+      "answer": "actress",
+      "sim": 0.61,
+      "sDA": 0.07,
+      "sDB": 0.23,
+      "sDC": 0.63,
+      "offsetCos": 0.31,
+      "trivial": true,
+      "current": 61,
+      "literal": 1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "son : daughter :: nephew",
+      "expected": "niece",
+      "answer": "granddaughter",
+      "sim": 0.6,
+      "sDA": 0.15,
+      "sDB": 0.62,
+      "sDC": 0.44,
+      "offsetCos": 0.35,
+      "trivial": false,
+      "current": 60,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": 1
+    },
+    {
+      "question": "france : paris :: japan",
+      "expected": "tokyo",
+      "answer": "tokyo",
+      "sim": 0.82,
+      "sDA": 0.12,
+      "sDB": 0.36,
+      "sDC": 0.72,
+      "offsetCos": 0.63,
+      "trivial": true,
+      "current": 82,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "france : paris :: italy",
+      "expected": "rome",
+      "answer": "florence",
+      "sim": 0.65,
+      "sDA": 0.19,
+      "sDB": 0.35,
+      "sDC": 0.57,
+      "offsetCos": 0.5,
+      "trivial": false,
+      "current": 65,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 1
+    },
+    {
+      "question": "germany : berlin :: spain",
+      "expected": "madrid",
+      "answer": "seville",
+      "sim": 0.58,
+      "sDA": 0.21,
+      "sDB": 0.33,
+      "sDC": 0.53,
+      "offsetCos": 0.43,
+      "trivial": false,
+      "current": 58,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 1
+    },
+    {
+      "question": "russia : moscow :: england",
+      "expected": "london",
+      "answer": "london",
+      "sim": 0.62,
+      "sDA": 0.29,
+      "sDB": 0.36,
+      "sDC": 0.5,
+      "offsetCos": 0.55,
+      "trivial": false,
+      "current": 62,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 1
+    },
+    {
+      "question": "good : better :: bad",
+      "expected": "worse",
+      "answer": "worse",
+      "sim": 0.59,
+      "sDA": 0.23,
+      "sDB": 0.6,
+      "sDC": 0.47,
+      "offsetCos": 0.44,
+      "trivial": false,
+      "current": 59,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": 1
+    },
+    {
+      "question": "big : bigger :: small",
+      "expected": "smaller",
+      "answer": "smaller",
+      "sim": 0.84,
+      "sDA": 0.41,
+      "sDB": 0.76,
+      "sDC": 0.8,
+      "offsetCos": 0.47,
+      "trivial": false,
+      "current": 84,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 1
+    },
+    {
+      "question": "fast : faster :: slow",
+      "expected": "slower",
+      "answer": "slower",
+      "sim": 0.73,
+      "sDA": 0.59,
+      "sDB": 0.8,
+      "sDC": 0.68,
+      "offsetCos": 0.42,
+      "trivial": false,
+      "current": 73,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": 1
+    },
+    {
+      "question": "hot : cold :: summer",
+      "expected": "winter",
+      "answer": "winter",
+      "sim": 0.57,
+      "sDA": 0.11,
+      "sDB": 0.54,
+      "sDC": 0.43,
+      "offsetCos": 0.37,
+      "trivial": false,
+      "current": 57,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": 1
+    },
+    {
+      "question": "day : night :: sun",
+      "expected": "moon",
+      "answer": "solar",
+      "sim": 0.49,
+      "sDA": 0.08,
+      "sDB": 0.13,
+      "sDC": 0.72,
+      "offsetCos": -0.04,
+      "trivial": true,
+      "current": 49,
+      "literal": 1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "dog : puppy :: cat",
+      "expected": "kitten",
+      "answer": "kitten",
+      "sim": 0.74,
+      "sDA": 0.27,
+      "sDB": 0.41,
+      "sDC": 0.67,
+      "offsetCos": 0.54,
+      "trivial": false,
+      "current": 74,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 1
+    },
+    {
+      "question": "cow : calf :: sheep",
+      "expected": "lamb",
+      "answer": "calves",
+      "sim": 0.58,
+      "sDA": 0.45,
+      "sDB": 0.86,
+      "sDC": 0.38,
+      "offsetCos": 0.42,
+      "trivial": false,
+      "current": 58,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": -1
+    },
+    {
+      "question": "horse : foal :: cow",
+      "expected": "calf",
+      "answer": "fowl",
+      "sim": 0.44,
+      "sDA": 0.24,
+      "sDB": 0.63,
+      "sDC": 0.21,
+      "offsetCos": 0.42,
+      "trivial": false,
+      "current": 44,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": -1
+    },
+    {
+      "question": "finger : hand :: toe",
+      "expected": "foot",
+      "answer": "foot",
+      "sim": 0.54,
+      "sDA": 0.36,
+      "sDB": 0.31,
+      "sDC": 0.68,
+      "offsetCos": 0.28,
+      "trivial": true,
+      "current": 54,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "doctor : hospital :: teacher",
+      "expected": "school",
+      "answer": "classroom",
+      "sim": 0.57,
+      "sDA": 0.03,
+      "sDB": 0.21,
+      "sDC": 0.57,
+      "offsetCos": 0.4,
+      "trivial": false,
+      "current": 57,
+      "literal": 1,
+      "nearest": 1,
+      "transfer": 1
+    },
+    {
+      "question": "chef : kitchen :: pilot",
+      "expected": "cockpit",
+      "answer": "aviation",
+      "sim": 0.56,
+      "sDA": 0.06,
+      "sDB": 0.05,
+      "sDC": 0.66,
+      "offsetCos": 0.35,
+      "trivial": true,
+      "current": 56,
+      "literal": 1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "pen : write :: knife",
+      "expected": "cut",
+      "answer": "knives",
+      "sim": 0.54,
+      "sDA": 0.15,
+      "sDB": 0.07,
+      "sDC": 0.82,
+      "offsetCos": 0.06,
+      "trivial": true,
+      "current": 54,
+      "literal": 1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "bird : fly :: fish",
+      "expected": "swim",
+      "answer": "flew",
+      "sim": 0.43,
+      "sDA": 0.24,
+      "sDB": 0.77,
+      "sDC": 0.09,
+      "offsetCos": 0.41,
+      "trivial": false,
+      "current": 43,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": -1
+    },
+    {
+      "question": "eye : see :: ear",
+      "expected": "hear",
+      "answer": "hearing",
+      "sim": 0.41,
+      "sDA": 0.09,
+      "sDB": 0.07,
+      "sDC": 0.65,
+      "offsetCos": 0.19,
+      "trivial": true,
+      "current": 41,
+      "literal": 1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "banana : yellow :: apple",
+      "expected": "red",
+      "answer": "colored",
+      "sim": 0.33,
+      "sDA": 0.15,
+      "sDB": 0.58,
+      "sDC": 0.05,
+      "offsetCos": 0.39,
+      "trivial": false,
+      "current": 33,
+      "literal": -1,
+      "nearest": -1,
+      "transfer": -1
+    },
+    {
+      "question": "water : drink :: food",
+      "expected": "eat",
+      "answer": "eat",
+      "sim": 0.58,
+      "sDA": 0.21,
+      "sDB": 0.36,
+      "sDC": 0.66,
+      "offsetCos": 0.26,
+      "trivial": false,
+      "current": 58,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 1
+    },
+    {
+      "question": "walk : walked :: run",
+      "expected": "ran",
+      "answer": "ran",
+      "sim": 0.79,
+      "sDA": 0.13,
+      "sDB": 0.22,
+      "sDC": 0.78,
+      "offsetCos": 0.37,
+      "trivial": true,
+      "current": 79,
+      "literal": 1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "japan : japanese :: france",
+      "expected": "french",
+      "answer": "french",
+      "sim": 0.85,
+      "sDA": 0.09,
+      "sDB": 0.3,
+      "sDC": 0.68,
+      "offsetCos": 0.76,
+      "trivial": true,
+      "current": 85,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "car : road :: train",
+      "expected": "track",
+      "answer": "railway",
+      "sim": 0.6,
+      "sDA": 0.14,
+      "sDB": 0.32,
+      "sDC": 0.75,
+      "offsetCos": 0.15,
+      "trivial": true,
+      "current": 60,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 0
+    },
+    {
+      "question": "winter : snow :: summer",
+      "expected": "sun",
+      "answer": "spring",
+      "sim": 0.46,
+      "sDA": 0.48,
+      "sDB": 0.35,
+      "sDC": 0.63,
+      "offsetCos": 0.09,
+      "trivial": true,
+      "current": 46,
+      "literal": -1,
+      "nearest": 1,
+      "transfer": 0
+    }
+  ],
+  "examples": {
+    "exploitSynonym": [
+      "range : ranging :: jew -> judaism (current 54, literal 1, nearest 1, transfer 0)",
+      "cast : actor :: turning -> turned (current 49, literal 1, nearest 1, transfer 0)",
+      "language : english :: arse -> oxford (current 36, literal -1, nearest -1, transfer 0)",
+      "refused : refusal :: existence -> existential (current 54, literal 1, nearest 1, transfer 0)",
+      "bomb : blast :: come -> coming (current 49, literal 1, nearest 1, transfer 0)",
+      "file : document :: bike -> bicycle (current 65, literal 1, nearest 1, transfer 0)"
+    ],
+    "exploitNearB": [
+      "chatter : sticking :: adhere -> adhesive (current 52, literal -1, nearest 1, transfer 0)",
+      "event : fifty :: sixty -> forty (current 61, literal -1, nearest -1, transfer 0)",
+      "clan : operating :: operated -> operational (current 51, literal -1, nearest -1, transfer 0)",
+      "threatening : divine :: golden -> gilded (current 42, literal -1, nearest 1, transfer 0)",
+      "exercise : maggie :: tabitha -> matilda (current 46, literal -1, nearest -1, transfer 0)",
+      "live : testimony :: testify -> witness (current 69, literal -1, nearest 1, transfer 0)"
+    ],
+    "dealtPair": [
+      "lily : lilly :: particular -> specific (current 52, literal 1, nearest 1, transfer 0)",
+      "skull : forehead :: agent -> agency (current 48, literal 1, nearest 1, transfer 0)",
+      "smile : smiling :: skull -> head (current 49, literal 1, nearest 1, transfer 0)",
+      "agent : agency :: specific -> particular (current 47, literal 1, nearest 1, transfer 0)",
+      "lilly : lily :: agency -> agent (current 53, literal 1, nearest 1, transfer 0)",
+      "lily : lilly :: particular -> specific (current 52, literal 1, nearest 1, transfer 0)"
+    ],
+    "random": [
+      "catholic : unable :: grunting -> error (current 38, literal -1, nearest -1, transfer -1)",
+      "humanity : broken :: psycho -> shattered (current 40, literal -1, nearest -1, transfer 1)",
+      "routine : bored :: posted -> posting (current 46, literal 1, nearest 1, transfer 0)",
+      "halloween : tour :: religious -> trip (current 39, literal -1, nearest -1, transfer 1)",
+      "entertainment : raining :: grateful -> rained (current 53, literal -1, nearest -1, transfer 1)",
+      "reception : monkey :: open -> gorilla (current 39, literal -1, nearest -1, transfer 1)"
+    ]
+  }
+}

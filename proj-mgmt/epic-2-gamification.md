@@ -88,7 +88,7 @@ Turn the physics prototype into an engaging, addictive educational game. Players
 * [ ] **Task 2.7.5** (stretch): voice commands for analogies and focus.
 * **Exit criteria**: spoken single words from the vocabulary appear on the board within 1.5 s (Web Speech) or 3 s (local) with ≥ 90% word accuracy on the test script; the microphone is released when the toggle is off (browser indicator gone); profanity policy applies identically to voice and typing; works in 2D and 3D.
 
-### Feature 2.8: Text & Website Import (roadmap · idea 2026-09-24)
+### Feature 2.8: Text & Website Import (paste MVP shipped 2026-09-24 · website import roadmap)
 * **Description**: Today a player can only type one word at a time. The input will also accept a pasted block of text (a paragraph, an article, lyrics), and its most meaningful words land on the board, so a whole text becomes a map of its ideas. Importing a website by URL comes later, through the backend (Epic 3 · Story 3.2.3).
 * **Design sketch**
   * **One input, three behaviours**: a single word keeps today's path (`submitPlayerWord`: embed, add to the corpus, spawn with focus); an expression with `+`/`−` plays an analogy (Feature 2.9); multi-line or long input switches to import (the field grows into a text area and the button reads "Import").
@@ -98,13 +98,14 @@ Turn the physics prototype into an engaging, addictive educational game. Players
   * **Modes**: sandbox only; a timed round keeps its dealt supply.
   * **Provenance**: record each import (source "paste" or URL, title, time, chosen words) in IndexedDB, sync-ready like other records, so a board can say where its words came from. This later feeds saved views (Epic 5 · Feature 5.9).
   * **Website import (needs the backend)**: paste a URL → `POST /api/import/url` (Epic 3 · Story 3.2.3) returns readable text → the same preview and spawn path. Until the backend exists, the URL option is hidden or says it needs the server.
-* [ ] **Task 2.8.1**: Pure `extractKeywords(text, { vocabRank, stopwords, profanity, max })` with unit tests (tokenizing, stopwords, inflection merge, ranking, profanity, cap); shared with voice input.
-* [ ] **Task 2.8.2** (MVP): The dashboard input accepts pasted blocks; keyword preview chips; confirm → staggered spawn with focus; works in 2D and 3D.
+* [x] **Task 2.8.1**: Pure `extractKeywords` (`src/game/keywords.ts`) with unit tests: tokenizing, stopwords, possessives and contractions, plural folding (including leaves → leaf), unknown words kept only when repeated, ranking by count × log(rank), profanity. Stopwords moved to `data/vocab/stopwords.txt`, shared with `scripts/build-vocab.mjs` (same 162 words). Inflections are merged by plural folding only: `sharesStem` merges unrelated words (car/care), so it is not used here.
+* [x] **Task 2.8.2** (MVP): `WordEntryForm` (textarea: Enter submits, Shift+Enter adds a new line, Esc clears) shows keyword chips (click to remove, "+ more" adds 6, "clear"); "Drop N" runs `importKeywords`, which embeds new words (✦) into the player corpus and spawns the set in order, with the last request carrying `focusGroup`, so the whole set is focused together in 2D and 3D.
 * [ ] **Task 2.8.3**: Import provenance store (IndexedDB migration) and a "from: <source>" note on the board.
 * [ ] **Task 2.8.4**: URL import client, once Story 3.2.3 ships.
+* **Result (2026-09-24)** ✅ Built vocabulary: ≥ 8 of 12 on-topic keywords on the science, sports, and cooking samples (`tests/keywords.test.ts`); keyword preview for a 500-word text in 0.2 ms in the app. Browser: 18 of 18 chosen science keywords landed in 3D ("photosynthesis" was new and joined the corpus), and the camera centred 35 units from the set; in 2D, all 12 sports keywords pulsed together. Single-word entry unchanged. Only the paste path works for now; no URL import (Story 3.2.3).
 * **Exit criteria (MVP)**: pasting a ~500-word article shows a preview in < 300 ms, with ≥ 8 of 12 keywords judged on-topic on three sample texts (science, sports, cooking); confirming spawns them in 2D and 3D with focus; single-word entry works exactly as before; the profanity policy applies to pasted text.
 
-### Feature 2.9: Analogy Expressions with + and − (roadmap · idea 2026-09-24)
+### Feature 2.9: Analogy Expressions with + and − (shipped 2026-09-24)
 * **Description**: Type the arithmetic directly: `king - man + woman` plays the analogy "man is to king as woman is to ?" and the answer lands on the board. The operators make the embedding math visible, which is the point of the game. Today an analogy needs three clicks in the right order.
 * **Design sketch**
   * **Grammar**: `term (('+' | '-') term)*`, where a term is a word; `−`, `–`, and `-` all count as minus. A minus needs spaces around it, so hyphenated words ("well-known") stay single terms. `a : b :: c : ?` and "a is to b as c is to" are accepted as the same analogy.
@@ -115,10 +116,11 @@ Turn the physics prototype into an engaging, addictive educational game. Players
   * **Timed game**: operands must be dealt words on the board (typing replaces clicking); no free spawning of operands.
   * **Visual (ties to Task 5.5.4)**: draw the offset as arrows (a → b copied onto c → answer) in 3D, and as a dashed parallelogram in 2D.
   * **Voice**: voice commands (Task 2.7.5) reuse the same parser: "king minus man plus woman".
-* [ ] **Task 2.9.1**: Pure parser `parseExpression(input)` → terms with signs, or a single word, or an error with position; unit tests (unicode minus, hyphenated words, `a : b :: c`, empty terms, trailing operators).
-* [ ] **Task 2.9.2**: `semanticEngine.evaluateExpression(terms)`: three-term analogies route to `playAnalogy`; general sums return nearest words with the stem/inflection exclusion.
-* [ ] **Task 2.9.3**: Dashboard input: detect expressions, live preview chips and answer, Enter plays; timed-game operand rule; help tooltip with examples.
+* [x] **Task 2.9.1**: Pure parser `parseEntry(input)` in `src/game/wordEntry.ts` (was planned as `parseExpression`) → terms with signs, or a single word, or an error with position; unit tests (unicode minus, hyphenated words, `a : b :: c`, empty terms, trailing operators).
+* [x] **Task 2.9.2**: `semanticEngine.evaluateExpression(terms)` (no recording, for preview and submit): three-term analogies use `solveAnalogy`, and `playExpression` then calls `playAnalogy` (same points, collection, and board list); general sums use `solveExpression` (`src/embeddings/analogy.ts`) with stem exclusion; words new to the corpus are embedded on Play.
+* [~] **Task 2.9.3**: Dashboard input: expression detection, live preview (terms as chips, answer, and the analogy it spells), Enter plays, tooltip with examples ✅. The timed-game operand rule is in `playExpression`, but the word box is still hidden in timed rounds ⬜ (show a typing-only box there).
 * [ ] **Task 2.9.4**: Offset arrows in 2D and 3D (with Task 5.5.4).
+* **Result (2026-09-24)** ✅ Browser, 3D: `king - man + woman` previews "= queen 0.47" and plays man : king :: woman → queen (the same as clicking): all four words land, one board-list entry is added, and the camera centres 8 units from the four. `ocean + desert` ≈ beach 0.67 (then sea, gulf, aquatic). 2D: `paris - france + italy` = florence (+90), and all four pulse. Preview in ~6 ms. `tests/wordEntry.test.ts`, `tests/expression.test.ts` (a three-term sum matches the analogy solver on the built vocabulary).
 * **Exit criteria**: `king - man + woman` returns the same answer, points, and list entry as clicking man → king → woman; preview updates within 100 ms of typing; hyphenated words are never split; works in 2D and 3D.
 
 ### Feature 2.10: Connect-All Puzzles (roadmap · idea 2026-09-24)
@@ -142,3 +144,22 @@ Turn the physics prototype into an engaging, addictive educational game. Players
 * [ ] **Task 2.10.4**: Generator: templates, permutation by similarity band, deterministic seeds, par/difficulty filter.
 * [ ] **Task 2.10.5**: Puzzle mode UI: HUD ratio, loose-word highlighting (2D and 3D), move counter vs par, win state, next puzzle; results persisted like timed games.
 * **Exit criteria**: every generated puzzle is solvable within par by the solver; in the harness no strategy beats the others by more than 20% on moves-over-par across 200 puzzles; three difficulty bands with ≥ 50 puzzles each; play-test: the user finds a puzzle fun, not just solvable.
+
+### Feature 2.11: Relation Scoring for the Timed Game (roadmap · idea 2026-09-24 · research complete)
+* **Description**: In the scoring version of the game, an analogy earns points only when the answer really completes it, meaning it **connects to the third word**, and loses points when the answer falls back onto the first or second word. Driven by [docs/research/analogy-scoring.md](../docs/research/analogy-scoring.md).
+* **Key findings (gamed out with simulated plays)**:
+  * The rule as first stated is inverted: it penalizes 77% of known-good analogies (a correct answer is naturally close to *b*: queen–king 0.53 vs queen–woman 0.22), and rewards 95% of a synonym-pair exploit and 97% of ordinary dealt-board plays, most of which transfer nothing (the answer is just *c*'s nearest word).
+  * Today's similarity-based points barely separate real analogies (59) from random words (42).
+  * A guarded rule keeps the core idea and cannot be gamed by either exploit: 70% of real analogies rewarded, ≤ 1% of exploit plays.
+* **Proposed rule**
+  * **Reward**: *a, b* related (≥ p99) **and** *d* connects to *c* (≥ p95) **and** the relation carries over (cos(b − a, d − c) ≥ 0.25). Points scale with the offset cosine.
+  * **Penalty** (small, explained): *d* connects to *a* or *b* but not to *c*: "the answer fell back onto your first pair".
+  * **Otherwise**: no points, with a hint.
+  * The sandbox shows the verdict as a learning hint, without scoring.
+* **Dealing must change**: dealt boards hold almost no analogies (0% of typical plays qualify), so the timed game should deal **analogy quads**: two pairs sharing a relation, mined offline (both pairs linked, offset cosine ≥ 0.35).
+* [ ] **Task 2.11.1**: Pure `relationVerdict(a, b, c, d, vectors, calibration)` → reward/penalty/none plus the reasons (sAB, sDC, offset), with unit tests on the canonical set.
+* [ ] **Task 2.11.2**: Held-out validation before shipping: a vocabulary-filtered subset of the Google analogy set / BATS; re-tune the thresholds if canonical reward drops below 60% or any exploit reward rises above 5%.
+* [ ] **Task 2.11.3**: Analogy-quad miner and dealer mode for timed rounds (shared with the Connect-All generator, Feature 2.10).
+* [ ] **Task 2.11.4**: HUD verdict: ✓ relation carried over / ✗ fell back onto the first pair / – no relation, with the three similarities; points scaled by the offset cosine; a small, explained penalty.
+* [ ] **Task 2.11.5**: Log real plays (question, answer, similarities, offset, verdict) so the analysis can be re-run on actual games.
+* **Exit criteria**: on the held-out set, ≥ 60% of real analogies rewarded and ≤ 5% penalized; every simulated exploit strategy ≤ 5% reward; every dealt timed round contains ≥ 2 rewardable analogies; play-test: penalties feel fair.
