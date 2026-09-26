@@ -46,7 +46,7 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - In 384-d embedding space unrelated words are all ~sqrt(2) apart: raw distances make layouts a sphere. Use board-relative targets (see `docs/research/embedding-shape.md`).
 - Keep Playwright at one worker: parallel pages (three.js, 8 MB vocabulary, per-frame physics) time out on navigation against the dev server.
 - Game out scoring rules before building them: simulate populations (known-good plays, typical plays, exploit strategies, nonsense) and check that no strategy beats real play (see `docs/research/analogy-scoring.md`).
-- Run unit tests with `yarn test:unit`, not bare `vitest run`: bare vitest also picks up the Playwright spec `tests/gameplay.spec.ts` and reports a failed suite.
+- Test excludes live in `vite.config.ts` (`test.exclude`), never as CLI globs in package.json scripts: on Linux CI, `sh` expanded an unquoted `--exclude **/*.spec.ts` into file names and Vitest ran a Playwright spec (the first CI run failed that way; it passed on Windows).
 - Browser checks in 3D: labels move while the camera eases, so read `wordBoxes()` right before each click, hover first (`mouse.move`, short wait), then `mouse.down`/`up`; confirm with `stores.menuStore.selectedWordTexts` instead of assuming the click landed.
 - Editing source during a browser check can make Vite fully reload the page (fresh random board, profile dimension restored): re-check the board state (`wordTexts()`) before measuring after any edit.
 - 3D camera scale: with `setViewOffset` at full frame size, one world unit is one pixel at `pixelMatchedDistance(fullHeight, FOV)`; use the full height, not the area below the dashboard.

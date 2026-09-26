@@ -70,7 +70,7 @@
     "build:e2e": "vite build --mode e2e --outDir dist-e2e",
     "preview:e2e": "vite preview --outDir dist-e2e --port 3000 --strictPort",
     "test:e2e": "playwright test",
-    "test:unit": "vitest run --exclude **/*.spec.ts --exclude src/App.test.tsx",
+    "test:unit": "vitest run",
     "research:cross-dim": "vitest run --config docs/research/experiments/vitest.research.config.ts"
   },
   "resolutions": {

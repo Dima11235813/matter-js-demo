@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
@@ -27,6 +27,11 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:8787',
     },
+  },
+  test: {
+    // Playwright specs (*.spec.ts) and the legacy CRA test are not Vitest tests. Kept here rather than as
+    // CLI globs: an unquoted --exclude glob is expanded by sh on Linux CI (and a spec ran as a unit test).
+    exclude: [...configDefaults.exclude, '**/*.spec.ts', 'src/App.test.tsx'],
   },
   resolve: {
     alias: {
