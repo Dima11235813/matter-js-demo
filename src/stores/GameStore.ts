@@ -3,6 +3,7 @@ import { CommonStore } from './CommonStore';
 import { RootStore } from './RootStore';
 import { defaultTimedRules, remainingMs, TimedGameRules, TimedGameState } from '../game/timedGame';
 import { Layout3d, loadLayout3d } from '../physics/layoutPresets';
+import { RelationDeal } from '../game/relationPairs';
 
 /**
  * UI state for the embedding modes: the hint-mode flag (shared by sandbox and timed game) and
@@ -18,6 +19,8 @@ export class GameStore extends CommonStore {
     bestScore = 0
     lastRoundWasBest = false
     lastRoundPoints: { points: number, duplicate: boolean } | null = null
+    /** The round's dealt relation pairs (designed questions); grows as reward pairs are dealt. */
+    relationDeal: RelationDeal | null = null
     readonly rules: TimedGameRules = defaultTimedRules
 
     constructor(store: RootStore) {
@@ -40,6 +43,8 @@ export class GameStore extends CommonStore {
             setNow: action,
             setBestScore: action,
             setLastRoundPoints: action,
+            relationDeal: observable.ref,
+            setRelationDeal: action,
         })
     }
 
@@ -77,5 +82,8 @@ export class GameStore extends CommonStore {
     }
     setLastRoundPoints = (value: { points: number, duplicate: boolean } | null) => {
         this.lastRoundPoints = value
+    }
+    setRelationDeal = (deal: RelationDeal | null) => {
+        this.relationDeal = deal
     }
 }

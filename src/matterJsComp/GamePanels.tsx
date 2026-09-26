@@ -4,6 +4,7 @@ import { GameStore } from "../stores/GameStore";
 import { RootStore } from "../stores/RootStore";
 import { nextRewardAt } from "../game/timedGame";
 import { startTimedRound } from "../services/timedGameController";
+import { categoryLabel } from "../game/relationPairs";
 import { toggleDimension, toggleHintMode, toggleLayout3d } from "../services/playground";
 import styles from "./AnalogyDashboard.module.scss";
 
@@ -87,6 +88,11 @@ export const GameHud = observer(({ gameStore }: { gameStore: GameStore }) => {
       </div>
       <div className={styles.HudRow}>
         <span className={styles.Clock}>{formatClock(remainingMs)}</span>
+        {gameStore.relationDeal && (
+          <span data-testid="round-relation" title="Three dealt pairs share this relation: a → b with c → ? completes a pair for 100 points">
+            relation: <strong>{categoryLabel(gameStore.relationDeal.category)}</strong>
+          </span>
+        )}
         <span>{countLabel(game.analogies, "analogy", "analogies")} · {countLabel(game.dealt, "word", "words")} dealt</span>
         <span>{nextAt !== undefined ? `+${rules.wordsPerReward} words at ${nextAt} pts` : "no more words this round"}</span>
         <span>best {bestScore}</span>

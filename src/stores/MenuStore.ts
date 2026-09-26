@@ -15,6 +15,9 @@ export function isWordView(view: AppView): boolean {
     return view === "fountain" || view === "game"
 }
 
+import type { RelationHint } from "../game/relationHint"
+import type { PlayVerdict } from "../game/relationPairs"
+
 export interface LastPlay {
     a: string
     b: string
@@ -24,6 +27,12 @@ export interface LastPlay {
     points: number
     isNewQuestion: boolean
     alternatives: Neighbor[]
+    /** Learning hint: did the relation a → b carry over to c → answer? (both modes) */
+    hint?: RelationHint
+    /** Timed rounds: how the play scored against the dealt relation pairs. */
+    verdict?: PlayVerdict
+    /** Timed rounds: the solver's first choice when a dealt word from its top 3 was taken instead. */
+    modelAnswer?: string
 }
 
 /** An analogy played on the current board (newest first in `boardAnalogies`). */

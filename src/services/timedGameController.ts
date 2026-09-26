@@ -1,6 +1,7 @@
 import deps from "../matterJsComp/Deps";
 import { AnalogyResult } from "../embeddings/analogy";
 import { applyPlay, PlayOutcome, startGame, tick, TIMED_RULES_VERSION, TimedGameState } from "../game/timedGame";
+import { DesignedScore, scoreDesignedPlay } from "../game/relationPairs";
 import { analogyKey } from "../persistence/LexicalRepository";
 import { RootStore } from "../stores/RootStore";
 import { logger } from "../utils/logger";
@@ -27,20 +28,36 @@ export function startTimedRound(stores: RootStore): void {
     const now = Date.now();
     gameStore.setNow(now);
     gameStore.setGame(startGame(now, gameStore.rules));
-    queueWords(semanticEngine.dealWords(gameStore.rules.initialWords, []));
+    // Designed questions: 3 pairs share the round's relation, 2 more come from another relation.
+    const deal = semanticEngine.dealRelationPairs({ mainPairs: 3, otherPairs: 2 });
+    gameStore.setRelationDeal(deal);
+    queueWords(deal.words);
     timer = setInterval(() => tickRound(stores), TICK_MS);
 }
 
-/** Scores a played analogy for the running round and deals reward words when earned. */
-export function recordRoundAnalogy(stores: RootStore, result: AnalogyResult): PlayOutcome | undefined {
+/**
+ * Scores a played analogy against the round's dealt relation pairs (designed questions) and deals
+ * reward pairs of the round's relation when earned. `answer` is the word the play lands on.
+ */
+export function recordRoundAnalogy(stores: RootStore, result: AnalogyResult): (PlayOutcome & DesignedScore) | undefined {
     const { gameStore } = stores;
-    if (!gameStore.game) return undefined;
-    const outcome = applyPlay(gameStore.game, analogyKey(result.a, result.b, result.c), result.similarity, Date.now(), gameStore.rules);
+    const deal = gameStore.relationDeal;
+    if (!gameStore.game || !deal) return undefined;
+    const { a, b, c } = result;
+    const ranked = [result.answer, ...result.alternatives.map(n => n.word)];
+    const stats = semanticEngine.relationStats(a, b, c, result.answer);
+    const { p95, p99 } = semanticEngine.calibration;
+    const scored = scoreDesignedPlay(deal.pairs, a, b, c, ranked, stats ?? { dc: 1, da: 0, db: 0 }, { link: p99, near: p95 });
+    const outcome = applyPlay(gameStore.game, analogyKey(a, b, c), scored.points, Date.now(), gameStore.rules);
     gameStore.setGame(outcome.state);
     gameStore.setLastRoundPoints({ points: outcome.points, duplicate: outcome.duplicate });
-    if (outcome.wordsToDeal > 0) queueWords(semanticEngine.dealWords(outcome.wordsToDeal, wordsInPlay()));
+    if (outcome.wordsToDeal > 0) {
+        const reward = semanticEngine.dealRelationPairs({ mainPairs: Math.ceil(outcome.wordsToDeal / 2), otherPairs: 0, category: deal.category, inPlay: wordsInPlay() });
+        gameStore.setRelationDeal({ ...deal, pairs: [...deal.pairs, ...reward.pairs], words: [...deal.words, ...reward.words] });
+        queueWords(reward.words);
+    }
     if (outcome.state.phase === "over") void finishRound(stores, outcome.state);
-    return outcome;
+    return { ...outcome, ...scored, points: outcome.points };
 }
 
 export function isRoundRunning(stores: RootStore): boolean {

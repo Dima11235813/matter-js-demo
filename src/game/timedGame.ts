@@ -14,7 +14,8 @@ export interface TimedGameRules {
     maxDealtWords: number;
 }
 
-export const TIMED_RULES_VERSION = 1;
+/** 2: designed questions (dealt relation pairs, full/penalty points), 2026-09-25. */
+export const TIMED_RULES_VERSION = 2;
 
 export const defaultTimedRules: TimedGameRules = {
     durationMs: 120_000,
@@ -44,7 +45,10 @@ export interface PlayOutcome {
     wordsToDeal: number;
 }
 
-/** Points for one analogy: cosine of the answer to the target, as a percentage, minimum 10. */
+/**
+ * Lifetime (sandbox) points for one analogy: cosine of the answer to the target, as a percentage,
+ * minimum 10. Timed rounds score designed plays instead (game/relationPairs.ts).
+ */
 export function analogyPoints(similarity: number): number {
     return Math.max(10, Math.round(similarity * 100));
 }
@@ -75,11 +79,14 @@ export function nextRewardAt(state: TimedGameState, rules: TimedGameRules = defa
     return (state.rewardsGranted + 1) * rules.rewardEveryPoints;
 }
 
-/** Scores a played analogy. Repeating a question within a round scores nothing. */
+/**
+ * Applies a scored play (points from `scoreDesignedPlay`; may be negative). Repeating a question
+ * within a round scores nothing; the round score never drops below zero.
+ */
 export function applyPlay(
     state: TimedGameState,
     questionKey: string,
-    similarity: number,
+    playPoints: number,
     now: number,
     rules: TimedGameRules = defaultTimedRules
 ): PlayOutcome {
@@ -87,8 +94,8 @@ export function applyPlay(
     if (live.phase !== "running") return { state: live, points: 0, duplicate: false, wordsToDeal: 0 };
     if (live.playedQuestions.includes(questionKey)) return { state: live, points: 0, duplicate: true, wordsToDeal: 0 };
 
-    const points = analogyPoints(similarity);
-    const score = live.score + points;
+    const score = Math.max(0, live.score + playPoints);
+    const points = score - live.score;
     const milestones = Math.floor(score / rules.rewardEveryPoints);
     const newRewards = Math.max(0, milestones - live.rewardsGranted);
     const wordsToDeal = Math.min(newRewards * rules.wordsPerReward, rules.maxDealtWords - live.dealt);

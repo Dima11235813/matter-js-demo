@@ -9,6 +9,7 @@ import { saveLayout3d } from "../physics/layoutPresets";
 import { handoffQueue } from "../space/handoff";
 import { expressionAsAnalogy, ExpressionTerm, formatExpression } from "../game/wordEntry";
 import { Keyword } from "../game/keywords";
+import { relationHint } from "../game/relationHint";
 
 /**
  * Use cases that connect the semantic engine, the MobX stores, and the physics world.
@@ -209,16 +210,29 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
     // In a timed round the round rules decide the points (repeats score 0); lifetime score still accrues.
     const round = menuStore.view === "game" ? recordRoundAnalogy(stores, result) : undefined;
     const points = round ? round.points : play.points;
+    // A dealt word in the solver's top 3 completes a designed play: the play lands on that word.
+    const answer = round?.answer ?? result.answer;
+    const stats = semanticEngine.relationStats(a, b, c, answer);
+    const { p90, p95, p99 } = semanticEngine.calibration;
+    const hint = stats ? relationHint(stats, { related: p90, near: p95, link: p99 }) : undefined;
     if (options.spawnOperands) {
         // Typed: the question words may not be on the board yet; focus all four together.
         [a, b, c].forEach(word => deps.pendingWordSpawns.push({ word }));
-        deps.pendingWordSpawns.push({ word: result.answer, focusGroup: [a, b, c, result.answer] });
+        deps.pendingWordSpawns.push({ word: answer, focusGroup: [a, b, c, answer] });
     } else {
-        deps.pendingWordSpawns.push({ word: result.answer, focus: true });
+        deps.pendingWordSpawns.push({ word: answer, focus: true });
     }
-    const lastPlay = { ...result, points, isNewQuestion: round ? !round.duplicate : isNewQuestion };
+    const lastPlay = {
+        ...result,
+        answer,
+        points,
+        isNewQuestion: round ? !round.duplicate : isNewQuestion,
+        hint,
+        verdict: round && !round.duplicate ? round.verdict : undefined,
+        modelAnswer: answer !== result.answer ? result.answer : undefined,
+    };
     menuStore.setLastPlay(lastPlay);
     menuStore.addBoardAnalogy(lastPlay);
-    menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${result.answer} (+${points} pts)`);
+    menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${answer} (${points >= 0 ? "+" : ""}${points} pts)`);
     await refreshStats(menuStore);
 }

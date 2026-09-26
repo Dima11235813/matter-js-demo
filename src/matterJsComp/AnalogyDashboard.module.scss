@@ -379,3 +379,30 @@
     cursor: default;
   }
 }
+
+.PointsNegative {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* Timed-round verdict and the relation hint under the last play. */
+.Verdict {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 2px 0 4px;
+}
+
+.VerdictGood {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.VerdictBad {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.Hint {
+  font-style: italic;
+}

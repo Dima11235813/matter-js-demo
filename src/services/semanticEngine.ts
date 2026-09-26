@@ -2,7 +2,7 @@ import { AnalogyResult, solveAnalogy, solveExpression } from "../embeddings/anal
 import { Calibration } from "../embeddings/calibration";
 import { LiveEncoder } from "../embeddings/liveEncoder";
 import { createProfanityPolicy, isProfanityFilterEnabled, parseWordList, ProfanityPolicy } from "../embeddings/profanity";
-import { centerAndNormalize, Vector } from "../embeddings/vectorMath";
+import { centerAndNormalize, dot, Vector } from "../embeddings/vectorMath";
 import { Neighbor, VectorIndex } from "../embeddings/VectorIndex";
 import { fetchVocabAsset, VocabManifest } from "../embeddings/vocabAsset";
 import { AnalogyRecord, GameRecord, openLexicalDb } from "../persistence/db";
@@ -12,6 +12,9 @@ import { analogyPoints } from "../game/timedGame";
 import { extractKeywords, KeywordResult } from "../game/keywords";
 import { expressionAsAnalogy, ExpressionTerm } from "../game/wordEntry";
 import stopwordsText from "../../data/vocab/stopwords.txt?raw";
+import relationPairsText from "../../data/vocab/relation-pairs.txt?raw";
+import { dealRelationPairs, DealRelationOptions, parseRelationBank, RelationBank, RelationDeal } from "../game/relationPairs";
+import { RelationStats } from "../game/relationHint";
 import { logger } from "../utils/logger";
 
 export type AddWordOutcome =
@@ -45,6 +48,7 @@ export type ExpressionOutcome =
 
 const WORD_PATTERN = /^[a-z]{2,24}$/;
 const STOPWORDS: ReadonlySet<string> = new Set(parseWordList(stopwordsText));
+const RELATION_BANK: RelationBank = parseRelationBank(relationPairsText);
 const NEW_QUESTION_BONUS = 25;
 
 interface Loaded {
@@ -195,6 +199,25 @@ export class SemanticEngine {
         }
         const neighbors = solveExpression(index, terms, policy.isAllowed);
         return neighbors && neighbors.length > 0 ? { kind: "sum", neighbors } : { kind: "none" };
+    }
+
+    /** Relation pairs for a timed round (designed questions); only words the index knows and allows. */
+    dealRelationPairs(options: Omit<DealRelationOptions, "allow">): RelationDeal {
+        const { index, policy } = this.require();
+        return dealRelationPairs(RELATION_BANK, { ...options, allow: w => index.has(w) && policy.isAllowed(w) });
+    }
+
+    /** Similarities behind the relation hint and designed-play penalty (game/relationHint.ts). */
+    relationStats(a: string, b: string, c: string, d: string): RelationStats | undefined {
+        const { index } = this.require();
+        const [va, vb, vc, vd] = [a, b, c, d].map(w => index.getVector(normalizeWord(w)));
+        if (!va || !vb || !vc || !vd) return undefined;
+        let offset = 0, n1 = 0, n2 = 0;
+        for (let i = 0; i < va.length; i++) {
+            const r = vb[i] - va[i], s = vd[i] - vc[i];
+            offset += r * s; n1 += r * r; n2 += s * s;
+        }
+        return { ab: dot(va, vb), dc: dot(vd, vc), da: dot(vd, va), db: dot(vd, vb), offset: n1 && n2 ? offset / Math.sqrt(n1 * n2) : 0 };
     }
 
     /** Keywords of a pasted text, best first (see game/keywords.ts). */

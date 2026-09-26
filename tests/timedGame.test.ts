@@ -18,17 +18,17 @@ describe('timed game rules', () => {
     expect(remainingMs(s, 60_000)).toBe(0);
   });
 
-  it('scores plays by similarity, minimum 10', () => {
+  it('scores sandbox plays by similarity, minimum 10', () => {
     expect(analogyPoints(0.62)).toBe(62);
     expect(analogyPoints(0.02)).toBe(10);
   });
 
   it('deals reward words at each score milestone', () => {
     let s = startGame(0, rules);
-    const first = applyPlay(s, 'a:b::c', 0.6, 1, rules);
+    const first = applyPlay(s, 'a:b::c', 60, 1, rules);
     expect(first).toMatchObject({ points: 60, wordsToDeal: 0 });
     s = first.state;
-    const second = applyPlay(s, 'a:b::d', 0.5, 2, rules);
+    const second = applyPlay(s, 'a:b::d', 50, 2, rules);
     expect(second.wordsToDeal).toBe(2);
     expect(second.state).toMatchObject({ score: 110, dealt: 8, rewardsGranted: 1, analogies: 2 });
     expect(nextRewardAt(second.state, rules)).toBe(200);
@@ -36,20 +36,31 @@ describe('timed game rules', () => {
 
   it('never deals beyond the cap, however high the score', () => {
     let s = startGame(0, rules);
-    for (let i = 0; i < 10; i++) s = applyPlay(s, `q${i}`, 0.9, i, rules).state;
+    for (let i = 0; i < 10; i++) s = applyPlay(s, `q${i}`, 90, i, rules).state;
     expect(s.dealt).toBe(rules.maxDealtWords);
     expect(nextRewardAt(s, rules)).toBeUndefined();
   });
 
   it('gives nothing for repeating a question within the round', () => {
-    const s = applyPlay(startGame(0, rules), 'a:b::c', 0.6, 1, rules).state;
-    const repeat = applyPlay(s, 'a:b::c', 0.6, 2, rules);
+    const s = applyPlay(startGame(0, rules), 'a:b::c', 60, 1, rules).state;
+    const repeat = applyPlay(s, 'a:b::c', 60, 2, rules);
     expect(repeat).toMatchObject({ points: 0, duplicate: true });
     expect(repeat.state.score).toBe(60);
   });
 
+  it('applies penalties but never takes the round score below zero', () => {
+    const up = applyPlay(startGame(0, rules), 'a:b::c', 100, 1, rules);
+    const down = applyPlay(up.state, 'a:b::d', -10, 2, rules);
+    expect(down).toMatchObject({ points: -10, wordsToDeal: 0 });
+    expect(down.state.score).toBe(90);
+    expect(down.state.rewardsGranted).toBe(1); // rewards already granted stay granted
+    const floor = applyPlay(startGame(0, rules), 'x:y::z', -10, 1, rules);
+    expect(floor.points).toBe(0);
+    expect(floor.state.score).toBe(0);
+  });
+
   it('ignores plays that land after time is up', () => {
-    const late = applyPlay(startGame(0, rules), 'a:b::c', 0.9, 60_001, rules);
+    const late = applyPlay(startGame(0, rules), 'a:b::c', 90, 60_001, rules);
     expect(late.points).toBe(0);
     expect(late.state.phase).toBe('over');
   });

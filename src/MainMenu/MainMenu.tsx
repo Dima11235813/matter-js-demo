@@ -110,7 +110,7 @@ const MainMenu = (props: MainMenuProps) => {
             <Divider />
             <MenuButton id="fountain-toggle" tooltip="Sandbox: free play with any word and analogies" active={view === "fountain"} onClick={() => setView("fountain")} icon={<BubbleChartIcon />} />
             <MenuButton id="sandbox-toggle" tooltip="Letters: drop letters that combine into words" active={view === "sandbox"} onClick={() => setView("sandbox")} icon={<ExtensionIcon />} />
-            <MenuButton id="game-toggle" tooltip="Timed game: 2 minutes, dealt words" active={view === "game"} onClick={() => setView("game")} icon={<TimerIcon />} />
+            <MenuButton id="game-toggle" tooltip="Timed game: 2 minutes, dealt relation pairs; complete a pair for 100 points" active={view === "game"} onClick={() => setView("game")} icon={<TimerIcon />} />
             <Divider />
             {isWordView(view) && (
               <MenuButton

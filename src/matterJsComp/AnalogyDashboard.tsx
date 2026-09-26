@@ -5,6 +5,7 @@ import { GameStore } from "../stores/GameStore";
 import { stores as rootStores } from "../stores";
 import { focusWords } from "../services/playground";
 import { analogyWords } from "../game/boardAnalogies";
+import { relationHintText } from "../game/relationHint";
 import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle } from "./GamePanels";
 import { useDashboardPlacement } from "./useDashboardPlacement";
 import { WordEntryForm } from "./WordEntryForm";
@@ -56,12 +57,12 @@ const WordLink = ({ word, strong = false }: { word: string; strong?: boolean }) 
 const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
   const { lastPlay } = store;
   if (!lastPlay) return null;
-  const { a, b, c, answer, similarity, points, isNewQuestion, alternatives } = lastPlay;
+  const { a, b, c, answer, similarity, points, isNewQuestion, alternatives, hint, verdict, modelAnswer } = lastPlay;
   return (
     <div className={styles.LogCard} data-testid="last-play">
       <div className={styles.LogText}>
         <WordLink word={a} /> : <WordLink word={b} /> :: <WordLink word={c} /> : <WordLink word={answer} strong />
-        <span className={styles.Points}> +{points}{isNewQuestion ? " new!" : ""}</span>
+        <span className={points < 0 ? styles.PointsNegative : styles.Points}> {points >= 0 ? "+" : ""}{points}{isNewQuestion && verdict === undefined ? " new!" : ""}</span>
         <button
           type="button"
           className={styles.FocusAll}
@@ -72,6 +73,14 @@ const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
           ⌖
         </button>
       </div>
+      {(verdict || hint) && (
+        <div className={styles.Verdict} data-testid="play-verdict">
+          {verdict === "full" && <span className={styles.VerdictGood}>completes a dealt pair{modelAnswer ? ` (the model's first choice was ${modelAnswer})` : ""} · </span>}
+          {verdict === "penalty" && <span className={styles.VerdictBad}>fell back onto your first pair · </span>}
+          {verdict === "none" && <span>not one of this round's relation pairs · </span>}
+          {hint && <span className={styles.Hint}>{relationHintText(hint, a, b)}</span>}
+        </div>
+      )}
       <div className={styles.Alternatives}>
         {[{ word: answer, similarity }, ...alternatives].map(n => (
           <span key={n.word} className={styles.AltChip} title={`cosine ${n.similarity.toFixed(3)}`}>

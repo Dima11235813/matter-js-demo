@@ -75,6 +75,8 @@ for (const dimension of ['2d', '3d'] as const) {
       await expect.poll(async () => (await boardWords(page)).filter(w => ['king', 'man', 'woman', 'queen'].includes(w)).length).toBe(4);
       await expectFocused(page, ['king', 'man', 'woman', 'queen']);
       await expect(page.getByTestId('last-play')).toContainText('queen');
+      // Sandbox: a learning hint, no timed-round verdict.
+      await expect(page.getByTestId('play-verdict')).toHaveText('✓ the relation man → king carried over');
     });
 
     test('analogy notation and sums work; malformed input explains itself', async ({ page }) => {
@@ -150,4 +152,51 @@ test('board analogies survive a 2D <-> 3D switch', async ({ page }) => {
   await page.locator('#analogies-toggle').click();
   await expect(page.getByTestId('board-analogies').locator('li')).toHaveCount(1);
   await expect.poll(() => boardWords(page), { timeout: 10_000 }).toEqual(expect.arrayContaining(['king', 'man', 'woman', 'queen']));
+});
+
+test('a timed round deals relation pairs and scores a designed play (2D clicks)', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
+  await page.evaluate(() => { window.__lexical.stores.gameStore.setHintMode(true); window.__lexical.stores.gameStore.setDimension('2d'); });
+  await page.locator('#game-toggle').click();
+  await expect(page.getByTestId('round-relation')).toBeVisible({ timeout: 20_000 });
+  await page.waitForFunction(() => (window.__lexical.deps.activeWorld?.wordTexts().length ?? 0) >= 10, null, { timeout: 20_000 });
+
+  // A designed play the model completes within its top 3 (skilled play earns full points ~69% of the time).
+  const play = await page.evaluate(() => {
+    const lexical = window.__lexical as unknown as {
+      stores: { gameStore: { relationDeal: { pairs: { x: string; y: string; category: string }[] } } };
+      semanticEngine: { evaluateExpression(t: { word: string; sign: number }[]): { kind: string; result?: { answer: string; alternatives: { word: string }[] } } };
+    };
+    const { pairs } = lexical.stores.gameStore.relationDeal;
+    for (const p of pairs) for (const q of pairs) {
+      if (p === q || p.category !== q.category) continue;
+      const outcome = lexical.semanticEngine.evaluateExpression([{ word: p.y, sign: 1 }, { word: p.x, sign: -1 }, { word: q.x, sign: 1 }]);
+      const top = outcome.result ? [outcome.result.answer, ...outcome.result.alternatives.map(n => n.word)].slice(0, 3) : [];
+      if (top.includes(q.y)) return { a: p.x, b: p.y, c: q.x, d: q.y };
+    }
+    return null;
+  });
+  test.skip(!play, 'no designed play on this deal is within the top 3 answers');
+
+  const canvas = await page.locator('#worldContainter canvas').first().boundingBox();
+  for (const word of [play!.a, play!.b, play!.c]) {
+    await expect.poll(async () => {
+      const probe = (await page.evaluate(() => (window.__lexical as unknown as { wordBoxes(): { text: string; x: number; y: number }[] }).wordBoxes()))
+        .find(w => w.text === word)!;
+      await page.mouse.move(canvas!.x + probe.x, canvas!.y + probe.y);
+      await page.mouse.down();
+      await page.mouse.up();
+      await page.waitForTimeout(250);
+      return page.evaluate(w => {
+        const store = window.__lexical.stores.menuStore as unknown as { selectedWordTexts: string[]; lastPlay: { a: string } | null };
+        return store.selectedWordTexts.includes(w) || store.lastPlay !== null;
+      }, word);
+    }, { timeout: 10_000 }).toBe(true);
+  }
+
+  await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: play!.a, b: play!.b, c: play!.c, answer: play!.d, points: 100, verdict: 'full' });
+  await expect(page.getByTestId('play-verdict')).toContainText('completes a dealt pair');
+  await expect(page.getByTestId('game-hud')).toBeVisible();
+  await expect.poll(() => boardWords(page)).toContain(play!.d);
 });

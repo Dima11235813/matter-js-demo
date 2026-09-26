@@ -90,7 +90,7 @@ By category (offset ≥ 0.25): nationality-adjective 93%, common capitals 85%, w
 **Conclusion.** Vector checks can tell nonsense (0–1% rewarded) and collapse (penalty) apart from plausible analogies, but not a cheap true analogy from an insightful one. Fair scoring needs the game to control the question, not a sharper threshold.
 
 **Revised proposal.**
-1. **Verdict as a learning hint**, in the sandbox and the timed game: offset ≥ 0.20 (held-out 51% "relation carried over ✓", exploits ≤ 4%, nonsense 0%), plus the collapse warning. It teaches which analogies the embedding actually encodes, and changes no points.
+1. **Verdict as a learning hint**, in the sandbox and the timed game: offset ≥ 0.20, plus the collapse warning. Shipped with relatedness at p90 instead of p99: man–king is only 0.10 in MiniLM, so p99 hid the textbook gender analogies. At p90: held-out 54% "relation carried over ✓", known-good 77%, synonym exploit 4%, random 1%. It teaches which analogies the embedding actually encodes, and changes no points.
 2. **Scoring by designed questions**: timed rounds deal analogy quads (Google-set categories that work in this model: capitals, nationality adjectives, family, comparatives). A play scores when its answer lands on the board word that completes a dealt quad (full points), or on another board word linked to *c* (partial); a collapse costs points. Synonym pairs are not dealt, so the exploit has nothing to work with. This measures what the user proposed (the answer connects to the right word) against a known answer instead of a heuristic.
 3. Validate (2) by simulation before building it: every dealt board has ≥ 2 completable quads, and random play earns < 10% of skilled play.
 
@@ -136,7 +136,7 @@ Skilled points per category (top-3 leniency): world capitals 90, present partici
 2. Score with the game solver and top-3 leniency: when a board word that completes a designed play is among the top 3 answers, that word is the answer (it gets focus; the HUD also shows the model's first choice).
 3. Points: full = 100, partial = 0, penalty (collapse onto the first pair) = −10, anything else = 0.
 4. Use the categories with skilled ≥ 60: capitals (common and world), family, nationality adjectives, comparative, superlative, present participle, past tense, city-in-state, opposites. Currency and adjective → adverb are excluded.
-5. The vector verdict (offset ≥ 0.20, collapse warning) is shown as a learning hint in both modes and changes no points.
+5. The vector verdict (relatedness ≥ p90, offset ≥ 0.20, collapse warning) is shown as a learning hint in both modes and changes no points.
 
 ## References
 
