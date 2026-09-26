@@ -1,4 +1,4 @@
-import { analogyTarget } from "./vectorMath";
+import { analogyTarget, normalizeInPlace } from "./vectorMath";
 import { Neighbor, VectorIndex } from "./VectorIndex";
 
 export interface AnalogyResult {
@@ -72,4 +72,31 @@ export function solveAnalogy(
     if (ranked.length === 0) return undefined;
     const [best, ...rest] = ranked;
     return { a, b, c, answer: best.word, similarity: best.similarity, alternatives: rest };
+}
+
+export interface SignedWord {
+    word: string;
+    sign: 1 | -1;
+}
+
+/**
+ * Nearest words to a signed sum of word vectors (`ocean + desert`, `paris - france + italy`).
+ * Like semantic analogies, candidates sharing a stem with any input are excluded. Returns undefined
+ * when a word has no vector.
+ */
+export function solveExpression(
+    index: VectorIndex,
+    terms: readonly SignedWord[],
+    allow?: (word: string) => boolean,
+    k = 6
+): Neighbor[] | undefined {
+    const target = new Float32Array(index.dim);
+    for (const { word, sign } of terms) {
+        const vector = index.getVector(word);
+        if (!vector) return undefined;
+        for (let d = 0; d < target.length; d++) target[d] += sign * vector[d];
+    }
+    const inputs = terms.map(t => t.word);
+    const allowCandidate = (word: string) => (!allow || allow(word)) && !inputs.some(input => sharesStem(word, input));
+    return index.nearest(normalizeInPlace(target), { k, exclude: new Set(inputs), allow: allowCandidate });
 }

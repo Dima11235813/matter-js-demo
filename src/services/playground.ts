@@ -6,6 +6,9 @@ import { semanticEngine } from "./semanticEngine";
 import { isRoundRunning, recordRoundAnalogy } from "./timedGameController";
 import { applyTheme, saveThemePreference } from "../theme/palette";
 import { saveLayout3d } from "../physics/layoutPresets";
+import { handoffQueue } from "../space/handoff";
+import { expressionAsAnalogy, ExpressionTerm, formatExpression } from "../game/wordEntry";
+import { Keyword } from "../game/keywords";
 
 /**
  * Use cases that connect the semantic engine, the MobX stores, and the physics world.
@@ -90,11 +93,11 @@ export function focusWords(words: readonly string[]): void {
     deps.activeWorld?.focusWords(words);
 }
 
-/** Takes the words handed over by the previous world if it showed the same view. */
+/** Takes the board (and queued spawns) handed over by the previous world if it showed the same view. */
 export function takeHandoff(view: string) {
     const handoff = deps.worldHandoff;
     deps.worldHandoff = undefined;
-    return handoff && handoff.view === view && handoff.words.length > 0 ? handoff.words : undefined;
+    return handoffQueue(handoff, view);
 }
 
 /** 2D <-> 3D; only meaningful with hint mode on. Persisted per device like hint mode. */
@@ -111,7 +114,91 @@ export function toggleLayout3d(stores: RootStore): void {
     saveLayout3d(next);
 }
 
-export async function playAnalogy(stores: RootStore, a: string, b: string, c: string): Promise<void> {
+/**
+ * A typed expression (Feature 2.9). `b - a + c` plays the analogy a : b :: c exactly like clicking the
+ * three words; any other sum drops the nearest word. Words new to the corpus are embedded first.
+ * Operands not on the board are spawned, and the whole expression takes focus.
+ */
+export async function playExpression(stores: RootStore, terms: readonly ExpressionTerm[]): Promise<void> {
+    const { menuStore } = stores;
+    if (!semanticEngine.isReady) return;
+    const words = terms.map(t => t.word);
+    if (menuStore.view === "game") {
+        const onBoard = new Set(deps.activeWorld?.wordTexts() ?? []);
+        const missing = words.filter(w => !onBoard.has(w));
+        if (missing.length > 0) {
+            menuStore.setWordInputMessage(`In a timed round, use words on the board (not: ${missing.join(", ")})`);
+            return;
+        }
+    }
+    let outcome = semanticEngine.evaluateExpression(terms);
+    if (outcome.kind === "unknown") {
+        for (const word of outcome.words) {
+            menuStore.setWordInputMessage(`Embedding "${word}"...`);
+            const added = await semanticEngine.addWord(word);
+            if ("reason" in added) {
+                menuStore.setWordInputMessage(`"${word}": ${added.reason}`);
+                return;
+            }
+        }
+        await refreshStats(menuStore);
+        outcome = semanticEngine.evaluateExpression(terms);
+    }
+    switch (outcome.kind) {
+        case "analogy": {
+            const { a, b, c } = expressionAsAnalogy(terms)!;
+            await playAnalogy(stores, a, b, c, { spawnOperands: true });
+            menuStore.setWordInputMessage("");
+            return;
+        }
+        case "sum": {
+            const [best, ...rest] = outcome.neighbors;
+            words.forEach(word => deps.pendingWordSpawns.push({ word }));
+            deps.pendingWordSpawns.push({ word: best.word, focusGroup: [...words, best.word] });
+            const also = rest.slice(0, 3).map(n => n.word).join(", ");
+            menuStore.setWordInputMessage(`${formatExpression(terms)} ≈ ${best.word} (${best.similarity.toFixed(2)})${also ? ` · also ${also}` : ""}`);
+            return;
+        }
+        case "blocked":
+            menuStore.setWordInputMessage(`Blocked by profanity filter: ${outcome.words.join(", ")}`);
+            return;
+        default:
+            menuStore.setWordInputMessage(`No answer for ${formatExpression(terms)}`);
+    }
+}
+
+/**
+ * Drops the chosen keywords of a pasted text (Feature 2.8). New words are embedded and join the
+ * player corpus; the set lands one after another and is focused together at the end.
+ */
+export async function importKeywords(stores: RootStore, keywords: readonly Keyword[]): Promise<void> {
+    const { menuStore } = stores;
+    if (!semanticEngine.isReady || keywords.length === 0) return;
+    const words: string[] = [];
+    let added = 0;
+    for (const keyword of keywords) {
+        if (!keyword.isNew) {
+            words.push(keyword.word);
+            continue;
+        }
+        menuStore.setWordInputMessage(`Embedding "${keyword.word}"...`);
+        const outcome = await semanticEngine.addWord(keyword.word);
+        if (outcome.status === "added" || outcome.status === "known") {
+            words.push(outcome.word);
+            if (outcome.status === "added") added++;
+        }
+    }
+    words.forEach((word, i) => deps.pendingWordSpawns.push(i === words.length - 1 ? { word, focusGroup: words } : { word }));
+    const skipped = keywords.length - words.length;
+    menuStore.setWordInputMessage(
+        `Dropped ${words.length} ${words.length === 1 ? "word" : "words"} from your text` +
+        (added > 0 ? ` · ${added} new to the corpus` : "") +
+        (skipped > 0 ? ` · ${skipped} could not be embedded` : "")
+    );
+    if (added > 0) await refreshStats(menuStore);
+}
+
+export async function playAnalogy(stores: RootStore, a: string, b: string, c: string, options: { spawnOperands?: boolean } = {}): Promise<void> {
     const { menuStore } = stores;
     const play = await semanticEngine.playAnalogy(a, b, c);
     if (!play) {
@@ -122,7 +209,13 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
     // In a timed round the round rules decide the points (repeats score 0); lifetime score still accrues.
     const round = menuStore.view === "game" ? recordRoundAnalogy(stores, result) : undefined;
     const points = round ? round.points : play.points;
-    deps.pendingWordSpawns.push({ word: result.answer, focus: true });
+    if (options.spawnOperands) {
+        // Typed: the question words may not be on the board yet; focus all four together.
+        [a, b, c].forEach(word => deps.pendingWordSpawns.push({ word }));
+        deps.pendingWordSpawns.push({ word: result.answer, focusGroup: [a, b, c, result.answer] });
+    } else {
+        deps.pendingWordSpawns.push({ word: result.answer, focus: true });
+    }
     const lastPlay = { ...result, points, isNewQuestion: round ? !round.duplicate : isNewQuestion };
     menuStore.setLastPlay(lastPlay);
     menuStore.addBoardAnalogy(lastPlay);

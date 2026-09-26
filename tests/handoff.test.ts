@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { boundingSphere, canvasToSpace, fitDistance, ndcToCanvas, pixelMatchedDistance, spaceToCanvas } from '../src/space/handoff';
+import { boundingSphere, canvasToSpace, fitDistance, handoffQueue, ndcToCanvas, pixelMatchedDistance, spaceToCanvas } from '../src/space/handoff';
 
 const size: [number, number] = [1200, 800];
 
@@ -42,5 +42,31 @@ describe('camera framing', () => {
     expect(center).toEqual([50, 0, 0]);
     expect(radius).toBe(70);
     expect(boundingSphere([]).radius).toBe(0);
+  });
+});
+
+describe('handoffQueue', () => {
+  const words = [{ word: 'king', x: 10, y: 20, color: '#fff' }, { word: 'man', x: 30, y: 40 }];
+
+  it('adopts the board, then the spawns that were still queued', () => {
+    const queue = handoffQueue({ view: 'fountain', words, pending: [{ word: 'queen', focusGroup: ['king', 'man', 'queen'] }, { word: 'dog' }] }, 'fountain');
+    expect(queue!.map(r => r.word)).toEqual(['king', 'man', 'queen', 'dog']);
+    expect(queue![0]).toEqual({ word: 'king', x: 10, y: 20, color: '#fff' });
+    expect(queue![2].focusGroup).toEqual(['king', 'man', 'queen']);
+  });
+
+  it('keeps a queued fresh board even when nothing had spawned yet', () => {
+    expect(handoffQueue({ view: 'fountain', words: [], pending: [{ word: 'dog' }, { word: 'cat' }] }, 'fountain')!.map(r => r.word)).toEqual(['dog', 'cat']);
+  });
+
+  it('drops plain duplicates of words already handed over, but keeps focus requests', () => {
+    const queue = handoffQueue({ view: 'fountain', words, pending: [{ word: 'king' }, { word: 'man', focus: true }] }, 'fountain');
+    expect(queue!.map(r => r.word)).toEqual(['king', 'man', 'man']);
+  });
+
+  it('adopts nothing across views or from an empty board', () => {
+    expect(handoffQueue({ view: 'game', words, pending: [] }, 'fountain')).toBeUndefined();
+    expect(handoffQueue({ view: 'fountain', words: [], pending: [] }, 'fountain')).toBeUndefined();
+    expect(handoffQueue(undefined, 'fountain')).toBeUndefined();
   });
 });

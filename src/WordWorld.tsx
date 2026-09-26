@@ -15,10 +15,14 @@ interface Destroyable {
   destroy(): void;
 }
 
-/** Captures the live board so a world of the same view can adopt it (2D <-> 3D switch). */
+/** Captures the live board and its spawn queue so a world of the same view can adopt them (2D <-> 3D switch). */
 function captureHandoff(view: string) {
   const probes = deps.activeWorld?.wordProbes() ?? [];
-  deps.worldHandoff = { view, words: probes.map(({ text, x, y, color }) => ({ word: text, x, y, color })) };
+  deps.worldHandoff = {
+    view,
+    words: probes.map(({ text, x, y, color }) => ({ word: text, x, y, color })),
+    pending: [...deps.pendingWordSpawns],
+  };
 }
 
 /**

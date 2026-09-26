@@ -2,7 +2,7 @@ import p5 from "p5"
 import { AppModes } from "./models/appMode"
 import { Box } from "./Shapes/Box"
 import type { WordWorld } from "./wordWorld"
-import type { WordHandoff } from "../space/handoff"
+import type { BoardHandoff } from "../space/handoff"
 
 export interface BrowserInfo {
     width: number
@@ -25,6 +25,11 @@ export interface WordSpawnRequest {
     color?: string
     /** Focus the word once it is on the board (new player words and analogy answers). */
     focus?: boolean
+    /**
+     * Focus these words together when this request is processed (an analogy's four words, an
+     * import's keywords). Queue it last: requests spawn in order, so the others are on the board.
+     */
+    focusGroup?: readonly string[]
 }
 
 const MENU_LEFT_PADDING = 60
@@ -38,7 +43,7 @@ class Deps {
      * Words captured from the world being torn down, in canvas pixels. A new world of the same
      * view adopts them, so switching 2D <-> 3D keeps the board instead of restarting it.
      */
-    public worldHandoff: { view: string, words: WordHandoff[] } | undefined
+    public worldHandoff: BoardHandoff | undefined
     public overlayRect: OverlayRect | undefined
     browserInfo: BrowserInfo
     p: p5 | undefined

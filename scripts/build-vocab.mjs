@@ -28,16 +28,8 @@ const DICT_DIR = path.join(ROOT, 'src', 'utils', 'Dictionary');
 const CALIBRATION_PAIRS = 50000;
 const PERCENTILES = [1, 5, 10, 25, 50, 75, 90, 95, 99];
 
-const STOPWORDS = new Set(`
-a about above after again against all also am an and any are aren as at be because been before being below
-between both but by can cannot could did do does doing down during each either else ever few for from further
-had has have having he her here hers herself him himself his how however i if in into is it its itself just
-let me more most much must my myself neither no nor not now of off on once only or other ought our ours
-ourselves out over own per same shall she should since so some such than that the their theirs them themselves
-then there these they this those though through thus to too under until up upon us very via was we were what
-when where whether which while who whom whose why will with within without would yet you your yours yourself
-yourselves shall may might also another anyone anything everyone everything nothing someone something whatever
-`.split(/\s+/).filter(Boolean));
+// Shared with text import in the app (src/game/keywords.ts).
+const STOPWORDS = new Set(readListFile(path.join(ROOT, 'data', 'vocab', 'stopwords.txt')));
 
 // Words ending in "s" that are not plurals of another vocabulary word.
 const PLURAL_EXCEPTIONS = new Set(['news', 'lens', 'yes', 'plus', 'bias', 'series', 'species', 'physics', 'mathematics', 'glass', 'class', 'gas', 'bus', 'boss', 'loss', 'mass', 'grass', 'dress']);

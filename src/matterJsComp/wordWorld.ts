@@ -23,4 +23,16 @@ export interface WordWorld {
      * (no camera yet) they pulse. Words not on the board are ignored.
      */
     focusWords(words: readonly string[]): void;
+    /** Words highlighted by focus right now (dev handle and e2e tests). */
+    focusedWords(): string[];
+}
+
+/** The words a spawn batch asks to focus: flagged words plus any requested focus groups. */
+export function focusTargets(batch: readonly { word: string; focus?: boolean; focusGroup?: readonly string[] }[]): string[] {
+    const words = new Set<string>();
+    for (const request of batch) {
+        if (request.focus) words.add(request.word);
+        request.focusGroup?.forEach(word => words.add(word));
+    }
+    return [...words];
 }

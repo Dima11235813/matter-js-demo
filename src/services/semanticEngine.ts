@@ -1,7 +1,7 @@
-import { AnalogyResult, solveAnalogy } from "../embeddings/analogy";
+import { AnalogyResult, solveAnalogy, solveExpression } from "../embeddings/analogy";
 import { Calibration } from "../embeddings/calibration";
 import { LiveEncoder } from "../embeddings/liveEncoder";
-import { createProfanityPolicy, isProfanityFilterEnabled, ProfanityPolicy } from "../embeddings/profanity";
+import { createProfanityPolicy, isProfanityFilterEnabled, parseWordList, ProfanityPolicy } from "../embeddings/profanity";
 import { centerAndNormalize, Vector } from "../embeddings/vectorMath";
 import { Neighbor, VectorIndex } from "../embeddings/VectorIndex";
 import { fetchVocabAsset, VocabManifest } from "../embeddings/vocabAsset";
@@ -9,6 +9,9 @@ import { AnalogyRecord, GameRecord, openLexicalDb } from "../persistence/db";
 import { GameResult, LexicalRepository } from "../persistence/LexicalRepository";
 import { dealWords } from "../game/dealer";
 import { analogyPoints } from "../game/timedGame";
+import { extractKeywords, KeywordResult } from "../game/keywords";
+import { expressionAsAnalogy, ExpressionTerm } from "../game/wordEntry";
+import stopwordsText from "../../data/vocab/stopwords.txt?raw";
 import { logger } from "../utils/logger";
 
 export type AddWordOutcome =
@@ -32,7 +35,16 @@ export interface CorpusStats {
     profanityFilter: boolean;
 }
 
+/** What an expression evaluates to, without recording anything (live preview and submit). */
+export type ExpressionOutcome =
+    | { kind: "analogy"; result: AnalogyResult }
+    | { kind: "sum"; neighbors: Neighbor[] }
+    | { kind: "unknown"; words: string[] }
+    | { kind: "blocked"; words: string[] }
+    | { kind: "none" };
+
 const WORD_PATTERN = /^[a-z]{2,24}$/;
+const STOPWORDS: ReadonlySet<string> = new Set(parseWordList(stopwordsText));
 const NEW_QUESTION_BONUS = 25;
 
 interface Loaded {
@@ -163,6 +175,38 @@ export class SemanticEngine {
         const points = analogyPoints(result.similarity) + (isNewQuestion ? NEW_QUESTION_BONUS : 0);
         const score = await repo.addScore(points);
         return { result, record, points, isNewQuestion, score };
+    }
+
+    /**
+     * Evaluates `b - a + c` as the analogy a : b :: c (same solver as clicking three words) and any
+     * other signed sum as "nearest to the sum". Words the vocabulary lacks come back as "unknown" so
+     * the caller can embed them first.
+     */
+    evaluateExpression(terms: readonly ExpressionTerm[]): ExpressionOutcome {
+        const { index, policy } = this.require();
+        const blocked = terms.map(t => t.word).filter(w => !policy.isAllowed(w));
+        if (blocked.length > 0) return { kind: "blocked", words: blocked };
+        const unknown = terms.map(t => t.word).filter(w => !index.has(w));
+        if (unknown.length > 0) return { kind: "unknown", words: unknown };
+        const analogy = expressionAsAnalogy(terms);
+        if (analogy) {
+            const result = solveAnalogy(index, analogy.a, analogy.b, analogy.c, policy.isAllowed);
+            return result ? { kind: "analogy", result } : { kind: "none" };
+        }
+        const neighbors = solveExpression(index, terms, policy.isAllowed);
+        return neighbors && neighbors.length > 0 ? { kind: "sum", neighbors } : { kind: "none" };
+    }
+
+    /** Keywords of a pasted text, best first (see game/keywords.ts). */
+    keywords(text: string): KeywordResult {
+        const { index, policy } = this.require();
+        return extractKeywords(text, {
+            rankOf: word => index.rankOf(word),
+            has: word => index.has(word),
+            isAllowed: policy.isAllowed,
+            stopwords: STOPWORDS,
+            size: index.baseSize,
+        });
     }
 
     recentAnalogies(limit = 5): Promise<AnalogyRecord[]> {

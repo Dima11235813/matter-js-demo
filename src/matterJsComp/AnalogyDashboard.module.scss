@@ -210,58 +210,6 @@
   z-index: -1;
 }
 
-.WordForm {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  pointer-events: auto; /* the dashboard root passes clicks through; the form must not */
-}
-
-.WordInput {
-  flex: 1 1 180px;
-  min-width: 0;
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 10px;
-  color: var(--text);
-
-  &::placeholder {
-    color: var(--text-muted);
-  }
-  font: inherit;
-  font-size: 0.85rem;
-
-  &:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-  }
-}
-
-.WordButton {
-  background: var(--accent);
-  border: none;
-  border-radius: 8px;
-  padding: 6px 14px;
-  color: var(--accent-text);
-  font: inherit;
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-}
-
-.WordMessage {
-  flex-basis: 100%;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-}
-
 .ModeTag {
   font-size: 0.65rem;
   font-weight: 700;
@@ -411,5 +359,23 @@
   &:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 1px;
+  }
+}
+
+/* "Play again" in the game-over card (GamePanels). */
+.WordButton {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
   }
 }

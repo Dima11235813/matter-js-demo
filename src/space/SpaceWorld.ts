@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import deps from "../matterJsComp/Deps";
-import { WordProbe, WordWorld } from "../matterJsComp/wordWorld";
+import { focusTargets, WordProbe, WordWorld } from "../matterJsComp/wordWorld";
 import { SpaceSimulation } from "../physics/spaceSimulation";
 import { Layout3d, layout3dConfig } from "../physics/layoutPresets";
 import { semanticEngine } from "../services/semanticEngine";
@@ -86,6 +86,11 @@ export class SpaceWorld implements WordWorld {
         this.director.focusOn(words, this.sim.bodies);
     }
 
+    focusedWords(): string[] {
+        const glowing = this.director.glowing(this.sim.bodies);
+        return this.sim.bodies.filter(b => glowing.has(b.id)).map(b => b.word);
+    }
+
     /** Canvas-pixel projections (for hand-off back to 2D and for tests) plus 3D positions. */
     wordProbes(): (WordProbe & { color: string })[] {
         return this.sim.bodies.map(b => {
@@ -116,7 +121,7 @@ export class SpaceWorld implements WordWorld {
         const { view } = stores.menuStore;
         const handoff = takeHandoff(view);
         if (handoff) {
-            handoff.forEach(({ word, x, y, color }) => deps.pendingWordSpawns.push({ word, x, y, color }));
+            handoff.forEach(request => deps.pendingWordSpawns.push(request));
         } else if (view === "game") {
             if (!isRoundRunning(stores)) startTimedRound(stores);
         } else {
@@ -157,8 +162,8 @@ export class SpaceWorld implements WordWorld {
             this.colors.set(body.id, color ?? getRandomColor());
             onBoard.add(word);
         }
-        // New player words and analogy answers get focus, even if the word was already on the board.
-        const focus = batch.filter(request => request.focus).map(request => request.word);
+        // New player words, analogy words, and imports get focus, even if already on the board.
+        const focus = focusTargets(batch);
         if (focus.length > 0) this.focusWords(focus);
     }
 

@@ -22,6 +22,8 @@ export function installDevtools(): void {
         /** Word positions in canvas pixels (3D: projected through the camera), for clicking. */
         wordBoxes: (): WordBoxProbe[] =>
             (deps.activeWorld?.wordProbes() ?? []).map(({ text, x, y }) => ({ text, x, y })),
+        /** Words currently highlighted by focus (new words, HUD links, the analogies panel). */
+        focusedWords: (): string[] => deps.activeWorld?.focusedWords() ?? [],
         /** Fidelity in the world's own space: 2D pixels or 3D world units. */
         layoutFidelity: (): LayoutFidelity => {
             const probes = deps.activeWorld?.wordProbes() ?? []

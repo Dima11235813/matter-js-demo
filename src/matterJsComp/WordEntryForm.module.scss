@@ -1,0 +1,147 @@
+.Form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: auto; /* the dashboard root passes clicks through; the form must not */
+}
+
+.Input {
+  flex: 1 1 180px;
+  min-width: 0;
+  resize: none;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.35;
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+
+  &:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+.InputExpanded {
+  composes: Input;
+  resize: vertical;
+  max-height: 40vh;
+}
+
+.Button {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.Message,
+.Hint {
+  flex-basis: 100%;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.Preview {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--text);
+
+  strong {
+    color: var(--accent);
+  }
+}
+
+.Terms {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-right: 4px;
+}
+
+.PlusTerm,
+.MinusTerm {
+  border-radius: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+}
+
+.MinusTerm {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.Muted {
+  color: var(--text-muted);
+}
+
+.Keywords {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.75rem;
+}
+
+.KeywordsHeader {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  color: var(--text-muted);
+}
+
+.Link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+.Chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.Chip {
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--danger);
+  }
+}
+
+.ChipNew {
+  composes: Chip;
+  border-color: var(--hint);
+}

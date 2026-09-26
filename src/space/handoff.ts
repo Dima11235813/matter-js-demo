@@ -7,6 +7,38 @@
  */
 export type Size = [number, number];
 
+/** A queued spawn (same shape as `WordSpawnRequest` in Deps, kept here so this module stays pure). */
+export interface SpawnRequest {
+    word: string;
+    x?: number;
+    y?: number;
+    color?: string;
+    focus?: boolean;
+    focusGroup?: readonly string[];
+}
+
+/** The board a world leaves behind: words on it, plus spawns still queued (a new board, an answer). */
+export interface BoardHandoff {
+    view: string;
+    words: WordHandoff[];
+    pending: SpawnRequest[];
+}
+
+/**
+ * The spawn queue a new world of `view` starts with: the handed-over words at their positions,
+ * then the requests that were still queued, so a switch right after a play or a fresh board
+ * loses nothing. Undefined when there is nothing to adopt or the view changed.
+ */
+export function handoffQueue(handoff: BoardHandoff | undefined, view: string): SpawnRequest[] | undefined {
+    if (!handoff || handoff.view !== view) return undefined;
+    const onBoard = new Set(handoff.words.map(w => w.word));
+    const queue: SpawnRequest[] = [
+        ...handoff.words.map(({ word, x, y, color }) => ({ word, x, y, color })),
+        ...handoff.pending.filter(request => !onBoard.has(request.word) || request.focus || request.focusGroup),
+    ];
+    return queue.length > 0 ? queue : undefined;
+}
+
 /** A word on its way between dimensions: canvas pixels for 2D, world units for 3D. */
 export interface WordHandoff {
     word: string;

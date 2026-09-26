@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import { inject, observer } from "mobx-react";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores as rootStores } from "../stores";
-import { focusWords, submitPlayerWord } from "../services/playground";
+import { focusWords } from "../services/playground";
 import { analogyWords } from "../game/boardAnalogies";
 import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle } from "./GamePanels";
 import { useDashboardPlacement } from "./useDashboardPlacement";
+import { WordEntryForm } from "./WordEntryForm";
 import styles from "./AnalogyDashboard.module.scss";
 
 interface AnalogyDashboardProps {
@@ -83,32 +84,6 @@ const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
   );
 });
 
-const WordForm = observer(({ store }: { store: MenuStore }) => {
-  const [value, setValue] = useState("");
-  const disabled = store.engineStatus !== "ready";
-  const onSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!value.trim()) return;
-    submitPlayerWord(store, value);
-    setValue("");
-  };
-  return (
-    <form className={styles.WordForm} onSubmit={onSubmit}>
-      <input
-        className={styles.WordInput}
-        value={value}
-        onChange={e => setValue(e.target.value)}
-        placeholder="Add a word to the corpus"
-        aria-label="Add a word"
-        maxLength={24}
-        disabled={disabled}
-      />
-      <button className={styles.WordButton} type="submit" disabled={disabled}>Drop</button>
-      {store.wordInputMessage && <span className={styles.WordMessage}>{store.wordInputMessage}</span>}
-    </form>
-  );
-});
-
 const AnalogyDashboardComponent = (props: AnalogyDashboardProps) => {
   const store = props.menuStore!;
   const gameStore = props.gameStore!;
@@ -161,7 +136,7 @@ const DashboardBody = observer(({ store, gameStore, isGame }: { store: MenuStore
         <Formula words={store.selectedWordTexts} />
       </div>
       <LastPlayCard store={store} />
-      {!isGame && <WordForm store={store} />}
+      {!isGame && <WordEntryForm store={store} />}
     </>
   );
 });

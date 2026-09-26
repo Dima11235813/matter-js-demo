@@ -11,7 +11,7 @@ import { stores } from "../stores";
 import { AppModes } from "./models/appMode";
 import { semanticEngine } from "../services/semanticEngine";
 import { selectWordForAnalogy, takeHandoff } from "../services/playground";
-import { WordProbe, WordWorld } from "./wordWorld";
+import { focusTargets, WordProbe, WordWorld } from "./wordWorld";
 import { isRoundRunning, startTimedRound } from "../services/timedGameController";
 import { isWordView } from "../stores/MenuStore";
 import { SemanticPhysics } from "./SemanticPhysics";
@@ -84,7 +84,7 @@ export class CustomWorld implements WordWorld {
         if (isWordView(view)) {
             // Words handed over by a 3D world of the same view keep their on-screen positions.
             const handoff = takeHandoff(view)
-            handoff?.forEach(({ word, x, y, color }) => deps.pendingWordSpawns.push({ word, x, y, color }))
+            handoff?.forEach(request => deps.pendingWordSpawns.push(request))
             stores.menuStore.clearWordSelection()
             // StrictMode mounts twice; only the world whose engine is still live may seed words.
             semanticEngine.start()
@@ -170,8 +170,8 @@ export class CustomWorld implements WordWorld {
             const box = this.shapesFac.createWordBox(word, rx, ry)
             if (color) box.setColor(color)
         })
-        // New player words and analogy answers get focus, even if the word was already on the board.
-        const focus = batch.filter(request => request.focus).map(request => request.word)
+        // New player words, analogy words, and imports get focus, even if already on the board.
+        const focus = focusTargets(batch)
         if (focus.length > 0) this.focusWords(focus)
     }
     /** 2D focus: the words pulse for a few seconds (no camera to move until 2D zoom, Task 5.7.1). */
@@ -179,6 +179,10 @@ export class CustomWorld implements WordWorld {
         const wanted = new Set(words)
         const until = performance.now() + CustomWorld.focusMs
         this.shapesFac.boxes.forEach(box => { if (box.embedding !== undefined && wanted.has(box.text)) box.focusUntil = until })
+    }
+    focusedWords = (): string[] => {
+        const now = performance.now()
+        return this.shapesFac.boxes.filter(box => box.embedding !== undefined && box.focusUntil > now).map(box => box.text)
     }
     /** Hover reveals the similarity numbers of the word under the pointer. */
     handleHover = (x: number, y: number) => {
