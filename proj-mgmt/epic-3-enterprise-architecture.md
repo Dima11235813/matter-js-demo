@@ -100,3 +100,69 @@ Refactor the codebase from a single client-side project containing all vocabular
   Property-based two-device tests: commutative, idempotent, no lost points.
 * [ ] **Task 3.7.4**: A client `SyncService` behind `LexicalRepository`: push on a timer, when back online, and after sign-in; pull at start; exponential backoff with jitter; a record becomes `synced` only when the server acknowledges that exact `updatedAt`.
 * [ ] **Task 3.7.5**: Schema versioning: accept versions N and N−1, upgrade on read; `X-Client-Version`; a `426` response asks the client to refresh.
+
+### Feature 3.8: Monorepo with Shared DTOs + Google Sign-in + Sync (plan 2026-09-26, in progress)
+* **Goal (owner, 2026-09-26)**: Google login and sync to a backend server, in a TypeScript monorepo where the data contracts are defined **once** and used by both the browser and the server.
+* **Layout (Yarn 1 workspaces; no file moves, per the Drive rule REPO-01)**:
+  ```
+  /                     web app (unchanged location), workspace root
+  packages/shared/      @lexical/shared: zod schemas (DTOs) + inferred types, merge rules, key normalizer, counters
+  server/               @lexical/server: Hono API on Node (Cloud Run later), Postgres
+  ```
+  * `@lexical/shared` ships TypeScript source (no build step). Vite compiles it for the browser; the server runs it with `tsx` in dev and bundles it with esbuild for production.
+  * The browser's `src/persistence/counters.ts` and `keys.ts` become thin re-exports of `@lexical/shared` (edited, not deleted), so there is one implementation.
+* **Contracts (`@lexical/shared`)**:
+  * the sync envelope: `{collection, key, op, schemaVersion, clientUpdatedAt, payload}`;
+  * per-collection payload schemas: `profile` (settings + `scoreByDevice`), `words` (vector as base64 float32), `analogies` (`playsByDevice` + answer), `games` (immutable);
+  * `PushRequest/Response`, `PullResponse` (opaque cursor), `ClaimRequest`, `ExportResponse`, `ApiError`.
+
+  The server validates every request with the same schemas the client uses for its types.
+* **Merge rules (shared, pure, property-tested)**:
+  * settings: last-writer-wins per field (tie-break deviceId);
+  * `scoreByDevice` / `playsByDevice`: max per device;
+  * words: add-wins;
+  * analogy answer: last-writer-wins by (vocabVersion, updatedAt);
+  * games: insert-if-absent.
+
+  The play log and device meta are **not** synced (telemetry is separate, Feature 3.6).
+* **Server (`server/`)**:
+  * Hono + `@hono/node-server`, routes under `/api/v1`: `GET /health`, `POST /devices/claim`, `POST /sync/push`, `GET /sync/pull?since=`, `GET /me/export`, `DELETE /me`.
+  * Postgres through a small `Db` interface: **PGlite** (Postgres compiled to WASM, in-process) for local dev and tests, so no Docker is needed and its data stays outside Drive; `pg` + `DATABASE_URL` in production.
+  * Plain SQL migrations applied at startup (`schema_migrations` table).
+* **Auth**:
+  * **Client**: Firebase Auth, Google popup; only when `VITE_FIREBASE_*` are set, otherwise no sign-in button.
+  * **Server**: verifies Firebase ID tokens with `jose` against Google's public keys (issuer `https://securetoken.google.com/<FIREBASE_PROJECT_ID>`, audience = project ID), so no service-account key is needed.
+  * **Dev and e2e only**: when `DEV_AUTH_SECRET` is set, the server also accepts HS256 tokens it mints at `POST /api/v1/dev/token`. The server **refuses to start** with `DEV_AUTH_SECRET` when `NODE_ENV=production`.
+* **Client sync**:
+  * An `AuthService` (provider-agnostic interface).
+  * A `SyncService` behind `LexicalRepository`. On sign-in it runs, in order:
+    1. claim the device (device secret);
+    2. push every pending record;
+    3. pull since the stored cursor;
+    4. merge with the shared rules;
+    5. mark synced.
+
+    It then pushes on a timer and when the browser comes back online.
+  * The age rule: accounts need an age band of 13 or older (Epic 6 · Task 6.2.2.1); the age question is asked first if needed.
+  * Vite dev proxies `/api` to `http://localhost:8787`, so the API is same-origin as in production (the Worker `/api/*` route later).
+* **Increments**:
+  1. Workspaces + `@lexical/shared` (DTOs, merge rules, keys, counters) + unit tests; the web app imports it.
+  2. `server/`: migrations, auth (Firebase + dev issuer), claim, push/pull with merge, export, delete; API tests on PGlite.
+  3. Client: `AuthService` (Firebase), the sign-in UI in the privacy panel, `SyncService`, the dev proxy; e2e: two browser contexts (two devices) sign in with dev tokens and converge.
+  4. Deploy: the server container to Cloud Run (`us-central1`), Cloud SQL with IAM login, the Worker `/api/*` proxy. Human steps are appended to `docs/setup/accounts-and-deploy.md`.
+* [x] **Task 3.8.1** (2026-09-26): Yarn workspaces (`packages/*`, `server`); `@lexical/shared` holds keys (`normalizeKey`, `analogyKey`, `wordKey`), counters, zod contracts (`SyncRecord` as a union discriminated on `collection`, with `profile`, `words`, `analogies`, `games`; push/pull/claim/export/delete/error DTOs), merge rules, and base64 vector encoding. The web app's `counters.ts` and `keys.ts` re-export it. Tests: contracts reject malformed records (including negative counters and the never-synced `meta`), and the merge rules are commutative, idempotent, and associative.
+* [x] **Task 3.8.2** (2026-09-26):
+  * `server/`: Hono app factory; a `Db` interface over PGlite or `pg`; SQL migration `001-accounts-and-sync` (users, identities, devices, the `sync_seq` sequence, sync_records, deletion_ledger).
+  * Auth: Firebase RS256 tokens verified via JWKS against the project's issuer and audience; dev HS256 tokens only when `DEV_AUTH_SECRET` is set, and the config refuses that in production.
+  * Routes: claim (device-secret hash; 409 when the device belongs to another account, 403 on a wrong secret); push (validated, canonical keys enforced, shared merge in a transaction, applied or merged); pull (server-sequence cursor, pages); export; delete (cascade, ledger receipt).
+  * Tests: 15 API tests on in-memory PGlite, including two offline devices converging (60 + 25 = 85 points, 2 + 1 plays), replay idempotence, per-user isolation, and delete then re-claim.
+  * Smoke test: `yarn dev:server` with the Vite proxy (health, dev token, claim, pull).
+  * A test caught `/me/export` running without auth (the middleware was mounted on `/me` only).
+* [ ] **Task 3.8.3**: Increment 3: client auth + sync + e2e with two devices.
+* [ ] **Task 3.8.4**: Increment 4: Cloud Run + Cloud SQL deploy.
+* **Exit criteria**:
+  * one schema definition per DTO (no duplicate types in `src/` or `server/`);
+  * two devices converge with no lost points (property tests + e2e);
+  * the server refuses dev auth in production;
+  * `yarn test:unit` covers shared + server;
+  * CI builds and tests all workspaces.

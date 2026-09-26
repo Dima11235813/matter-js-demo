@@ -61,8 +61,10 @@ jobs:
         if: steps.vocab.outputs.cache-hit != 'true'
         run: yarn vocab:build
 
-      - name: Typecheck
-        run: npx tsc --noEmit -p .
+      - name: Typecheck (web app, then server)
+        run: |
+          npx tsc --noEmit -p .
+          npx tsc --noEmit -p server
 
       - name: Unit tests
         run: yarn test:unit

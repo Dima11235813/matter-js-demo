@@ -18,6 +18,15 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    // Same-origin API in dev, as in production (the Worker's /api/* route): run `yarn dev:server`.
+    proxy: {
+      '/api': 'http://localhost:8787',
+    },
+  },
+  preview: {
+    proxy: {
+      '/api': 'http://localhost:8787',
+    },
   },
   resolve: {
     alias: {

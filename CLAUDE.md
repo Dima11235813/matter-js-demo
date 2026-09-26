@@ -10,6 +10,7 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - `src/persistence/` IndexedDB (sync-ready records); `src/services/` use cases; `src/stores/` MobX
 - `proj-mgmt/` epics and roadmap (source of truth for plans); `docs/research/` reports + reproducible experiments that drive plans
 - `scripts/build-vocab.mjs` builds `public/vocab/` (gitignored; `yarn start`/`yarn build` build it if missing)
+- Monorepo (Yarn 1 workspaces; the web app stays at the root because files are never moved on Drive): `packages/shared` (`@lexical/shared`: zod DTOs, merge rules, keys, counters; TypeScript source, no build step) and `server/` (`@lexical/server`: Hono API, PGlite locally / Postgres in production). Define a contract once in `@lexical/shared`; `src/persistence/counters.ts` and `keys.ts` only re-export it
 
 ## Commands
 
@@ -19,6 +20,7 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - Sentry initializes only when a build sets `VITE_SENTRY_DSN` (dev and e2e never report)
 - Research experiments (kept out of the unit suite): `yarn research:cross-dim` runs all of them; run one with `npx vitest run --config docs/research/experiments/vitest.research.config.ts <name>`
 - Rebuild vocabulary: `yarn vocab:build`
+- API server: `yarn dev:server` (port 8787; Vite proxies `/api`; config in `server/.env.local`, see `server/.env.example`). Server typecheck: `npx tsc --noEmit -p server`. Shared and server tests run in `yarn test:unit` (PGlite in memory)
 - Dev server: `npx vite --port 3000 --strictPort --open false`
 - Dev handle in the browser console: `window.__lexical` (`wordBoxes()`, `layoutFidelity()`, `semanticEngine`, `stores`, `deps`)
 
@@ -50,4 +52,5 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - 3D camera scale: with `setViewOffset` at full frame size, one world unit is one pixel at `pixelMatchedDistance(fullHeight, FOV)`; use the full height, not the area below the dashboard.
 - Patch scripts: create them with the Write tool (never a shell heredoc or `python -` stdin: quotes, `\r\n`, and `\s` escapes get mangled, which broke a regex, an apostrophe, and a whole script in one session); prefer the Edit tool for small edits. The repo mixes LF and CRLF files, so an exact-match patch must normalize line endings on read and restore them on write.
 - `yarn build` can fail once right after "built" when Google Drive holds a lock on `dist/`; rerun before investigating.
+- Yarn 1 workspaces on this machine: `yarn workspace <pkg> add …` fails silently (prints only its usage help). Edit the workspace's `package.json` and run `yarn install --ignore-scripts` instead. Run workspace binaries through root scripts (`yarn dev:server`): `npx tsx` inside `server/` resolves a broken path through the workspace symlink.
 - Before writing a file with the Write tool, check whether it already exists (`git ls-files`, `ls`): Write replaces it whole. A tracked `.env.example` was overwritten once and had to be merged back from git.

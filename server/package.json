@@ -1,0 +1,26 @@
+{
+  "name": "@lexical/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lexical Fountain API: accounts (Firebase ID tokens), device claim, sync push/pull, export, delete",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@hono/node-server": "^2.1.1",
+    "@lexical/shared": "0.1.0",
+    "hono": "^4.13.9",
+    "jose": "^6.2.12",
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "@types/pg": "^8.15.5",
+    "tsx": "^4.23.15"
+  }
+}
