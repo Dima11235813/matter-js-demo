@@ -1,0 +1,1400 @@
+{
+  "vocabVersion": "2d0798c49b2c",
+  "schemes": [
+    {
+      "solver": "global",
+      "scheme": "full100 partial25 penalty-10",
+      "skilled": 55.8,
+      "pairPlusAny": "14.8 (0.27)",
+      "mostSimilarPair": "15.8 (0.28)",
+      "random": "1.9 (0.03)"
+    },
+    {
+      "solver": "global",
+      "scheme": "full100 partial10 penalty-10",
+      "skilled": 55.8,
+      "pairPlusAny": "11.9 (0.21)",
+      "mostSimilarPair": "13.5 (0.24)",
+      "random": "0 (0.00)"
+    },
+    {
+      "solver": "global",
+      "scheme": "full100 partial0 penalty-10",
+      "skilled": 55.8,
+      "pairPlusAny": "10.1 (0.18)",
+      "mostSimilarPair": "12 (0.22)",
+      "random": "-1.4 (-0.03)"
+    },
+    {
+      "solver": "global",
+      "scheme": "full100 partial0 penalty-25",
+      "skilled": 55.1,
+      "pairPlusAny": "9.7 (0.18)",
+      "mostSimilarPair": "12 (0.22)",
+      "random": "-5.3 (-0.10)"
+    },
+    {
+      "solver": "globalTop3",
+      "scheme": "full100 partial25 penalty-10",
+      "skilled": 68.9,
+      "pairPlusAny": "19.6 (0.28)",
+      "mostSimilarPair": "22.8 (0.33)",
+      "random": "3.5 (0.05)"
+    },
+    {
+      "solver": "globalTop3",
+      "scheme": "full100 partial10 penalty-10",
+      "skilled": 68.9,
+      "pairPlusAny": "14.8 (0.21)",
+      "mostSimilarPair": "18.1 (0.26)",
+      "random": "0.7 (0.01)"
+    },
+    {
+      "solver": "globalTop3",
+      "scheme": "full100 partial0 penalty-10",
+      "skilled": 68.9,
+      "pairPlusAny": "11.5 (0.17)",
+      "mostSimilarPair": "15 (0.22)",
+      "random": "-1.2 (-0.02)"
+    },
+    {
+      "solver": "globalTop3",
+      "scheme": "full100 partial0 penalty-25",
+      "skilled": 68.2,
+      "pairPlusAny": "11 (0.16)",
+      "mostSimilarPair": "15 (0.22)",
+      "random": "-5.3 (-0.08)"
+    },
+    {
+      "solver": "board",
+      "scheme": "full100 partial25 penalty-10",
+      "skilled": 95.2,
+      "pairPlusAny": "36.4 (0.38)",
+      "mostSimilarPair": "37.2 (0.39)",
+      "random": "13.3 (0.14)"
+    },
+    {
+      "solver": "board",
+      "scheme": "full100 partial10 penalty-10",
+      "skilled": 94.9,
+      "pairPlusAny": "24.9 (0.26)",
+      "mostSimilarPair": "26 (0.27)",
+      "random": "4.9 (0.05)"
+    },
+    {
+      "solver": "board",
+      "scheme": "full100 partial0 penalty-10",
+      "skilled": 94.6,
+      "pairPlusAny": "17.2 (0.18)",
+      "mostSimilarPair": "18.6 (0.20)",
+      "random": "-0.7 (-0.01)"
+    },
+    {
+      "solver": "board",
+      "scheme": "full100 partial0 penalty-25",
+      "skilled": 94.4,
+      "pairPlusAny": "16.9 (0.18)",
+      "mostSimilarPair": "18.3 (0.19)",
+      "random": "-5.1 (-0.05)"
+    }
+  ],
+  "boardsPerCategory": 12,
+  "table": [
+    {
+      "category": "capital-common-countries",
+      "solver": "global",
+      "completableMedian": 12,
+      "boardsWith2": 1,
+      "skilled": 72.6,
+      "pairPlusAny": 17.9,
+      "mostSimilarPair": 20.1,
+      "random": 5.4,
+      "outcomes": {
+        "skilled": {
+          "full": 140,
+          "partial": 0,
+          "penalty": 6,
+          "none": 46
+        },
+        "pairPlusAny": {
+          "full": 18,
+          "partial": 17,
+          "penalty": 4,
+          "none": 83
+        },
+        "mostSimilarPair": {
+          "full": 18,
+          "partial": 5,
+          "penalty": 0,
+          "none": 73
+        },
+        "random": {
+          "full": 2,
+          "partial": 20,
+          "penalty": 17,
+          "none": 59
+        }
+      }
+    },
+    {
+      "category": "capital-common-countries",
+      "solver": "globalTop3",
+      "completableMedian": 14,
+      "boardsWith2": 1,
+      "skilled": 80.4,
+      "pairPlusAny": 22.9,
+      "mostSimilarPair": 22.9,
+      "random": 8.2,
+      "outcomes": {
+        "skilled": {
+          "full": 155,
+          "partial": 0,
+          "penalty": 6,
+          "none": 31
+        },
+        "pairPlusAny": {
+          "full": 18,
+          "partial": 42,
+          "penalty": 3,
+          "none": 60
+        },
+        "mostSimilarPair": {
+          "full": 16,
+          "partial": 24,
+          "penalty": 0,
+          "none": 56
+        },
+        "random": {
+          "full": 2,
+          "partial": 38,
+          "penalty": 20,
+          "none": 56
+        }
+      }
+    },
+    {
+      "category": "capital-common-countries",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 98.4,
+      "pairPlusAny": 35.8,
+      "mostSimilarPair": 39.1,
+      "random": 17,
+      "outcomes": {
+        "skilled": {
+          "full": 188,
+          "partial": 4,
+          "penalty": 0,
+          "none": 0
+        },
+        "pairPlusAny": {
+          "full": 18,
+          "partial": 99,
+          "penalty": 1,
+          "none": 1
+        },
+        "mostSimilarPair": {
+          "full": 19,
+          "partial": 74,
+          "penalty": 0,
+          "none": 3
+        },
+        "random": {
+          "full": 3,
+          "partial": 73,
+          "penalty": 26,
+          "none": 8
+        }
+      }
+    },
+    {
+      "category": "capital-world",
+      "solver": "global",
+      "completableMedian": 12,
+      "boardsWith2": 1,
+      "skilled": 72.7,
+      "pairPlusAny": 18.5,
+      "mostSimilarPair": 20.1,
+      "random": 0.9,
+      "outcomes": {
+        "skilled": {
+          "full": 140,
+          "partial": 0,
+          "penalty": 5,
+          "none": 47
+        },
+        "pairPlusAny": {
+          "full": 18,
+          "partial": 21,
+          "penalty": 1,
+          "none": 85
+        },
+        "mostSimilarPair": {
+          "full": 15,
+          "partial": 17,
+          "penalty": 0,
+          "none": 64
+        },
+        "random": {
+          "full": 0,
+          "partial": 12,
+          "penalty": 22,
+          "none": 58
+        }
+      }
+    },
+    {
+      "category": "capital-world",
+      "solver": "globalTop3",
+      "completableMedian": 15,
+      "boardsWith2": 1,
+      "skilled": 90,
+      "pairPlusAny": 22.4,
+      "mostSimilarPair": 30.5,
+      "random": 9.3,
+      "outcomes": {
+        "skilled": {
+          "full": 173,
+          "partial": 0,
+          "penalty": 2,
+          "none": 17
+        },
+        "pairPlusAny": {
+          "full": 13,
+          "partial": 47,
+          "penalty": 1,
+          "none": 49
+        },
+        "mostSimilarPair": {
+          "full": 20,
+          "partial": 37,
+          "penalty": 0,
+          "none": 39
+        },
+        "random": {
+          "full": 2,
+          "partial": 34,
+          "penalty": 15,
+          "none": 46
+        }
+      }
+    },
+    {
+      "category": "capital-world",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 99.6,
+      "pairPlusAny": 36,
+      "mostSimilarPair": 40.9,
+      "random": 18,
+      "outcomes": {
+        "skilled": {
+          "full": 191,
+          "partial": 1,
+          "penalty": 0,
+          "none": 0
+        },
+        "pairPlusAny": {
+          "full": 18,
+          "partial": 102,
+          "penalty": 0,
+          "none": 1
+        },
+        "mostSimilarPair": {
+          "full": 21,
+          "partial": 73,
+          "penalty": 0,
+          "none": 2
+        },
+        "random": {
+          "full": 3,
+          "partial": 75,
+          "penalty": 20,
+          "none": 12
+        }
+      }
+    },
+    {
+      "category": "currency",
+      "solver": "global",
+      "completableMedian": 4,
+      "boardsWith2": 0.92,
+      "skilled": 23.9,
+      "pairPlusAny": 3.2,
+      "mostSimilarPair": 8.1,
+      "random": 1.1,
+      "outcomes": {
+        "skilled": {
+          "full": 52,
+          "partial": 0,
+          "penalty": 61,
+          "none": 79
+        },
+        "pairPlusAny": {
+          "full": 5,
+          "partial": 3,
+          "penalty": 21,
+          "none": 86
+        },
+        "mostSimilarPair": {
+          "full": 8,
+          "partial": 0,
+          "penalty": 2,
+          "none": 86
+        },
+        "random": {
+          "full": 1,
+          "partial": 11,
+          "penalty": 26,
+          "none": 68
+        }
+      }
+    },
+    {
+      "category": "currency",
+      "solver": "globalTop3",
+      "completableMedian": 6,
+      "boardsWith2": 1,
+      "skilled": 37,
+      "pairPlusAny": 13.6,
+      "mostSimilarPair": 14.3,
+      "random": 2.2,
+      "outcomes": {
+        "skilled": {
+          "full": 77,
+          "partial": 1,
+          "penalty": 62,
+          "none": 52
+        },
+        "pairPlusAny": {
+          "full": 13,
+          "partial": 15,
+          "penalty": 16,
+          "none": 67
+        },
+        "mostSimilarPair": {
+          "full": 8,
+          "partial": 23,
+          "penalty": 0,
+          "none": 65
+        },
+        "random": {
+          "full": 1,
+          "partial": 15,
+          "penalty": 26,
+          "none": 55
+        }
+      }
+    },
+    {
+      "category": "currency",
+      "solver": "board",
+      "completableMedian": 10,
+      "boardsWith2": 1,
+      "skilled": 68.8,
+      "pairPlusAny": 24.8,
+      "mostSimilarPair": 26.7,
+      "random": 13.8,
+      "outcomes": {
+        "skilled": {
+          "full": 130,
+          "partial": 19,
+          "penalty": 26,
+          "none": 17
+        },
+        "pairPlusAny": {
+          "full": 11,
+          "partial": 75,
+          "penalty": 12,
+          "none": 17
+        },
+        "mostSimilarPair": {
+          "full": 11,
+          "partial": 62,
+          "penalty": 9,
+          "none": 14
+        },
+        "random": {
+          "full": 2,
+          "partial": 60,
+          "penalty": 27,
+          "none": 15
+        }
+      }
+    },
+    {
+      "category": "city-in-state",
+      "solver": "global",
+      "completableMedian": 10,
+      "boardsWith2": 1,
+      "skilled": 55.2,
+      "pairPlusAny": 15.8,
+      "mostSimilarPair": 15.6,
+      "random": 7,
+      "outcomes": {
+        "skilled": {
+          "full": 106,
+          "partial": 1,
+          "penalty": 2,
+          "none": 83
+        },
+        "pairPlusAny": {
+          "full": 13,
+          "partial": 25,
+          "penalty": 1,
+          "none": 82
+        },
+        "mostSimilarPair": {
+          "full": 9,
+          "partial": 24,
+          "penalty": 0,
+          "none": 63
+        },
+        "random": {
+          "full": 1,
+          "partial": 33,
+          "penalty": 15,
+          "none": 62
+        }
+      }
+    },
+    {
+      "category": "city-in-state",
+      "solver": "globalTop3",
+      "completableMedian": 11,
+      "boardsWith2": 1,
+      "skilled": 70,
+      "pairPlusAny": 23.6,
+      "mostSimilarPair": 22.1,
+      "random": 4.4,
+      "outcomes": {
+        "skilled": {
+          "full": 135,
+          "partial": 0,
+          "penalty": 6,
+          "none": 51
+        },
+        "pairPlusAny": {
+          "full": 21,
+          "partial": 35,
+          "penalty": 7,
+          "none": 60
+        },
+        "mostSimilarPair": {
+          "full": 13,
+          "partial": 33,
+          "penalty": 0,
+          "none": 50
+        },
+        "random": {
+          "full": 0,
+          "partial": 27,
+          "penalty": 26,
+          "none": 42
+        }
+      }
+    },
+    {
+      "category": "city-in-state",
+      "solver": "board",
+      "completableMedian": 15,
+      "boardsWith2": 1,
+      "skilled": 94.4,
+      "pairPlusAny": 42.2,
+      "mostSimilarPair": 33.4,
+      "random": 14.3,
+      "outcomes": {
+        "skilled": {
+          "full": 179,
+          "partial": 10,
+          "penalty": 2,
+          "none": 1
+        },
+        "pairPlusAny": {
+          "full": 30,
+          "partial": 83,
+          "penalty": 1,
+          "none": 6
+        },
+        "mostSimilarPair": {
+          "full": 14,
+          "partial": 74,
+          "penalty": 4,
+          "none": 4
+        },
+        "random": {
+          "full": 3,
+          "partial": 62,
+          "penalty": 32,
+          "none": 10
+        }
+      }
+    },
+    {
+      "category": "family",
+      "solver": "global",
+      "completableMedian": 12,
+      "boardsWith2": 1,
+      "skilled": 63.1,
+      "pairPlusAny": 17.2,
+      "mostSimilarPair": 17.2,
+      "random": 0.9,
+      "outcomes": {
+        "skilled": {
+          "full": 121,
+          "partial": 2,
+          "penalty": 3,
+          "none": 66
+        },
+        "pairPlusAny": {
+          "full": 16,
+          "partial": 18,
+          "penalty": 2,
+          "none": 82
+        },
+        "mostSimilarPair": {
+          "full": 14,
+          "partial": 10,
+          "penalty": 0,
+          "none": 72
+        },
+        "random": {
+          "full": 2,
+          "partial": 11,
+          "penalty": 37,
+          "none": 61
+        }
+      }
+    },
+    {
+      "category": "family",
+      "solver": "globalTop3",
+      "completableMedian": 12,
+      "boardsWith2": 1,
+      "skilled": 78.4,
+      "pairPlusAny": 17.3,
+      "mostSimilarPair": 21.4,
+      "random": 4.3,
+      "outcomes": {
+        "skilled": {
+          "full": 150,
+          "partial": 3,
+          "penalty": 3,
+          "none": 36
+        },
+        "pairPlusAny": {
+          "full": 9,
+          "partial": 38,
+          "penalty": 2,
+          "none": 57
+        },
+        "mostSimilarPair": {
+          "full": 14,
+          "partial": 26,
+          "penalty": 0,
+          "none": 56
+        },
+        "random": {
+          "full": 4,
+          "partial": 19,
+          "penalty": 38,
+          "none": 54
+        }
+      }
+    },
+    {
+      "category": "family",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 97.5,
+      "pairPlusAny": 38.3,
+      "mostSimilarPair": 35.4,
+      "random": 11,
+      "outcomes": {
+        "skilled": {
+          "full": 186,
+          "partial": 5,
+          "penalty": 1,
+          "none": 0
+        },
+        "pairPlusAny": {
+          "full": 23,
+          "partial": 94,
+          "penalty": 2,
+          "none": 2
+        },
+        "mostSimilarPair": {
+          "full": 15,
+          "partial": 76,
+          "penalty": 0,
+          "none": 5
+        },
+        "random": {
+          "full": 1,
+          "partial": 61,
+          "penalty": 39,
+          "none": 11
+        }
+      }
+    },
+    {
+      "category": "gram1-adjective-to-adverb",
+      "solver": "global",
+      "completableMedian": 6,
+      "boardsWith2": 1,
+      "skilled": 37.2,
+      "pairPlusAny": 12.3,
+      "mostSimilarPair": 8.9,
+      "random": -0.3,
+      "outcomes": {
+        "skilled": {
+          "full": 72,
+          "partial": 0,
+          "penalty": 5,
+          "none": 115
+        },
+        "pairPlusAny": {
+          "full": 7,
+          "partial": 30,
+          "penalty": 2,
+          "none": 77
+        },
+        "mostSimilarPair": {
+          "full": 7,
+          "partial": 6,
+          "penalty": 0,
+          "none": 83
+        },
+        "random": {
+          "full": 0,
+          "partial": 9,
+          "penalty": 25,
+          "none": 61
+        }
+      }
+    },
+    {
+      "category": "gram1-adjective-to-adverb",
+      "solver": "globalTop3",
+      "completableMedian": 7,
+      "boardsWith2": 1,
+      "skilled": 46,
+      "pairPlusAny": 11.5,
+      "mostSimilarPair": 15.5,
+      "random": 0.5,
+      "outcomes": {
+        "skilled": {
+          "full": 89,
+          "partial": 0,
+          "penalty": 7,
+          "none": 96
+        },
+        "pairPlusAny": {
+          "full": 7,
+          "partial": 24,
+          "penalty": 6,
+          "none": 71
+        },
+        "mostSimilarPair": {
+          "full": 9,
+          "partial": 24,
+          "penalty": 1,
+          "none": 62
+        },
+        "random": {
+          "full": 1,
+          "partial": 13,
+          "penalty": 37,
+          "none": 56
+        }
+      }
+    },
+    {
+      "category": "gram1-adjective-to-adverb",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 95.8,
+      "pairPlusAny": 35.7,
+      "mostSimilarPair": 35.4,
+      "random": 12.5,
+      "outcomes": {
+        "skilled": {
+          "full": 182,
+          "partial": 8,
+          "penalty": 0,
+          "none": 2
+        },
+        "pairPlusAny": {
+          "full": 18,
+          "partial": 102,
+          "penalty": 0,
+          "none": 2
+        },
+        "mostSimilarPair": {
+          "full": 14,
+          "partial": 80,
+          "penalty": 0,
+          "none": 2
+        },
+        "random": {
+          "full": 3,
+          "partial": 49,
+          "penalty": 30,
+          "none": 16
+        }
+      }
+    },
+    {
+      "category": "gram2-opposite",
+      "solver": "global",
+      "completableMedian": 8,
+      "boardsWith2": 0.92,
+      "skilled": 47.8,
+      "pairPlusAny": 12.6,
+      "mostSimilarPair": 14.8,
+      "random": 0.4,
+      "outcomes": {
+        "skilled": {
+          "full": 92,
+          "partial": 0,
+          "penalty": 3,
+          "none": 97
+        },
+        "pairPlusAny": {
+          "full": 9,
+          "partial": 22,
+          "penalty": 1,
+          "none": 82
+        },
+        "mostSimilarPair": {
+          "full": 10,
+          "partial": 17,
+          "penalty": 0,
+          "none": 69
+        },
+        "random": {
+          "full": 1,
+          "partial": 10,
+          "penalty": 31,
+          "none": 58
+        }
+      }
+    },
+    {
+      "category": "gram2-opposite",
+      "solver": "globalTop3",
+      "completableMedian": 10,
+      "boardsWith2": 1,
+      "skilled": 61.9,
+      "pairPlusAny": 21.1,
+      "mostSimilarPair": 20.1,
+      "random": 3.4,
+      "outcomes": {
+        "skilled": {
+          "full": 119,
+          "partial": 0,
+          "penalty": 1,
+          "none": 72
+        },
+        "pairPlusAny": {
+          "full": 13,
+          "partial": 34,
+          "penalty": 2,
+          "none": 52
+        },
+        "mostSimilarPair": {
+          "full": 11,
+          "partial": 33,
+          "penalty": 0,
+          "none": 52
+        },
+        "random": {
+          "full": 1,
+          "partial": 22,
+          "penalty": 31,
+          "none": 47
+        }
+      }
+    },
+    {
+      "category": "gram2-opposite",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 97.1,
+      "pairPlusAny": 36.2,
+      "mostSimilarPair": 38.5,
+      "random": 13.3,
+      "outcomes": {
+        "skilled": {
+          "full": 185,
+          "partial": 6,
+          "penalty": 1,
+          "none": 0
+        },
+        "pairPlusAny": {
+          "full": 20,
+          "partial": 93,
+          "penalty": 2,
+          "none": 4
+        },
+        "mostSimilarPair": {
+          "full": 19,
+          "partial": 72,
+          "penalty": 0,
+          "none": 5
+        },
+        "random": {
+          "full": 4,
+          "partial": 53,
+          "penalty": 32,
+          "none": 17
+        }
+      }
+    },
+    {
+      "category": "gram3-comparative",
+      "solver": "global",
+      "completableMedian": 10,
+      "boardsWith2": 1,
+      "skilled": 63,
+      "pairPlusAny": 11.3,
+      "mostSimilarPair": 15.6,
+      "random": 1,
+      "outcomes": {
+        "skilled": {
+          "full": 121,
+          "partial": 0,
+          "penalty": 0,
+          "none": 71
+        },
+        "pairPlusAny": {
+          "full": 3,
+          "partial": 38,
+          "penalty": 0,
+          "none": 70
+        },
+        "mostSimilarPair": {
+          "full": 8,
+          "partial": 28,
+          "penalty": 0,
+          "none": 60
+        },
+        "random": {
+          "full": 1,
+          "partial": 11,
+          "penalty": 28,
+          "none": 57
+        }
+      }
+    },
+    {
+      "category": "gram3-comparative",
+      "solver": "globalTop3",
+      "completableMedian": 11,
+      "boardsWith2": 1,
+      "skilled": 64.9,
+      "pairPlusAny": 19.6,
+      "mostSimilarPair": 25,
+      "random": 6.3,
+      "outcomes": {
+        "skilled": {
+          "full": 125,
+          "partial": 1,
+          "penalty": 7,
+          "none": 59
+        },
+        "pairPlusAny": {
+          "full": 10,
+          "partial": 50,
+          "penalty": 4,
+          "none": 49
+        },
+        "mostSimilarPair": {
+          "full": 14,
+          "partial": 40,
+          "penalty": 0,
+          "none": 42
+        },
+        "random": {
+          "full": 6,
+          "partial": 14,
+          "penalty": 30,
+          "none": 53
+        }
+      }
+    },
+    {
+      "category": "gram3-comparative",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 97.9,
+      "pairPlusAny": 40.7,
+      "mostSimilarPair": 43.2,
+      "random": 10.6,
+      "outcomes": {
+        "skilled": {
+          "full": 188,
+          "partial": 0,
+          "penalty": 0,
+          "none": 4
+        },
+        "pairPlusAny": {
+          "full": 26,
+          "partial": 85,
+          "penalty": 0,
+          "none": 5
+        },
+        "mostSimilarPair": {
+          "full": 24,
+          "partial": 70,
+          "penalty": 0,
+          "none": 2
+        },
+        "random": {
+          "full": 1,
+          "partial": 53,
+          "penalty": 31,
+          "none": 20
+        }
+      }
+    },
+    {
+      "category": "gram4-superlative",
+      "solver": "global",
+      "completableMedian": 8,
+      "boardsWith2": 1,
+      "skilled": 49.4,
+      "pairPlusAny": 11.9,
+      "mostSimilarPair": 16.4,
+      "random": -0.1,
+      "outcomes": {
+        "skilled": {
+          "full": 95,
+          "partial": 0,
+          "penalty": 1,
+          "none": 96
+        },
+        "pairPlusAny": {
+          "full": 9,
+          "partial": 20,
+          "penalty": 0,
+          "none": 89
+        },
+        "mostSimilarPair": {
+          "full": 12,
+          "partial": 15,
+          "penalty": 0,
+          "none": 69
+        },
+        "random": {
+          "full": 2,
+          "partial": 5,
+          "penalty": 34,
+          "none": 69
+        }
+      }
+    },
+    {
+      "category": "gram4-superlative",
+      "solver": "globalTop3",
+      "completableMedian": 12,
+      "boardsWith2": 1,
+      "skilled": 70,
+      "pairPlusAny": 15.7,
+      "mostSimilarPair": 19.8,
+      "random": -1.5,
+      "outcomes": {
+        "skilled": {
+          "full": 135,
+          "partial": 0,
+          "penalty": 6,
+          "none": 51
+        },
+        "pairPlusAny": {
+          "full": 13,
+          "partial": 22,
+          "penalty": 5,
+          "none": 75
+        },
+        "mostSimilarPair": {
+          "full": 13,
+          "partial": 24,
+          "penalty": 0,
+          "none": 59
+        },
+        "random": {
+          "full": 0,
+          "partial": 7,
+          "penalty": 34,
+          "none": 70
+        }
+      }
+    },
+    {
+      "category": "gram4-superlative",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 97.4,
+      "pairPlusAny": 35.2,
+      "mostSimilarPair": 35.9,
+      "random": 11.9,
+      "outcomes": {
+        "skilled": {
+          "full": 186,
+          "partial": 4,
+          "penalty": 0,
+          "none": 2
+        },
+        "pairPlusAny": {
+          "full": 20,
+          "partial": 98,
+          "penalty": 2,
+          "none": 6
+        },
+        "mostSimilarPair": {
+          "full": 16,
+          "partial": 74,
+          "penalty": 0,
+          "none": 6
+        },
+        "random": {
+          "full": 2,
+          "partial": 54,
+          "penalty": 31,
+          "none": 17
+        }
+      }
+    },
+    {
+      "category": "gram5-present-participle",
+      "solver": "global",
+      "completableMedian": 9,
+      "boardsWith2": 1,
+      "skilled": 57.9,
+      "pairPlusAny": 23.6,
+      "mostSimilarPair": 15.9,
+      "random": -0.6,
+      "outcomes": {
+        "skilled": {
+          "full": 112,
+          "partial": 0,
+          "penalty": 9,
+          "none": 71
+        },
+        "pairPlusAny": {
+          "full": 19,
+          "partial": 35,
+          "penalty": 4,
+          "none": 58
+        },
+        "mostSimilarPair": {
+          "full": 10,
+          "partial": 21,
+          "penalty": 0,
+          "none": 65
+        },
+        "random": {
+          "full": 1,
+          "partial": 9,
+          "penalty": 38,
+          "none": 48
+        }
+      }
+    },
+    {
+      "category": "gram5-present-participle",
+      "solver": "globalTop3",
+      "completableMedian": 14,
+      "boardsWith2": 1,
+      "skilled": 82.2,
+      "pairPlusAny": 24.5,
+      "mostSimilarPair": 34.6,
+      "random": 1.1,
+      "outcomes": {
+        "skilled": {
+          "full": 158,
+          "partial": 0,
+          "penalty": 1,
+          "none": 33
+        },
+        "pairPlusAny": {
+          "full": 13,
+          "partial": 50,
+          "penalty": 0,
+          "none": 41
+        },
+        "mostSimilarPair": {
+          "full": 22,
+          "partial": 45,
+          "penalty": 0,
+          "none": 29
+        },
+        "random": {
+          "full": 0,
+          "partial": 14,
+          "penalty": 24,
+          "none": 62
+        }
+      }
+    },
+    {
+      "category": "gram5-present-participle",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 99,
+      "pairPlusAny": 37,
+      "mostSimilarPair": 41.8,
+      "random": 7.6,
+      "outcomes": {
+        "skilled": {
+          "full": 190,
+          "partial": 0,
+          "penalty": 0,
+          "none": 2
+        },
+        "pairPlusAny": {
+          "full": 20,
+          "partial": 95,
+          "penalty": 1,
+          "none": 2
+        },
+        "mostSimilarPair": {
+          "full": 23,
+          "partial": 69,
+          "penalty": 1,
+          "none": 3
+        },
+        "random": {
+          "full": 0,
+          "partial": 49,
+          "penalty": 43,
+          "none": 12
+        }
+      }
+    },
+    {
+      "category": "gram6-nationality-adjective",
+      "solver": "global",
+      "completableMedian": 10,
+      "boardsWith2": 1,
+      "skilled": 69.5,
+      "pairPlusAny": 13.9,
+      "mostSimilarPair": 21.6,
+      "random": 4.3,
+      "outcomes": {
+        "skilled": {
+          "full": 134,
+          "partial": 0,
+          "penalty": 5,
+          "none": 53
+        },
+        "pairPlusAny": {
+          "full": 14,
+          "partial": 13,
+          "penalty": 1,
+          "none": 95
+        },
+        "mostSimilarPair": {
+          "full": 18,
+          "partial": 11,
+          "penalty": 0,
+          "none": 67
+        },
+        "random": {
+          "full": 1,
+          "partial": 19,
+          "penalty": 13,
+          "none": 70
+        }
+      }
+    },
+    {
+      "category": "gram6-nationality-adjective",
+      "solver": "globalTop3",
+      "completableMedian": 12,
+      "boardsWith2": 1,
+      "skilled": 71.5,
+      "pairPlusAny": 25.6,
+      "mostSimilarPair": 26.8,
+      "random": 2.3,
+      "outcomes": {
+        "skilled": {
+          "full": 137,
+          "partial": 1,
+          "penalty": 0,
+          "none": 54
+        },
+        "pairPlusAny": {
+          "full": 22,
+          "partial": 37,
+          "penalty": 0,
+          "none": 63
+        },
+        "mostSimilarPair": {
+          "full": 19,
+          "partial": 27,
+          "penalty": 0,
+          "none": 50
+        },
+        "random": {
+          "full": 1,
+          "partial": 15,
+          "penalty": 24,
+          "none": 63
+        }
+      }
+    },
+    {
+      "category": "gram6-nationality-adjective",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 96.9,
+      "pairPlusAny": 39.1,
+      "mostSimilarPair": 38.9,
+      "random": 13.5,
+      "outcomes": {
+        "skilled": {
+          "full": 186,
+          "partial": 2,
+          "penalty": 4,
+          "none": 0
+        },
+        "pairPlusAny": {
+          "full": 27,
+          "partial": 75,
+          "penalty": 8,
+          "none": 5
+        },
+        "mostSimilarPair": {
+          "full": 23,
+          "partial": 60,
+          "penalty": 7,
+          "none": 6
+        },
+        "random": {
+          "full": 2,
+          "partial": 61,
+          "penalty": 32,
+          "none": 9
+        }
+      }
+    },
+    {
+      "category": "gram7-past-tense",
+      "solver": "global",
+      "completableMedian": 10,
+      "boardsWith2": 1,
+      "skilled": 57.2,
+      "pairPlusAny": 18.3,
+      "mostSimilarPair": 15.1,
+      "random": 2.7,
+      "outcomes": {
+        "skilled": {
+          "full": 110,
+          "partial": 0,
+          "penalty": 1,
+          "none": 81
+        },
+        "pairPlusAny": {
+          "full": 15,
+          "partial": 24,
+          "penalty": 0,
+          "none": 76
+        },
+        "mostSimilarPair": {
+          "full": 10,
+          "partial": 18,
+          "penalty": 0,
+          "none": 68
+        },
+        "random": {
+          "full": 3,
+          "partial": 12,
+          "penalty": 32,
+          "none": 57
+        }
+      }
+    },
+    {
+      "category": "gram7-past-tense",
+      "solver": "globalTop3",
+      "completableMedian": 14,
+      "boardsWith2": 1,
+      "skilled": 74.9,
+      "pairPlusAny": 16.3,
+      "mostSimilarPair": 21,
+      "random": 1.2,
+      "outcomes": {
+        "skilled": {
+          "full": 144,
+          "partial": 0,
+          "penalty": 2,
+          "none": 46
+        },
+        "pairPlusAny": {
+          "full": 7,
+          "partial": 39,
+          "penalty": 0,
+          "none": 57
+        },
+        "mostSimilarPair": {
+          "full": 14,
+          "partial": 25,
+          "penalty": 1,
+          "none": 56
+        },
+        "random": {
+          "full": 1,
+          "partial": 15,
+          "penalty": 35,
+          "none": 50
+        }
+      }
+    },
+    {
+      "category": "gram7-past-tense",
+      "solver": "board",
+      "completableMedian": 16,
+      "boardsWith2": 1,
+      "skilled": 100,
+      "pairPlusAny": 35.9,
+      "mostSimilarPair": 37.5,
+      "random": 15.5,
+      "outcomes": {
+        "skilled": {
+          "full": 192,
+          "partial": 0,
+          "penalty": 0,
+          "none": 0
+        },
+        "pairPlusAny": {
+          "full": 18,
+          "partial": 95,
+          "penalty": 1,
+          "none": 2
+        },
+        "mostSimilarPair": {
+          "full": 17,
+          "partial": 76,
+          "penalty": 0,
+          "none": 3
+        },
+        "random": {
+          "full": 5,
+          "partial": 62,
+          "penalty": 33,
+          "none": 11
+        }
+      }
+    }
+  ]
+}

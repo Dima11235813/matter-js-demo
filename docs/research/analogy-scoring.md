@@ -1,6 +1,6 @@
 # Analogy Scoring: Rewarding Answers That Connect to the Third Word
 
-**Status**: research complete; held-out validation (§5) shows vectors alone cannot score analogies fairly, so a design pivot is proposed (not built), plan in [Epic 2 · Feature 2.11](../../proj-mgmt/epic-2-gamification.md) · **Date**: 2026-09-24 · **Reproduce**: `npx vitest run --config docs/research/experiments/vitest.research.config.ts analogyScoring` (data: [`experiments/results/analogy-scoring.json`](experiments/results/analogy-scoring.json))
+**Status**: research complete; held-out validation (§5) shows vectors alone cannot score analogies fairly, so timed rounds will score against designed questions, validated by simulation in §7 (decided 2026-09-25, not built yet), plan in [Epic 2 · Feature 2.11](../../proj-mgmt/epic-2-gamification.md) · **Date**: 2026-09-24 · **Reproduce**: `npx vitest run --config docs/research/experiments/vitest.research.config.ts analogyScoring` (data: [`experiments/results/analogy-scoring.json`](experiments/results/analogy-scoring.json))
 
 ## 1. Question
 
@@ -99,7 +99,44 @@ By category (offset ≥ 0.25): nationality-adjective 93%, common capitals 85%, w
 * The thresholds were first chosen on 30 canonical analogies; the held-out check in §5 showed they were overfit.
 * MiniLM is weak at analogies (it finds the expected answer in 53% of the canonical set), so many "wrong" answers are reasonable (florence, seville, classroom).
 * Trivial ≠ wrong: japan → tokyo is both correct and Japan's nearest word. The proposed rule doesn't use the trivial flag; the offset does the work.
+* The quad simulation deals 12 boards per category, and its strategies are models, not people. Play-testing decides whether full = 100 and penalty = −10 feel right.
 * Player behaviour is simulated by populations, not observed. Log real plays (question, answer, the three similarities, offset, verdict) to re-run this analysis on actual games.
+
+## 7. Designed questions, simulated (2026-09-25)
+
+**Decision (user, 2026-09-25)**: score timed rounds against designed questions; the vector verdict becomes a learning hint.
+
+**Setup** ([`quadBoards.experiment.ts`](experiments/quadBoards.experiment.ts), data [`experiments/results/quad-boards.json`](experiments/results/quad-boards.json)): 350 relation pairs in 13 categories ([`experiments/data/google-analogy-pairs.txt`](experiments/data/google-analogy-pairs.txt), unique pairs from the Google set with both words in the vocabulary). A board deals 10 words: 3 pairs from one category and 2 from another, with no stems shared across pairs. A **designed play** is *a → b* from one pair and *c → d* from another pair of the same category, in the same direction (either way round). 12 boards per category. Strategies:
+
+* **skilled**: every designed play on the board;
+* **pairPlusAny**: a dealt pair plus any other word as *c* (half-informed);
+* **mostSimilarPair**: the two most similar words on the board as *a, b*, then every other word as *c* (the synonym exploit, adapted to dealt boards);
+* **random**: any three words.
+
+Outcomes: **full** = the answer completes a designed play; **partial** = the answer is another board word linked to *c*; **penalty** = the answer connects to *a* or *b* but not to *c*. Three solvers: the game's solver (any vocabulary word; the answer spawns), a lenient version that counts a board word in the solver's **top 3**, and a board-only solver (the answer must be a board word).
+
+Mean points per play, pooled over categories (full 100, partial 0, penalty −10; in brackets the share of skilled play):
+
+| Solver | skilled | pairPlusAny | mostSimilarPair | random |
+|---|---|---|---|---|
+| game solver | 55.8 | 10.1 (0.18) | 12.0 (0.22) | −1.4 |
+| **game solver, top-3 leniency** | **68.9** | 11.5 (0.17) | 15.0 (0.22) | −1.2 |
+| board-only solver | 94.6 | 17.2 (0.18) | 18.6 (0.20) | −0.7 |
+
+A partial reward makes guessing pay: with partial 25, random play earns 14% of skilled on the board-only solver, and informed guesses earn 0.27–0.39. So partial matches earn nothing.
+
+* **Every board is completable**: the median is 8–14 designed plays the solver completes, and ≥ 2 on 100% of boards (92% for currency and opposites).
+* **Random play earns nothing**, meeting the "< 10% of skilled" gate; half-informed strategies earn about a fifth.
+* **The board-only solver scores skilled play highest**, but it makes the answer a pick from the board instead of an introduced word, and random play gets lucky more often. The top-3 game solver keeps the original mechanic, where the answer is a new word that lands on the board.
+
+Skilled points per category (top-3 leniency): world capitals 90, present participle 82, common capitals 80, family 78, past tense 75, nationality adjective 72, superlative 70, city-in-state 70, comparative 65, opposite 62, adjective → adverb 46, currency 37.
+
+**Decision**:
+1. Timed rounds deal 3 pairs from one relation category plus 2 from another.
+2. Score with the game solver and top-3 leniency: when a board word that completes a designed play is among the top 3 answers, that word is the answer (it gets focus; the HUD also shows the model's first choice).
+3. Points: full = 100, partial = 0, penalty (collapse onto the first pair) = −10, anything else = 0.
+4. Use the categories with skilled ≥ 60: capitals (common and world), family, nationality adjectives, comparative, superlative, present participle, past tense, city-in-state, opposites. Currency and adjective → adverb are excluded.
+5. The vector verdict (offset ≥ 0.20, collapse warning) is shown as a learning hint in both modes and changes no points.
 
 ## References
 
