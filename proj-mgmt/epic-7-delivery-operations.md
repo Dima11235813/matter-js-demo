@@ -32,6 +32,11 @@ Take the game from a local dev server to a public site with checked PRs, preview
   * [~] **Task 7.1.1.8**: Dependabot (npm + github-actions, grouped weekly) ✅ `.github/dependabot.yml`. ⬜ CodeQL default setup and secret scanning with push protection are repository settings on GitHub (owner's action).
 * **Exit criteria**: a green PR run; cold and warm vocabulary-build timings; total CI minutes; the unit-test count in CI equals the local count (no skips).
 
+### Feature 7.1b: Branch Model & Deploy-on-Merge (decided by the owner 2026-09-26)
+* [x] **Task 7.1b.1**: `feature/*` → PR → `develop` (tested locally) → PR → `main`, and a push to `main` deploys. CI runs on every PR and on pushes to `develop` and `main`.
+* [x] **Task 7.1b.2**: `deploy-production` job: runs only on pushes to `main` with `vars.DEPLOY_ENABLED == 'true'`; needs `verify` + `e2e` and deploys the exact `dist` artifact they tested; GitHub OIDC → GCP Workload Identity Federation → Secret Manager `cloudflare-deploy-token` → `wrangler deploy --message <sha>`; smoke test (page + `vocab.bin`). Actions pinned (google-github-actions/auth v3.0.0, get-secretmanager-secrets v3.0.0). `wrangler` 4.141.0 as a dev dependency; `wrangler.jsonc` (static assets, SPA fallback); `public/_headers` (immutable `/assets/*`, `no-cache` `/vocab/*`, `nosniff`, `Referrer-Policy`); `public/.assetsignore` (`*.map`). `wrangler deploy --dry-run` reads the 17 built assets.
+* [ ] **Task 7.1b.3** (owner): the human steps in [docs/setup/accounts-and-deploy.md](../docs/setup/accounts-and-deploy.md): default branch `main`, rulesets, CodeQL and secret scanning, the `production` environment, GCP WIF + Secret Manager, the Cloudflare account + token, repository variables, then `DEPLOY_ENABLED=true`.
+
 ### Feature 7.2: Production & Previews (Stage B, ~$1–2/month)
 * [ ] **Task 7.2.1**: Cloudflare account, `wrangler.jsonc` (assets, SPA fallback), `public/_headers`:
   * `immutable` for `/assets/*`;

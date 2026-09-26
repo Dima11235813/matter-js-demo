@@ -1,0 +1,12 @@
+// Cloudflare Workers static-assets site (Epic 7 · Feature 7.2; docs/setup/accounts-and-deploy.md §3).
+// Deployed only by CI on merges to main; never from the Drive-synced working copy.
+// Stage C/D adds "main" (a Worker script) with "run_worker_first": ["/api/*"] to proxy the API to Cloud Run.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lexical-fountain",
+  "compatibility_date": "2026-09-25",
+  "assets": {
+    "directory": "./dist/",
+    "not_found_handling": "single-page-application"
+  }
+}

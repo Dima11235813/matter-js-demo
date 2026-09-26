@@ -1,0 +1,12 @@
+# Cloudflare static-asset headers (copied into dist/ by Vite). docs/research/delivery-cicd.md §2.
+# Content-hashed bundles never change, so browsers may keep them for a year.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# vocab.bin's name has no content hash yet (Epic 7 · Task 7.2.4): revalidate (cheap 304s) instead of pinning.
+/vocab/*
+  Cache-Control: no-cache
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

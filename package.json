@@ -51,7 +51,8 @@
     "sass": "^1.62.0",
     "typescript": "^7.0.2",
     "vite": "^4.4.5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "wrangler": "^4"
   },
   "scripts": {
     "vocab:build": "node scripts/build-vocab.mjs",

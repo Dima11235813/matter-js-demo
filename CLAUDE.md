@@ -24,6 +24,9 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 
 ## Working agreements
 
+- Branches: work on `feature/*`, PR into `develop` (the owner tests locally), PR `develop` into `main`; a push to `main` deploys to production (CI job `deploy-production`, enabled by the `DEPLOY_ENABLED` repository variable). Never commit straight to `main` or `develop` once the rulesets are on.
+- Accounts, secrets, and env variable names: `docs/setup/accounts-and-deploy.md` (human steps), `.env.example`, `server/.env.example`.
+
 - Work in small, testable milestones; each ends with tests plus a measured number from the running app, recorded in the epic.
 - Complex features start with research in `docs/research/` (question, experiments, findings, decision), then a proj-mgmt plan, then an MVP. Measure before claiming; a metric that disagrees with a screenshot means the metric is incomplete.
 - Ideas the user raises mid-task go into proj-mgmt as `(roadmap)` items immediately, even when not built now.
@@ -47,3 +50,4 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - 3D camera scale: with `setViewOffset` at full frame size, one world unit is one pixel at `pixelMatchedDistance(fullHeight, FOV)`; use the full height, not the area below the dashboard.
 - Patch scripts: create them with the Write tool (never a shell heredoc or `python -` stdin: quotes, `\r\n`, and `\s` escapes get mangled, which broke a regex, an apostrophe, and a whole script in one session); prefer the Edit tool for small edits. The repo mixes LF and CRLF files, so an exact-match patch must normalize line endings on read and restore them on write.
 - `yarn build` can fail once right after "built" when Google Drive holds a lock on `dist/`; rerun before investigating.
+- Before writing a file with the Write tool, check whether it already exists (`git ls-files`, `ls`): Write replaces it whole. A tracked `.env.example` was overwritten once and had to be merged back from git.
