@@ -223,3 +223,76 @@ test('plays are recorded in the local play log and can be downloaded without the
   expect(exported.events[0].payload).toMatchObject({ a: 'man', b: 'king', c: 'woman', answer: 'queen', input: 'typed', hint: 'carried' });
   expect(text).not.toContain('deviceId');
 });
+
+test.describe('privacy: consent, age question, export, erase', () => {
+  const playThree = async (page: Page) => {
+    for (const expression of ['king - man + woman', 'paris - france + italy', 'puppy - dog + cat']) {
+      await wordBox(page).fill(expression);
+      await wordBox(page).press('Enter');
+      await expect(page.getByTestId('last-play')).toBeVisible();
+      await page.waitForTimeout(300);
+    }
+  };
+  const consentOf = (page: Page) => page.evaluate(() => (window.__lexical.stores as unknown as { privacyStore: { consent?: { researchId: string } } }).privacyStore.consent ?? null);
+
+  test('after three plays the prompt asks; an adult shares; sharing can be stopped', async ({ page }) => {
+    await openSandbox(page, '2d');
+    await expect(page.getByTestId('consent-prompt')).toHaveCount(0);
+    await playThree(page);
+    const prompt = page.getByTestId('consent-prompt');
+    await expect(prompt).toContainText('Nothing is sent until our research server goes live');
+    await prompt.getByRole('button', { name: 'Yes, share my plays' }).click();
+    await prompt.getByLabel('What year were you born?').fill('1990');
+    await prompt.getByRole('button', { name: 'Continue' }).click();
+    await expect(prompt).toContainText('Your plays will help research');
+    expect((await consentOf(page))?.researchId).toMatch(/[0-9a-f-]{36}/);
+
+    await page.locator('#privacy-toggle').click();
+    const panel = page.getByTestId('privacy-panel');
+    await expect(panel.getByTestId('consent-status')).toHaveText('on');
+    await panel.getByRole('button', { name: 'Stop sharing' }).click();
+    await expect(panel.getByTestId('consent-status')).toHaveText('off');
+    expect(await consentOf(page)).toBeNull();
+  });
+
+  test('a child keeps playing locally: no consent, no prompt, and no retry right away', async ({ page }) => {
+    await openSandbox(page, '2d');
+    await playThree(page);
+    const prompt = page.getByTestId('consent-prompt');
+    await prompt.getByRole('button', { name: 'Yes, share my plays' }).click();
+    await prompt.getByLabel('What year were you born?').fill(String(new Date().getFullYear() - 10));
+    await prompt.getByRole('button', { name: 'Continue' }).click();
+    await expect(prompt).toContainText('Your plays stay on this device');
+    expect(await consentOf(page)).toBeNull();
+    await prompt.getByRole('button', { name: 'close' }).click();
+    await expect(page.getByTestId('consent-prompt')).toHaveCount(0);
+
+    await page.locator('#privacy-toggle').click();
+    await expect(page.getByTestId('privacy-panel')).toContainText('Your plays stay on this device');
+    await expect(page.getByTestId('privacy-panel').getByRole('button', { name: 'Share my plays' })).toHaveCount(0);
+  });
+
+  test('export all my data leaves out the device secret; erase starts a fresh profile', async ({ page }) => {
+    await openSandbox(page, '2d');
+    await wordBox(page).fill('king - man + woman');
+    await wordBox(page).press('Enter');
+    await expect(page.getByTestId('last-play')).toContainText('queen');
+
+    await page.locator('#privacy-toggle').click();
+    const panel = page.getByTestId('privacy-panel');
+    const [download] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'Export all my data' }).click()]);
+    const text = await (await download.createReadStream()).toArray().then(chunks => Buffer.concat(chunks).toString('utf8'));
+    const exported = JSON.parse(text);
+    expect(exported.kind).toBe('lexical-fountain-my-data');
+    expect(exported.analogies.map((a: { id: string }) => a.id)).toContain('man:king::woman');
+    expect(exported.profile.score).toBeGreaterThan(0);
+    expect(text).not.toContain('deviceSecret');
+
+    await panel.getByRole('button', { name: 'Erase this device' }).click();
+    await Promise.all([page.waitForEvent('load'), panel.getByRole('button', { name: 'Erase everything' }).click()]);
+    await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
+    await expect.poll(() => page.evaluate(() => (window.__lexical.stores.menuStore as unknown as { score: number }).score)).toBe(0);
+    const summary = await page.evaluate(() => (window.__lexical as unknown as { playLog(): Promise<{ events: number }> }).playLog());
+    expect(summary.events).toBe(0);
+  });
+});

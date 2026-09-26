@@ -9,6 +9,7 @@ import { relationHintText } from "../game/relationHint";
 import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle } from "./GamePanels";
 import { useDashboardPlacement } from "./useDashboardPlacement";
 import { WordEntryForm } from "./WordEntryForm";
+import { ConsentPrompt } from "./PrivacyPanels";
 import styles from "./AnalogyDashboard.module.scss";
 
 interface AnalogyDashboardProps {
@@ -145,6 +146,7 @@ const DashboardBody = observer(({ store, gameStore, isGame }: { store: MenuStore
         <Formula words={store.selectedWordTexts} />
       </div>
       <LastPlayCard store={store} />
+      <ConsentPrompt />
       {!isGame && <WordEntryForm store={store} />}
     </>
   );

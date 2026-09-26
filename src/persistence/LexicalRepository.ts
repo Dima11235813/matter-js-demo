@@ -4,6 +4,18 @@ import { counterTotal, incrementCounter } from "./counters";
 import { analogyKey } from "./keys";
 
 export type GameResult = Omit<GameRecord, keyof SyncStamp | "id">;
+
+export interface LocalDataExport {
+    kind: "lexical-fountain-my-data";
+    exportedAt: string;
+    deviceId: string;
+    profile: ProfileRecord;
+    meta: Omit<MetaRecord, "deviceSecret">;
+    words: (Omit<PlayerWordRecord, "vector"> & { vector: number[] })[];
+    analogies: AnalogyRecord[];
+    games: GameRecord[];
+    playEvents: PlayEventRecord[];
+}
 export type PlayEventInput = Omit<PlayEventRecord, keyof SyncStamp | "id" | "schema" | "at"> & { at?: number };
 
 export interface PendingSyncCounts {
@@ -86,6 +98,10 @@ export class LexicalRepository {
 
     get consentPromptDismissedAt(): number | undefined {
         return this.meta.consentPromptDismissedAt;
+    }
+
+    get ageAnsweredAt(): number | undefined {
+        return this.meta.ageBand?.at;
     }
 
     async updateMeta(changes: Partial<Omit<MetaRecord, "id" | "deviceSecret">>): Promise<void> {
@@ -177,6 +193,35 @@ export class LexicalRepository {
         const base = existing?.playsByDevice ?? (existing ? { [existing.deviceId]: existing.timesPlayed } : undefined);
         const playsByDevice = incrementCounter(base, this.deviceId);
         return { playsByDevice, timesPlayed: counterTotal(playsByDevice) };
+    }
+
+    /**
+     * Everything this device holds about the player, as one JSON-ready object: the local version of the
+     * future GDPR export (Epic 6 · Task 6.3.1). The device secret is left out: it is a credential.
+     */
+    async exportAll(): Promise<LocalDataExport> {
+        const [words, analogies, games, playEvents] = await Promise.all([
+            this.db.getAll("words"), this.db.getAll("analogies"), this.db.getAll("games"), this.db.getAll("playEvents"),
+        ]);
+        const { deviceSecret: _secret, ...meta } = this.meta;
+        return {
+            kind: "lexical-fountain-my-data",
+            exportedAt: new Date().toISOString(),
+            deviceId: this.deviceId,
+            profile: this.profile,
+            meta,
+            words: words.map(w => ({ ...w, vector: Array.from(w.vector) })),
+            analogies,
+            games,
+            playEvents,
+        };
+    }
+
+    /** Clears every store on this device (Epic 6 · Task 6.3.2). The next open starts a fresh profile. */
+    async eraseAll(): Promise<void> {
+        const names = ["words", "analogies", "profile", "games", "playEvents", "meta"] as const;
+        const tx = this.db.transaction([...names], "readwrite");
+        await Promise.all([...names.map(name => tx.objectStore(name).clear()), tx.done]);
     }
 
     private stamp(): SyncStamp {

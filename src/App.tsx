@@ -6,6 +6,7 @@ import MainMenu from "./MainMenu/MainMenu";
 import WordWorld from "./WordWorld";
 import { AnalogyDashboard } from "./matterJsComp/AnalogyDashboard";
 import { BoardAnalogies } from "./matterJsComp/BoardAnalogies";
+import { PrivacyPanel } from "./matterJsComp/PrivacyPanels";
 import { stores } from "./stores";
 import { uiPalettes } from "./theme/palette";
 
@@ -30,6 +31,7 @@ const App = observer(() => {
         <MainMenu />
         <AnalogyDashboard />
         <BoardAnalogies />
+        <PrivacyPanel />
         <WordWorld />
       </div>
     </ThemeProvider>

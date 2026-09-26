@@ -27,15 +27,16 @@ Optional accounts on top of local-first play, and the privacy engineering that l
 
 ### Feature 6.2: Consent, Age Screen & Privacy Notice (Stage A)
 * **Story 6.2.1**: *As a player, I want to choose whether my plays help research, and change my mind any time.*
-  * [ ] **Task 6.2.1.1**: A MobX `ConsentStore`. The event sender is only created once consent exists, so the gate is enforced by how the code is built, not by flag checks.
-  * [ ] **Task 6.2.1.2**: A dismissible prompt after the first finished round, plus a Settings toggle; withdrawal drops queued events and offers "also delete what I sent". Plays from before consent stay local unless "include my earlier plays" is ticked.
+  * [x] **Task 6.2.1.1** (2026-09-25): `PrivacyStore` (MobX; the repository's `meta` record is the source of truth) and `src/services/privacy.ts`; pure rules in `src/game/privacyRules.ts`. Consent = `{policyVersion: research-2026-09-draft, grantedAt, scopes: [plays], researchId}`, with a fresh research id on every grant. ⬜ The event sender (Epic 3 · 3.6) must be created only from a present consent.
+  * [~] **Task 6.2.1.2** (2026-09-25): The dashboard prompt appears after 3 plays in a session or a finished round; "Not now" snoozes it for 30 days; it never blocks play; its copy says honestly that nothing is sent until the research server exists. "Privacy & your data" panel (menu, policy icon): share on/off. ⬜ Once ingest exists: withdrawal drops queued events and offers "also delete what I sent"; the "include my earlier plays" choice.
 * **Story 6.2.2**: *As an operator, I don't want to collect children's identifiers without the consent the law requires.*
-  * [ ] **Task 6.2.2.1**: A neutral age screen ("What year were you born?", no default), shown before sign-in or a telemetry offer. It stores the band only, and has a short cooldown before a retry with a different year.
-* [ ] **Task 6.2.3**: Privacy notice: processors, what is collected, retention (decision D8), rights, contact. Reviewed before real players' data is collected.
+  * [x] **Task 6.2.2.1** (2026-09-25): Neutral birth-year question (no default), shown when the player says yes to sharing, never before play. It stores only the band (under 13 / 13–15 / 16+; with no birth date, the younger possible age counts) and has a 24 h cooldown. Under 13: local-only play. 13–15: no research sharing (EU consent ages run up to 16 and the country isn't known). Accounts later from 13.
+* [~] **Task 6.2.3**: Privacy notice: processors, what is collected, retention (decision D8), rights, contact. ✅ Draft at [docs/privacy-notice.md](../docs/privacy-notice.md). ⬜ Review (ideally legal), fill the contact and operator placeholders, publish in the app before Stage C.
 
 ### Feature 6.3: Local Export & Erase (Stage A)
-* [~] **Task 6.3.1**: "Download my play log" ✅ (Epic 2 · Task 2.11.5). ⬜ "Export all my data": words, analogies, games, profile, plays, as one JSON (the future GDPR export format).
-* [ ] **Task 6.3.2**: "Erase this device": clear every store, with confirmation. Important on shared or school computers.
+* [x] **Task 6.3.1** (2026-09-25): "Download my play log" (Epic 2 · Task 2.11.5) and "Export all my data" (`LexicalRepository.exportAll`: profile, meta without the device secret, words with vectors, analogies, games, plays) in the privacy panel.
+* [x] **Task 6.3.2** (2026-09-25): "Erase this device": confirmed on the page (never a browser dialog), clears all six stores in one transaction, reloads into a fresh profile with a new device id.
+* **Result (Stage A privacy, 2026-09-25)**: unit 248/248 (`tests/privacyRules.test.ts`, counter merges, v4 migration); e2e 20/20 in three consecutive full runs (a fourth run had one failure that did not reproduce; see Epic 7 · Task 7.1.1.2). An e2e test caught a bug: an adult's consent wasn't saved because the service checked a stale age band.
 
 ### Feature 6.4: Sign-in & Claim (Stage D)
 * **Story 6.4.1**: *As a player who played anonymously for weeks, I want to sign in and keep everything, on this device and the next.*

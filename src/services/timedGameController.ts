@@ -82,6 +82,7 @@ function tickRound(stores: RootStore): void {
 
 async function finishRound(stores: RootStore, state: TimedGameState): Promise<void> {
     stopTimer();
+    stores.privacyStore.noteRoundFinished();
     const { gameStore, menuStore } = stores;
     menuStore.clearWordSelection();
     try {

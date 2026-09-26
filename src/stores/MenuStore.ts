@@ -47,6 +47,7 @@ export class MenuStore extends CommonStore {
     corpusStats: CorpusStats | null = null
     lastPlay: LastPlay | null = null
     boardAnalogies: BoardAnalogy[] = []
+    privacyOpen = false
     analogiesOpen: boolean = false
     private nextAnalogyId = 1
     wordInputMessage: string = ""
@@ -98,6 +99,8 @@ export class MenuStore extends CommonStore {
             setScore: action,
             setCorpusStats: action,
             setLastPlay: action,
+            privacyOpen: observable,
+            setPrivacyOpen: action,
             clearLastPlay: action,
             boardAnalogies: observable.ref,
             analogiesOpen: observable,
@@ -153,6 +156,9 @@ export class MenuStore extends CommonStore {
     setCorpusStats = (stats: CorpusStats) => {
         this.corpusStats = stats
         this.score = stats.score
+    }
+    setPrivacyOpen = (open: boolean) => {
+        this.privacyOpen = open
     }
     setLastPlay = (play: LastPlay) => {
         this.lastPlay = play

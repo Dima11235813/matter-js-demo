@@ -6,8 +6,9 @@ import { centerAndNormalize, dot, Vector } from "../embeddings/vectorMath";
 import { normalizeKey } from "../persistence/keys";
 import { Neighbor, VectorIndex } from "../embeddings/VectorIndex";
 import { fetchVocabAsset, VocabManifest } from "../embeddings/vocabAsset";
-import { AnalogyRecord, GameRecord, openLexicalDb, PlayContext, PlayEventType } from "../persistence/db";
-import { GameResult, LexicalRepository } from "../persistence/LexicalRepository";
+import { AnalogyRecord, GameRecord, MetaRecord, openLexicalDb, PlayContext, PlayEventType } from "../persistence/db";
+import { GameResult, LexicalRepository, LocalDataExport } from "../persistence/LexicalRepository";
+import type { PrivacySnapshot } from "../stores/PrivacyStore";
 import { dealWords } from "../game/dealer";
 import { analogyPoints } from "../game/timedGame";
 import { extractKeywords, KeywordResult } from "../game/keywords";
@@ -244,6 +245,23 @@ export class SemanticEngine {
         } catch (error) {
             logger.warn("Could not record play", error);
         }
+    }
+
+    privacyState(): PrivacySnapshot {
+        const { repo } = this.require();
+        return { consent: repo.consent, ageBand: repo.ageBand, ageAnsweredAt: repo.ageAnsweredAt, consentPromptDismissedAt: repo.consentPromptDismissedAt };
+    }
+
+    updatePrivacy(changes: Partial<Omit<MetaRecord, "id" | "deviceSecret">>): Promise<void> {
+        return this.require().repo.updateMeta(changes);
+    }
+
+    exportAllData(): Promise<LocalDataExport> {
+        return this.require().repo.exportAll();
+    }
+
+    eraseDevice(): Promise<void> {
+        return this.require().repo.eraseAll();
     }
 
     async playLogSummary(): Promise<PlayLogSummary> {

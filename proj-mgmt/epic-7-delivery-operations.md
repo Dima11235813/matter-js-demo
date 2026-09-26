@@ -20,7 +20,7 @@ Take the game from a local dev server to a public site with checked PRs, preview
     * restore the model and vocabulary caches (keyed by *every* input the build script reads, including `src/utils/Dictionary/*` and `src/mitDict.txt`), or build on a miss;
     * typecheck, unit tests, both builds, guards;
     * a report-only `audit-ci`.
-  * [ ] **Task 7.1.1.2**: `e2e` job: Playwright against `vite preview` of a `--mode e2e` build (`VITE_E2E_HANDLE=on`); upload the report on failure. `playwright.config.ts` switches its web server by env var.
+  * [ ] **Task 7.1.1.2**: `e2e` job: Playwright against `vite preview` of a `--mode e2e` build (`VITE_E2E_HANDLE=on`); upload the report on failure. `playwright.config.ts` switches its web server by env var. **Watch for flakes**: on 2026-09-25 one full local run of 20 had a single failure that three reruns didn't reproduce. CI keeps `retries: 1` plus the failure report, so the next occurrence names the test.
   * [ ] **Task 7.1.1.3**: Guards:
     * `__lexical` must not appear in `dist/`;
     * no file in `dist/` may exceed 24 MiB;

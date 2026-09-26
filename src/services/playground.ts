@@ -47,6 +47,7 @@ export async function bootSemanticPlayground(stores: RootStore): Promise<void> {
         gameStore.setDimension(semanticEngine.dimension);
         gameStore.setBestScore(await semanticEngine.bestGameScore());
         await refreshStats(menuStore);
+        stores.privacyStore.load(semanticEngine.privacyState());
         menuStore.setEngineStatus("ready");
     } catch (error) {
         logger.error("Semantic engine failed to start", error);
@@ -268,6 +269,7 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
     };
     menuStore.setLastPlay(lastPlay);
     menuStore.addBoardAnalogy(lastPlay);
+    stores.privacyStore.notePlay();
     const deal = stores.gameStore.relationDeal;
     void semanticEngine.logPlay("analogy", playContext(stores), analogyPayload({
         a, b, c, answer, modelAnswer: lastPlay.modelAnswer,

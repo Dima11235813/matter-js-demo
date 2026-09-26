@@ -27,6 +27,7 @@ import Brightness4Icon from "@material-ui/icons/Brightness4";
 import Brightness7Icon from "@material-ui/icons/Brightness7";
 import ThreeDRotationIcon from "@material-ui/icons/ThreeDRotation";
 import ListAltIcon from "@material-ui/icons/ListAlt";
+import PolicyIcon from "@material-ui/icons/Policy";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores } from "../stores";
@@ -86,7 +87,7 @@ const MainMenu = (props: MainMenuProps) => {
     prevOpen.current = open;
   }, [open]);
 
-  const { setMode, mode, setView, view, theme, analogiesOpen, boardAnalogies, setAnalogiesOpen } = props.menuStore!;
+  const { setMode, mode, setView, view, theme, analogiesOpen, boardAnalogies, setAnalogiesOpen, privacyOpen, setPrivacyOpen } = props.menuStore!;
   const { hintMode, dimension } = props.gameStore!;
 
   const handleCreateMode = (event: React.MouseEvent<EventTarget>) => {
@@ -139,6 +140,13 @@ const MainMenu = (props: MainMenuProps) => {
                 icon={<ListAltIcon />}
               />
             )}
+            <MenuButton
+              id="privacy-toggle"
+              tooltip="Privacy & your data: research sharing, export, erase"
+              active={privacyOpen}
+              onClick={() => setPrivacyOpen(!privacyOpen)}
+              icon={<PolicyIcon />}
+            />
             <MenuButton
               id="theme-toggle"
               tooltip={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
