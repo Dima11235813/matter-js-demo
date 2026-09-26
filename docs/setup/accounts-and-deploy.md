@@ -136,7 +136,9 @@ yarn dev:server    # API on http://localhost:8787 (in-process Postgres; no Docke
 yarn start         # game on http://localhost:3000; /api is proxied to the server
 ```
 
-Without the Firebase values the game works exactly as before, with no sign-in button: accounts are optional by design.
+Without the Firebase values the game works exactly as before, with no sign-in button: accounts are optional by design. With them: menu → shield icon → **Account, privacy & your data** → **Sign in with Google** (after the one-time age question). Sign in on two browsers (or a normal and a private window) to watch the score, analogies, words, and games converge.
+
+Local sync without Google (developer): put `DEV_AUTH_SECRET=<any 16+ chars>` in `server/.env.local`, then in the browser console run `await __lexical.account.devSignIn("me")`.
 
 ## 6. Later stages (not needed yet)
 

@@ -8,6 +8,7 @@
   ],
   "dependencies": {
     "@lexical/shared": "0.1.0",
+    "firebase": "^12.19.0",
     "@fortawesome/fontawesome-svg-core": "^1.2.27",
     "@fortawesome/free-solid-svg-icons": "^5.12.1",
     "@fortawesome/react-fontawesome": "^0.1.8",
@@ -64,6 +65,7 @@
     "prestart": "node scripts/build-vocab.mjs --if-missing",
     "start": "vite",
     "dev:server": "yarn workspace @lexical/server dev",
+    "start:server": "yarn workspace @lexical/server start",
     "prebuild": "node scripts/build-vocab.mjs --if-missing",
     "build": "tsc && vite build",
     "preview": "vite preview",

@@ -296,3 +296,44 @@ test.describe('privacy: consent, age question, export, erase', () => {
     expect(summary.events).toBe(0);
   });
 });
+
+test('two devices sign in to the same account and sync their plays through the API', async ({ browser }) => {
+  const subject = `e2e-player-${Date.now()}`;
+  const devices = await Promise.all([browser.newContext(), browser.newContext()]);
+  const [laptop, phone] = await Promise.all(devices.map(context => context.newPage()));
+  await openSandbox(laptop, '2d');
+  await openSandbox(phone, '2d');
+
+  // Offline play: a different analogy on each device.
+  const play = async (page: Page, expression: string) => {
+    await wordBox(page).fill(expression);
+    await wordBox(page).press('Enter');
+    await expect(page.getByTestId('last-play')).toBeVisible();
+  };
+  await play(laptop, 'king - man + woman');
+  await play(phone, 'paris - france + italy');
+  const scoreOf = (page: Page) => page.evaluate(() => (window.__lexical.stores.menuStore as unknown as { score: number }).score);
+  await expect.poll(() => scoreOf(laptop)).toBeGreaterThan(0);
+  await expect.poll(() => scoreOf(phone)).toBeGreaterThan(0);
+  const expected = (await scoreOf(laptop)) + (await scoreOf(phone));
+
+  type Account = { account: { devSignIn(s: string): Promise<void>; syncNow(): Promise<void>; state(): { status: string; message: string } } };
+  for (const page of [laptop, phone]) await page.evaluate(s => (window.__lexical as unknown as Account).account.devSignIn(s), subject);
+  // The laptop synced first, so it needs one more pass to receive the phone's plays.
+  await laptop.evaluate(() => (window.__lexical as unknown as Account).account.syncNow());
+
+  for (const page of [laptop, phone]) {
+    await expect.poll(() => scoreOf(page)).toBe(expected);
+    expect(await page.evaluate(() => (window.__lexical as unknown as Account).account.state().status)).toBe('synced');
+    await expect.poll(() => page.evaluate(async () => {
+      const data = await (window.__lexical.semanticEngine as unknown as { exportAllData(): Promise<{ analogies: { id: string }[] }> }).exportAllData();
+      return data.analogies.map(a => a.id).sort();
+    })).toEqual(['france:paris::italy', 'man:king::woman']);
+  }
+
+  // The account section shows the signed-in state and sync status.
+  await laptop.locator('#privacy-toggle').click();
+  await expect(laptop.getByTestId('account-user')).toHaveText(subject);
+  await expect(laptop.getByTestId('sync-status')).toContainText('Synced');
+  await Promise.all(devices.map(context => context.close()));
+});

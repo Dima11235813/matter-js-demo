@@ -158,7 +158,16 @@ Refactor the codebase from a single client-side project containing all vocabular
   * Tests: 15 API tests on in-memory PGlite, including two offline devices converging (60 + 25 = 85 points, 2 + 1 plays), replay idempotence, per-user isolation, and delete then re-claim.
   * Smoke test: `yarn dev:server` with the Vite proxy (health, dev token, claim, pull).
   * A test caught `/me/export` running without auth (the middleware was mounted on `/me` only).
-* [ ] **Task 3.8.3**: Increment 3: client auth + sync + e2e with two devices.
+* [x] **Task 3.8.3** (2026-09-26):
+  * `src/account/`: `ApiClient` (validates responses with the shared schemas; injectable fetch), `AuthService` (Firebase Google popup, lazy-loaded only when `VITE_FIREBASE_*` are set; a dev token service reachable only through the dev handle), `syncOnce` (claim → push pages → pull pages → cursor).
+  * Repository: `pendingSyncRecords`, `markSynced` (skipped if the record changed during the push), `applyRemote` (shared merge; stays pending if the local copy is newer).
+  * Converters: `src/persistence/syncRecords.ts`.
+  * `services/account.ts` syncs on sign-in, every 30 s, when back online, and 3 s after a play or round.
+  * The privacy panel's Account section: age question, then Google sign-in, sync status, sync now, sign out, account export, account delete.
+  * Tests:
+    * `tests/syncFullStack.test.ts`: two IndexedDB devices plus the real server app on PGlite, in one process. Scores 60 + 25 = 85 on both, analogy plays 2 + 1 = 3, the word vector bit-exact, the game synced, nothing left pending; repeat syncs are no-ops; a later local change stays pending; no silent merge into a second account.
+    * e2e: two browser contexts sign in (dev tokens) and converge through the API, which Playwright now starts; 21/21 against the dev server and 21/21 against the e2e bundle.
+  * The Firebase SDK is code-split (not in the main bundle); zod adds about 130 KB to the main bundle (follow-up: `zod/mini`).
 * [ ] **Task 3.8.4**: Increment 4: Cloud Run + Cloud SQL deploy.
 * **Exit criteria**:
   * one schema definition per DTO (no duplicate types in `src/` or `server/`);

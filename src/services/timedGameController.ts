@@ -6,6 +6,7 @@ import { analogyKey } from "../persistence/LexicalRepository";
 import { RootStore } from "../stores/RootStore";
 import { logger } from "../utils/logger";
 import { semanticEngine } from "./semanticEngine";
+import { syncSoon } from "./account";
 
 /**
  * Runs timed rounds: deals the opening hand, ticks the clock, scores analogies through the pure
@@ -98,6 +99,7 @@ async function finishRound(stores: RootStore, state: TimedGameState): Promise<vo
             hintMode: gameStore.hintMode,
         });
         gameStore.setBestScore(await semanticEngine.bestGameScore(), state.score > previousBest);
+        syncSoon();
     } catch (error) {
         logger.error("Failed to save timed round", error);
     }

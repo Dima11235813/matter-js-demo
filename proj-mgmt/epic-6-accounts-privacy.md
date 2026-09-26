@@ -40,17 +40,17 @@ Optional accounts on top of local-first play, and the privacy engineering that l
 
 ### Feature 6.4: Sign-in & Claim (Stage D)
 * **Story 6.4.1**: *As a player who played anonymously for weeks, I want to sign in and keep everything, on this device and the next.*
-  * [ ] **Task 6.4.1.1**: Firebase project on Blaze with Identity Platform; Google + email link; custom `authDomain`; popup flow (tested on Safari iOS); a budget alert. The client talks to an `AuthService` interface, so the provider can be swapped.
-  * [ ] **Task 6.4.1.2**: Claim on sign-in: `POST /devices/claim {deviceId, deviceSecret}`; local records re-stamped `pending` and pushed; the server merges them (Epic 3 · Feature 3.7).
-  * [ ] **Task 6.4.1.3**: A device already bound to another account is never merged silently: "switch account (keep / clear this device's data)".
-  * [ ] **Task 6.4.1.4**: Sign-out keeps local data by default; "remove my data from this device" is offered.
+  * [~] **Task 6.4.1.1**: Firebase project on Blaze with Identity Platform; Google + email link; custom `authDomain`; popup flow (tested on Safari iOS); a budget alert. The client talks to an `AuthService` interface, so the provider can be swapped. ✅ Code (2026-09-26): `AuthService` + Firebase Google popup, lazy-loaded, active only when configured. ⬜ Owner: the Firebase project and config ([setup §1](../docs/setup/accounts-and-deploy.md)); then a real Google sign-in test and Safari iOS.
+  * [x] **Task 6.4.1.2** (2026-09-26, Epic 3 · 3.8.3): Claim on sign-in: `POST /devices/claim {deviceId, deviceSecret}`; local records re-stamped `pending` and pushed; the server merges them (Epic 3 · Feature 3.7).
+  * [~] **Task 6.4.1.3** (✅ sync refuses and says so, tested; ⬜ a "switch account" choice in the UI; today the player erases the device first): A device already bound to another account is never merged silently: "switch account (keep / clear this device's data)".
+  * [x] **Task 6.4.1.4** (2026-09-26): Sign-out keeps local data; "Erase this device" is in the same panel.
 * **Story 6.4.2**: *As a player, my session should be safe.*
   * [ ] **Task 6.4.2.1**: Content Security Policy (report-only first; then enforced): `script-src 'self'` plus the auth SDK origins; never render player text as HTML.
   * [ ] **Task 6.4.2.2**: "Sign out everywhere" (`revokeRefreshTokens`); sensitive endpoints (export, delete) verify tokens with the revocation check (`checkRevoked`).
 
 ### Feature 6.5: Data Rights (Stage D)
-* [ ] **Task 6.5.1**: `GET /me/export`: the same format as the local export, plus the server copy of the user's research events.
-* [ ] **Task 6.5.2**: `DELETE /me`: the account, sync data, games, leaderboard entries, and research events linked to the account's research ids. Also a deletion ledger, which the Parquet archive job honours. A receipt is shown to the player; the target is completion within 30 days.
+* [x] **Task 6.5.1** (2026-09-26; "Download account data" in the panel): `GET /me/export`: the same format as the local export, plus the server copy of the user's research events.
+* [~] **Task 6.5.2** (✅ the account, sync data, and devices cascade; ledger receipt; "Delete my account" with an on-page confirm. ⬜ Research events and Parquet, once Stage C exists): `DELETE /me`: the account, sync data, games, leaderboard entries, and research events linked to the account's research ids. Also a deletion ledger, which the Parquet archive job honours. A receipt is shown to the player; the target is completion within 30 days.
 * [ ] **Task 6.5.3**: "Delete my research data" for anonymous players, authenticated by `researchId` + `deviceSecret`.
 
 ### Feature 6.6: Later

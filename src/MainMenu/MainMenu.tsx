@@ -142,7 +142,7 @@ const MainMenu = (props: MainMenuProps) => {
             )}
             <MenuButton
               id="privacy-toggle"
-              tooltip="Privacy & your data: research sharing, export, erase"
+              tooltip="Account, privacy & your data: sign in and sync, research sharing, export, erase"
               active={privacyOpen}
               onClick={() => setPrivacyOpen(!privacyOpen)}
               icon={<PolicyIcon />}

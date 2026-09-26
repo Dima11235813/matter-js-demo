@@ -7,6 +7,7 @@ import * as serviceWorker from "./serviceWorker";
 import { Provider } from "mobx-react";
 import { stores } from "./stores";
 import { bootSemanticPlayground } from "./services/playground";
+import { bootAccount } from "./services/account";
 import { installDevtools } from "./devtools";
 import { applyTheme } from "./theme/palette";
 
@@ -17,6 +18,7 @@ if (sentryDsn) Sentry.init({ dsn: sentryDsn, environment: import.meta.env.MODE }
 
 applyTheme(stores.menuStore.theme);
 bootSemanticPlayground(stores);
+void bootAccount();
 // The dev handle (window.__lexical) exists in dev and in the CI e2e build (`vite build --mode e2e`),
 // never in production: both conditions are build-time constants, so production drops the module.
 // CI checks that "__lexical" does not appear in dist/.

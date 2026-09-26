@@ -2,6 +2,10 @@ import { AnalogyResult } from "../embeddings/analogy";
 import { AgeBand, AnalogyRecord, ConsentState, GameRecord, LexicalDb, MetaRecord, PLAY_EVENT_SCHEMA, PlayEventRecord, PlayerWordRecord, ProfileRecord, SyncStamp } from "./db";
 import { counterTotal, incrementCounter } from "./counters";
 import { analogyKey } from "./keys";
+import { mergeRecords, sameRecord, type SyncRecord } from "@lexical/shared";
+import {
+    analogyFromSync, analogyToSync, gameFromSync, gameToSync, profileFromSync, profileToSync, wordFromSync, wordToSync,
+} from "./syncRecords";
 
 export type GameResult = Omit<GameRecord, keyof SyncStamp | "id">;
 
@@ -104,6 +108,18 @@ export class LexicalRepository {
         return this.meta.ageBand?.at;
     }
 
+    get deviceSecret(): string {
+        return this.meta.deviceSecret;
+    }
+
+    get accountUid(): string | undefined {
+        return this.meta.accountUid;
+    }
+
+    get syncCursor(): string | undefined {
+        return this.meta.syncCursor;
+    }
+
     async updateMeta(changes: Partial<Omit<MetaRecord, "id" | "deviceSecret">>): Promise<void> {
         this.meta = { ...this.meta, ...changes };
         await this.db.put("meta", this.meta);
@@ -186,6 +202,86 @@ export class LexicalRepository {
             this.db.countFromIndex("playEvents", "bySyncState", "pending"),
         ]);
         return { words, analogies, games, playEvents };
+    }
+
+    // --- sync (Epic 3 · Feature 3.8): local records in the shared contract's shape -----------------
+
+    /** Every record waiting to be pushed (the play log and device meta are never synced). */
+    async pendingSyncRecords(): Promise<SyncRecord[]> {
+        const [words, analogies, games] = await Promise.all([
+            this.db.getAllFromIndex("words", "bySyncState", "pending"),
+            this.db.getAllFromIndex("analogies", "bySyncState", "pending"),
+            this.db.getAllFromIndex("games", "bySyncState", "pending"),
+        ]);
+        return [
+            ...(this.profile.syncState === "pending" ? [profileToSync(this.profile)] : []),
+            ...words.map(wordToSync),
+            ...analogies.map(analogyToSync),
+            ...games.map(gameToSync),
+        ];
+    }
+
+    /** Marks a pushed record synced, unless it changed locally while the push was in flight. */
+    async markSynced(record: SyncRecord): Promise<void> {
+        const current = await this.localAsSync(record);
+        if (!current || current.clientUpdatedAt !== record.clientUpdatedAt) return;
+        await this.writeLocal(current, "synced");
+    }
+
+    /**
+     * Folds a record from the server into the local copy with the shared merge rules. The result is
+     * `synced` when it equals the server's copy, `pending` when this device still has something newer.
+     */
+    async applyRemote(remote: SyncRecord): Promise<"inserted" | "merged" | "unchanged"> {
+        const local = await this.localAsSync(remote);
+        if (local && sameRecord(local, remote)) {
+            await this.writeLocal(local, "synced");
+            return "unchanged";
+        }
+        const merged = local ? mergeRecords(local, remote) : remote;
+        await this.writeLocal(merged, sameRecord(merged, remote) ? "synced" : "pending");
+        return local ? "merged" : "inserted";
+    }
+
+    private async localAsSync(record: SyncRecord): Promise<SyncRecord | undefined> {
+        switch (record.collection) {
+            case "profile":
+                return profileToSync(this.profile);
+            case "words": {
+                const local = await this.db.get("words", record.payload.word);
+                // The same word embedded by another model is a different record; keep this device's.
+                return local && local.model === record.payload.model && local.dtype === record.payload.dtype ? wordToSync(local) : undefined;
+            }
+            case "analogies": {
+                const local = await this.db.get("analogies", record.key);
+                return local ? analogyToSync(local) : undefined;
+            }
+            case "games": {
+                const local = await this.db.get("games", record.key);
+                return local ? gameToSync(local) : undefined;
+            }
+        }
+    }
+
+    private async writeLocal(record: SyncRecord, syncState: "synced" | "pending"): Promise<void> {
+        switch (record.collection) {
+            case "profile":
+                this.profile = profileFromSync(this.profile, record, syncState);
+                await this.db.put("profile", this.profile);
+                return;
+            case "words": {
+                const existing = await this.db.get("words", record.payload.word);
+                if (existing && (existing.model !== record.payload.model || existing.dtype !== record.payload.dtype)) return;
+                await this.db.put("words", wordFromSync(record, syncState));
+                return;
+            }
+            case "analogies":
+                await this.db.put("analogies", analogyFromSync(record, syncState));
+                return;
+            case "games":
+                await this.db.put("games", gameFromSync(record, syncState));
+                return;
+        }
     }
 
     /** One more play of an analogy on this device; the total is derived from the per-device counts. */

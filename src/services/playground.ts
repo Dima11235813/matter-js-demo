@@ -15,6 +15,7 @@ import { analogyPayload, expressionPayload } from "../game/playLog";
 import { designedAnswer } from "../game/relationPairs";
 import { TIMED_RULES_VERSION } from "../game/timedGame";
 import type { PlayContext } from "../persistence/db";
+import { syncSoon } from "./account";
 
 /**
  * Use cases that connect the semantic engine, the MobX stores, and the physics world.
@@ -76,6 +77,7 @@ export async function submitPlayerWord(store: MenuStore, input: string): Promise
     const outcome = await semanticEngine.addWord(input);
     if (outcome.status === "added" || outcome.status === "known") {
         void semanticEngine.logPlay("word", playContext(rootStores), { word: outcome.word, status: outcome.status, source: "typed" });
+        syncSoon();
     }
     switch (outcome.status) {
         case "added":
@@ -270,6 +272,7 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
     menuStore.setLastPlay(lastPlay);
     menuStore.addBoardAnalogy(lastPlay);
     stores.privacyStore.notePlay();
+    syncSoon();
     const deal = stores.gameStore.relationDeal;
     void semanticEngine.logPlay("analogy", playContext(stores), analogyPayload({
         a, b, c, answer, modelAnswer: lastPlay.modelAnswer,

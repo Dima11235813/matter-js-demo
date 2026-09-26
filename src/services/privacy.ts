@@ -15,18 +15,28 @@ export async function loadPrivacy(): Promise<void> {
 
 export type AgeOutcome = { status: "shared" | "local-only" | "cooldown" | "invalid"; message: string };
 
-/** Answers the age question, then grants consent when the band allows it. */
-export async function answerAgeAndConsent(birthYear: number): Promise<AgeOutcome> {
+/** Answers the age question (only the band is stored). Used before research sharing and before sign-in. */
+export async function answerAge(birthYear: number): Promise<{ ok: true } | { ok: false; outcome: AgeOutcome }> {
     const { privacyStore } = stores;
     const now = Date.now();
     if (!canAnswerAge(privacyStore.ageAnsweredAt, now) && privacyStore.ageBand) {
-        return { status: "cooldown", message: "You answered recently. Try again tomorrow." };
+        return { ok: false, outcome: { status: "cooldown", message: "You answered recently. Try again tomorrow." } };
     }
     const answer = ageBandFor(birthYear);
-    if (!answer.ok) return { status: "invalid", message: answer.message };
+    if (!answer.ok) return { ok: false, outcome: { status: "invalid", message: answer.message } };
     await semanticEngine.updatePrivacy({ ageBand: { band: answer.band, at: now } });
-    await loadPrivacy(); // grantConsent reads the band from the store
-    if (!canShareResearch(answer.band)) {
+    await loadPrivacy();
+    return { ok: true };
+}
+
+/** Answers the age question, then grants consent when the band allows it. */
+export async function answerAgeAndConsent(birthYear: number): Promise<AgeOutcome> {
+    const { privacyStore } = stores;
+    const answered = await answerAge(birthYear);
+    if (!answered.ok) return answered.outcome;
+    const now = Date.now();
+    const band = privacyStore.ageBand!;
+    if (!canShareResearch(band)) {
         await semanticEngine.updatePrivacy({ consentPromptDismissedAt: now });
         privacyStore.setAskingAge(false);
         await loadPrivacy();

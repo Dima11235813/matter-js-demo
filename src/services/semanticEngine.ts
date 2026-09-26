@@ -9,6 +9,7 @@ import { fetchVocabAsset, VocabManifest } from "../embeddings/vocabAsset";
 import { AnalogyRecord, GameRecord, MetaRecord, openLexicalDb, PlayContext, PlayEventType } from "../persistence/db";
 import { GameResult, LexicalRepository, LocalDataExport } from "../persistence/LexicalRepository";
 import type { PrivacySnapshot } from "../stores/PrivacyStore";
+import type { SyncPort } from "../account/syncService";
 import { dealWords } from "../game/dealer";
 import { analogyPoints } from "../game/timedGame";
 import { extractKeywords, KeywordResult } from "../game/keywords";
@@ -245,6 +246,33 @@ export class SemanticEngine {
         } catch (error) {
             logger.warn("Could not record play", error);
         }
+    }
+
+    /** Local storage as the sync service needs it (Epic 3 · Feature 3.8). */
+    syncPort(): SyncPort {
+        const { repo } = this.require();
+        return {
+            get deviceId() { return repo.deviceId; },
+            get deviceSecret() { return repo.deviceSecret; },
+            get accountUid() { return repo.accountUid; },
+            get syncCursor() { return repo.syncCursor; },
+            setAccount: changes => repo.updateMeta(changes),
+            pendingSyncRecords: () => repo.pendingSyncRecords(),
+            markSynced: record => repo.markSynced(record),
+            applyRemote: record => repo.applyRemote(record),
+        };
+    }
+
+    /** After a sync: index player words that arrived from other devices (same model only). */
+    async indexSyncedWords(): Promise<number> {
+        const { index, repo, manifest } = this.require();
+        let added = 0;
+        for (const record of await repo.listPlayerWords()) {
+            if (record.model !== manifest.model || record.dtype !== manifest.dtype || index.has(record.word)) continue;
+            index.addWord(record.word, centerAndNormalize(record.vector, manifest.mean));
+            added++;
+        }
+        return added;
     }
 
     privacyState(): PrivacySnapshot {

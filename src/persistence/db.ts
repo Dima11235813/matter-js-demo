@@ -124,6 +124,8 @@ export interface MetaRecord {
     ageBand?: { band: AgeBand; at: number };
     /** When the consent prompt was last dismissed, so it isn't shown again right away. */
     consentPromptDismissedAt?: number;
+    /** The server's opaque pull cursor for this device's account (Epic 3 · Feature 3.8). */
+    syncCursor?: string;
 }
 
 export interface LexicalSchema extends DBSchema {

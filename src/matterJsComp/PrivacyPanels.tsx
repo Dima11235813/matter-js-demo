@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { observer } from "mobx-react";
 import { stores } from "../stores";
 import { downloadPlayLog } from "../services/playground";
-import { answerAgeAndConsent, dismissConsentPrompt, downloadAllData, eraseThisDevice, grantConsent, withdrawConsent } from "../services/privacy";
-import { canShareResearch } from "../game/privacyRules";
+import { AgeOutcome, answerAge, answerAgeAndConsent, dismissConsentPrompt, downloadAllData, eraseThisDevice, grantConsent, withdrawConsent } from "../services/privacy";
+import { deleteAccount, downloadAccountData, signIn, signOut, syncNow } from "../services/account";
+import { canHaveAccount, canShareResearch } from "../game/privacyRules";
 import styles from "./PrivacyPanels.module.scss";
 
 /**
@@ -11,12 +12,12 @@ import styles from "./PrivacyPanels.module.scss";
  * exists (Epic 3 · 3.6) nothing is sent, and the copy says so.
  */
 
-const AgeQuestion = ({ onDone }: { onDone(message: string): void }) => {
+const AgeQuestion = ({ onDone, answer = answerAgeAndConsent }: { onDone(message: string): void; answer?: (year: number) => Promise<AgeOutcome> }) => {
   const [year, setYear] = useState("");
   const [error, setError] = useState("");
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const outcome = await answerAgeAndConsent(Number(year));
+    const outcome = await answer(Number(year));
     if (outcome.status === "invalid" || outcome.status === "cooldown") setError(outcome.message);
     else onDone(outcome.message);
   };
@@ -73,6 +74,70 @@ export const ConsentPrompt = observer(() => {
   );
 });
 
+/** The age question before sign-in: accounts are for players 13 and older (Epic 6 · Task 6.2.2.1). */
+async function answerForAccount(year: number): Promise<AgeOutcome> {
+  const answered = await answerAge(year);
+  if (!answered.ok) return answered.outcome;
+  if (!canHaveAccount(stores.privacyStore.ageBand)) {
+    return { status: "local-only", message: "Accounts are for players 13 and older. Your game stays on this device." };
+  }
+  await signIn();
+  return { status: "shared", message: "" };
+}
+
+/** Optional Google sign-in and sync (Epic 3 · Feature 3.8, Epic 6 · Feature 6.4). Hidden when not configured. */
+const AccountSection = observer(() => {
+  const { accountStore, privacyStore } = stores;
+  const [askAge, setAskAge] = useState(false);
+  const [note, setNote] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  if (!accountStore.available) return null;
+  const { user, status, message, lastSyncAt } = accountStore;
+
+  if (!user) {
+    const blocked = privacyStore.ageBand !== undefined && !canHaveAccount(privacyStore.ageBand);
+    return (
+      <div className={styles.Section} data-testid="account-section">
+        <div className={styles.Title}>Account</div>
+        <p className={styles.Fine}>Sign in to keep your score, words, analogies, and games in sync on all your devices. Optional: the game works fully without it.</p>
+        {blocked ? (
+          <p className={styles.Fine}>Accounts are for players 13 and older. Your game stays on this device.</p>
+        ) : askAge ? (
+          <AgeQuestion answer={answerForAccount} onDone={setNote} />
+        ) : (
+          <button type="button" className={styles.Primary} onClick={() => (privacyStore.ageBand ? void signIn() : setAskAge(true))}>Sign in with Google</button>
+        )}
+        {(note || message) && <p className={styles.Fine}>{note || message}</p>}
+      </div>
+    );
+  }
+
+  const statusText = status === "syncing" ? "Syncing…"
+    : status === "error" ? message
+      : lastSyncAt ? `Synced ${new Date(lastSyncAt).toLocaleTimeString()}${message ? ` · ${message}` : ""}` : "";
+  return (
+    <div className={styles.Section} data-testid="account-section">
+      <div className={styles.Title}>Signed in as <strong data-testid="account-user">{user.email ?? user.displayName ?? "you"}</strong></div>
+      <p className={status === "error" ? styles.Error : styles.Fine} data-testid="sync-status">{statusText}</p>
+      <div className={styles.Actions}>
+        <button type="button" className={styles.Secondary} onClick={() => void syncNow()} disabled={status === "syncing"}>Sync now</button>
+        <button type="button" className={styles.Secondary} onClick={() => void signOut()}>Sign out</button>
+        <button type="button" className={styles.Secondary} onClick={() => void downloadAccountData()}>Download account data</button>
+      </div>
+      {confirmDelete ? (
+        <div className={styles.Actions}>
+          <span className={styles.Warning}>Delete your account and everything synced to it? This device keeps its own copy.</span>
+          <button type="button" className={styles.Danger} onClick={() => void deleteAccount().then(receipt => { setConfirmDelete(false); setNote(`Account deleted (receipt ${receipt.slice(0, 8)}).`); })}>Delete account</button>
+          <button type="button" className={styles.Secondary} onClick={() => setConfirmDelete(false)}>Cancel</button>
+        </div>
+      ) : (
+        <button type="button" className={styles.DangerOutline} onClick={() => setConfirmDelete(true)}>Delete my account</button>
+      )}
+      {note && <p className={styles.Fine}>{note}</p>}
+    </div>
+  );
+});
+
 /** Opened from the menu: research sharing, downloads, and erasing this device. */
 export const PrivacyPanel = observer(() => {
   const { menuStore, privacyStore } = stores;
@@ -84,9 +149,11 @@ export const PrivacyPanel = observer(() => {
   return (
     <section className={styles.Panel} aria-label="Privacy and your data" data-testid="privacy-panel">
       <div className={styles.Header}>
-        <span>Privacy &amp; your data</span>
+        <span>Account, privacy &amp; your data</span>
         <button type="button" className={styles.Close} onClick={() => menuStore.setPrivacyOpen(false)} aria-label="Close privacy" title="Close">×</button>
       </div>
+
+      <AccountSection />
 
       <div className={styles.Section}>
         <div className={styles.Title}>Research sharing: <strong data-testid="consent-status">{consent ? "on" : "off"}</strong></div>

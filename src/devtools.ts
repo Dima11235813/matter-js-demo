@@ -2,6 +2,7 @@ import deps from "./matterJsComp/Deps";
 import { stores } from "./stores";
 import { semanticEngine } from "./services/semanticEngine";
 import { layoutFidelity, LayoutFidelity } from "./physics/layoutMetrics";
+import { devSignIn, signOut, syncNow } from "./services/account";
 
 export interface WordBoxProbe {
     text: string
@@ -26,6 +27,13 @@ export function installDevtools(): void {
         playLog: () => semanticEngine.playLogSummary(),
         /** The export a player can download: events without device id or sync bookkeeping. */
         exportPlays: () => semanticEngine.exportPlayLog(),
+        /** Dev and e2e only: sign in with a token from the local API (DEV_AUTH_SECRET), sync, sign out. */
+        account: {
+            devSignIn: (subject: string) => devSignIn(subject),
+            syncNow: () => syncNow(),
+            signOut: () => signOut(),
+            state: () => ({ user: stores.accountStore.user, status: stores.accountStore.status, message: stores.accountStore.message }),
+        },
         /** Words currently highlighted by focus (new words, HUD links, the analogies panel). */
         focusedWords: (): string[] => deps.activeWorld?.focusedWords() ?? [],
         /** Fidelity in the world's own space: 2D pixels or 3D world units. */
