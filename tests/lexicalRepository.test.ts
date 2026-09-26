@@ -63,7 +63,7 @@ describe('LexicalRepository', () => {
   it('reports pending rows for a future sync outbox', async () => {
     await repo.savePlayerWord('newword', Float32Array.from([1]), 'm', 'q8');
     await repo.recordAnalogy(result('queen'), 'v1');
-    expect(await repo.pendingSyncCounts()).toEqual({ words: 1, analogies: 1, games: 0 });
+    expect(await repo.pendingSyncCounts()).toEqual({ words: 1, analogies: 1, games: 0, playEvents: 0 });
   });
 });
 
@@ -110,5 +110,22 @@ describe('LexicalRepository games and preferences', () => {
     expect(repo.deviceId).toBe('dev-1');
     await repo.saveGame(game(10));
     expect(await repo.bestGameScore()).toBe(10);
+    await repo.logPlayEvent({ type: 'word', sessionId: 's', vocabVersion: 'v', context: { view: 'fountain', dimension: '2d', hintMode: true }, payload: {} });
+    expect(await repo.countPlayEvents()).toBe(1);
+  });
+});
+
+describe('LexicalRepository play log', () => {
+  const context = { view: 'fountain', dimension: '3d' as const, hintMode: true };
+
+  it('appends play events with client ids, schema, and sync stamps, in time order', async () => {
+    const repo = await freshRepo();
+    const second = await repo.logPlayEvent({ type: 'analogy', sessionId: 's1', vocabVersion: 'v1', context, payload: { a: 'man' }, at: 200 });
+    const first = await repo.logPlayEvent({ type: 'word', sessionId: 's1', vocabVersion: 'v1', context, payload: { word: 'volcano' }, at: 100 });
+    expect(first.id).not.toBe(second.id);
+    expect(first).toMatchObject({ schema: 1, syncState: 'pending', deviceId: repo.deviceId });
+    expect((await repo.listPlayEvents()).map(e => e.type)).toEqual(['word', 'analogy']);
+    expect((await repo.listPlayEvents(150)).map(e => e.type)).toEqual(['analogy']);
+    expect((await repo.pendingSyncCounts()).playEvents).toBe(2);
   });
 });

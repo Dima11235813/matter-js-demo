@@ -7,6 +7,7 @@ import { Neighbor } from "../embeddings/VectorIndex";
  *   - words are keyed by the word itself (the same word from two devices is one record)
  *   - analogies are keyed by their question "a:b::c" (repeat plays increment timesPlayed)
  *   - games are keyed by a random id (each finished round is one immutable result)
+ *   - play events are keyed by a client-generated id (append-only; the id makes uploads idempotent)
  */
 export type SyncState = "pending" | "synced";
 
@@ -61,17 +62,48 @@ export interface GameRecord extends SyncStamp {
     hintMode: boolean;
 }
 
+/**
+ * One thing a player did, for research (Epic 2 · Task 2.11.5): which analogies players find, which
+ * fail, how imports and new words are used. Local only until telemetry ingest ships with consent.
+ * Payloads never contain free text the player typed or pasted beyond the words that were played.
+ */
+export type PlayEventType = "analogy" | "expression" | "word" | "import";
+export const PLAY_EVENT_SCHEMA = 1;
+
+export interface PlayContext {
+    view: string;
+    dimension: "2d" | "3d";
+    hintMode: boolean;
+    /** Timed rounds only. */
+    rulesVersion?: number;
+    /** Timed rounds only: the round's relation category. */
+    relation?: string;
+}
+
+export interface PlayEventRecord extends SyncStamp {
+    id: string;
+    type: PlayEventType;
+    schema: number;
+    at: number;
+    /** One id per app session (page load), to group plays without identifying the player. */
+    sessionId: string;
+    vocabVersion: string;
+    context: PlayContext;
+    payload: Record<string, unknown>;
+}
+
 export interface LexicalSchema extends DBSchema {
     words: { key: string; value: PlayerWordRecord; indexes: { bySyncState: SyncState } };
     analogies: { key: string; value: AnalogyRecord; indexes: { bySyncState: SyncState; byUpdatedAt: number } };
     profile: { key: string; value: ProfileRecord };
     games: { key: string; value: GameRecord; indexes: { bySyncState: SyncState; byScore: number } };
+    playEvents: { key: string; value: PlayEventRecord; indexes: { bySyncState: SyncState; byAt: number } };
 }
 
 export type LexicalDb = IDBPDatabase<LexicalSchema>;
 
 export const DEFAULT_DB_NAME = "lexical-fountain";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export function openLexicalDb(name: string = DEFAULT_DB_NAME): Promise<LexicalDb> {
     return openDB<LexicalSchema>(name, DB_VERSION, {
@@ -89,6 +121,11 @@ export function openLexicalDb(name: string = DEFAULT_DB_NAME): Promise<LexicalDb
                 const games = db.createObjectStore("games", { keyPath: "id" });
                 games.createIndex("bySyncState", "syncState");
                 games.createIndex("byScore", "score");
+            }
+            if (oldVersion < 3) {
+                const events = db.createObjectStore("playEvents", { keyPath: "id" });
+                events.createIndex("bySyncState", "syncState");
+                events.createIndex("byAt", "at");
             }
         },
     });

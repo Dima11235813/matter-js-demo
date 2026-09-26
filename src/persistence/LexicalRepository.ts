@@ -1,12 +1,14 @@
 import { AnalogyResult } from "../embeddings/analogy";
-import { AnalogyRecord, GameRecord, LexicalDb, PlayerWordRecord, ProfileRecord, SyncStamp } from "./db";
+import { AnalogyRecord, GameRecord, LexicalDb, PLAY_EVENT_SCHEMA, PlayEventRecord, PlayerWordRecord, ProfileRecord, SyncStamp } from "./db";
 
 export type GameResult = Omit<GameRecord, keyof SyncStamp | "id">;
+export type PlayEventInput = Omit<PlayEventRecord, keyof SyncStamp | "id" | "schema" | "at"> & { at?: number };
 
 export interface PendingSyncCounts {
     words: number;
     analogies: number;
     games: number;
+    playEvents: number;
 }
 
 export function analogyKey(a: string, b: string, c: string): string {
@@ -112,13 +114,30 @@ export class LexicalRepository {
         return cursor?.value.score ?? 0;
     }
 
+    /** Appends a play event (never updated afterwards; a sync marks it synced). */
+    async logPlayEvent(input: PlayEventInput): Promise<PlayEventRecord> {
+        const record: PlayEventRecord = { ...input, id: crypto.randomUUID(), schema: PLAY_EVENT_SCHEMA, at: input.at ?? Date.now(), ...this.stamp() };
+        await this.db.put("playEvents", record);
+        return record;
+    }
+
+    /** Play events in time order, optionally only those at or after `since`. */
+    listPlayEvents(since = 0): Promise<PlayEventRecord[]> {
+        return this.db.getAllFromIndex("playEvents", "byAt", IDBKeyRange.lowerBound(since));
+    }
+
+    countPlayEvents(): Promise<number> {
+        return this.db.count("playEvents");
+    }
+
     async pendingSyncCounts(): Promise<PendingSyncCounts> {
-        const [words, analogies, games] = await Promise.all([
+        const [words, analogies, games, playEvents] = await Promise.all([
             this.db.countFromIndex("words", "bySyncState", "pending"),
             this.db.countFromIndex("analogies", "bySyncState", "pending"),
             this.db.countFromIndex("games", "bySyncState", "pending"),
+            this.db.countFromIndex("playEvents", "bySyncState", "pending"),
         ]);
-        return { words, analogies, games };
+        return { words, analogies, games, playEvents };
     }
 
     private stamp(): SyncStamp {

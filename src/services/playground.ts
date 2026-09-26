@@ -1,6 +1,7 @@
 import deps from "../matterJsComp/Deps";
 import { MenuStore } from "../stores/MenuStore";
 import { RootStore } from "../stores/RootStore";
+import { stores as rootStores } from "../stores";
 import { logger } from "../utils/logger";
 import { semanticEngine } from "./semanticEngine";
 import { isRoundRunning, recordRoundAnalogy } from "./timedGameController";
@@ -10,12 +11,28 @@ import { handoffQueue } from "../space/handoff";
 import { expressionAsAnalogy, ExpressionTerm, formatExpression } from "../game/wordEntry";
 import { Keyword } from "../game/keywords";
 import { relationHint } from "../game/relationHint";
+import { analogyPayload, expressionPayload } from "../game/playLog";
+import { designedAnswer } from "../game/relationPairs";
+import { TIMED_RULES_VERSION } from "../game/timedGame";
+import type { PlayContext } from "../persistence/db";
 
 /**
  * Use cases that connect the semantic engine, the MobX stores, and the physics world.
  * Physics receives words through deps.pendingWordSpawns, drained by the live CustomWorld on its
  * next frame, so a world that was torn down mid-request never receives stray bodies.
  */
+
+/** Where and how a play happened, recorded with every play-log event. */
+function playContext(stores: RootStore): PlayContext {
+    const { menuStore, gameStore } = stores;
+    const isGame = menuStore.view === "game";
+    return {
+        view: menuStore.view,
+        dimension: deps.activeWorld?.dimension ?? gameStore.dimension,
+        hintMode: gameStore.hintMode,
+        ...(isGame ? { rulesVersion: TIMED_RULES_VERSION, relation: gameStore.relationDeal?.category } : {}),
+    };
+}
 
 async function refreshStats(store: MenuStore): Promise<void> {
     store.setCorpusStats(await semanticEngine.stats());
@@ -56,6 +73,9 @@ export async function submitPlayerWord(store: MenuStore, input: string): Promise
     if (!semanticEngine.isReady) return;
     store.setWordInputMessage(`Embedding "${input.trim()}"...`);
     const outcome = await semanticEngine.addWord(input);
+    if (outcome.status === "added" || outcome.status === "known") {
+        void semanticEngine.logPlay("word", playContext(rootStores), { word: outcome.word, status: outcome.status, source: "typed" });
+    }
     switch (outcome.status) {
         case "added":
             store.setWordInputMessage(`"${outcome.word}" joined the corpus`);
@@ -87,6 +107,18 @@ export function selectWordForAnalogy(stores: RootStore, id: number, text: string
         void playAnalogy(stores, a, b, c);
     }
     return true;
+}
+
+/** Saves the local play log as a JSON file the player can share for research. */
+export async function downloadPlayLog(): Promise<void> {
+    if (!semanticEngine.isReady) return;
+    const data = await semanticEngine.exportPlayLog();
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `lexical-fountain-plays-${data.exportedAt.slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** Brings words into view in whichever world (2D or 3D) is live. */
@@ -154,6 +186,7 @@ export async function playExpression(stores: RootStore, terms: readonly Expressi
         }
         case "sum": {
             const [best, ...rest] = outcome.neighbors;
+            void semanticEngine.logPlay("expression", playContext(stores), expressionPayload(terms, outcome.neighbors));
             words.forEach(word => deps.pendingWordSpawns.push({ word }));
             deps.pendingWordSpawns.push({ word: best.word, focusGroup: [...words, best.word] });
             const also = rest.slice(0, 3).map(n => n.word).join(", ");
@@ -191,6 +224,8 @@ export async function importKeywords(stores: RootStore, keywords: readonly Keywo
     }
     words.forEach((word, i) => deps.pendingWordSpawns.push(i === words.length - 1 ? { word, focusGroup: words } : { word }));
     const skipped = keywords.length - words.length;
+    // Only the chosen words: the pasted text itself is never stored (data minimization).
+    void semanticEngine.logPlay("import", playContext(stores), { chosen: words, newWords: added, skipped });
     menuStore.setWordInputMessage(
         `Dropped ${words.length} ${words.length === 1 ? "word" : "words"} from your text` +
         (added > 0 ? ` · ${added} new to the corpus` : "") +
@@ -233,6 +268,15 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
     };
     menuStore.setLastPlay(lastPlay);
     menuStore.addBoardAnalogy(lastPlay);
+    const deal = stores.gameStore.relationDeal;
+    void semanticEngine.logPlay("analogy", playContext(stores), analogyPayload({
+        a, b, c, answer, modelAnswer: lastPlay.modelAnswer,
+        ranked: [{ word: result.answer, similarity: result.similarity }, ...result.alternatives],
+        input: options.spawnOperands ? "typed" : "click",
+        stats, hint, verdict: lastPlay.verdict,
+        designed: round ? designedAnswer(deal?.pairs ?? [], a, b, c) !== undefined : undefined,
+        points, duplicate: round?.duplicate,
+    }));
     menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${answer} (${points >= 0 ? "+" : ""}${points} pts)`);
     await refreshStats(menuStore);
 }

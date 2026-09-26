@@ -200,3 +200,26 @@ test('a timed round deals relation pairs and scores a designed play (2D clicks)'
   await expect(page.getByTestId('game-hud')).toBeVisible();
   await expect.poll(() => boardWords(page)).toContain(play!.d);
 });
+
+test('plays are recorded in the local play log and can be downloaded without the device id', async ({ page }) => {
+  await openSandbox(page, '2d');
+  await wordBox(page).fill('king - man + woman');
+  await wordBox(page).press('Enter');
+  await expect(page.getByTestId('last-play')).toContainText('queen');
+  await wordBox(page).fill('volcano');
+  await wordBox(page).press('Enter');
+
+  const summary = () => page.evaluate(() => (window.__lexical as unknown as { playLog(): Promise<{ byType: Record<string, number>; analogies: { hints: Record<string, number> } }> }).playLog());
+  await expect.poll(async () => (await summary()).byType).toEqual({ analogy: 1, word: 1 });
+  expect((await summary()).analogies.hints).toEqual({ carried: 1 });
+
+  await page.locator('#analogies-toggle').click();
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download my play log' }).click()]);
+  expect(download.suggestedFilename()).toMatch(/^lexical-fountain-plays-\d{4}-\d{2}-\d{2}\.json$/);
+  const text = await (await download.createReadStream()).toArray().then(chunks => Buffer.concat(chunks).toString('utf8'));
+  const exported = JSON.parse(text);
+  expect(exported.kind).toBe('lexical-fountain-play-log');
+  expect(exported.events.map((e: { type: string }) => e.type)).toEqual(['analogy', 'word']);
+  expect(exported.events[0].payload).toMatchObject({ a: 'man', b: 'king', c: 'woman', answer: 'queen', input: 'typed', hint: 'carried' });
+  expect(text).not.toContain('deviceId');
+});

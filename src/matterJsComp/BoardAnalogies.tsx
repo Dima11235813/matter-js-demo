@@ -1,7 +1,7 @@
 import React from "react";
 import { inject, observer } from "mobx-react";
 import { isWordView, MenuStore } from "../stores/MenuStore";
-import { focusWords } from "../services/playground";
+import { downloadPlayLog, focusWords } from "../services/playground";
 import { analogyWords } from "../game/boardAnalogies";
 import styles from "./BoardAnalogies.module.scss";
 
@@ -54,6 +54,16 @@ const BoardAnalogiesPanel = ({ menuStore }: BoardAnalogiesProps) => {
           })}
         </ul>
       )}
+      <div className={styles.Footer}>
+        <button
+          type="button"
+          className={styles.Download}
+          onClick={() => void downloadPlayLog()}
+          title="Every analogy you played, with the model's answers, as a JSON file. Stays on this device unless you share it."
+        >
+          Download my play log
+        </button>
+      </div>
     </section>
   );
 };

@@ -5,7 +5,7 @@ import { createProfanityPolicy, isProfanityFilterEnabled, parseWordList, Profani
 import { centerAndNormalize, dot, Vector } from "../embeddings/vectorMath";
 import { Neighbor, VectorIndex } from "../embeddings/VectorIndex";
 import { fetchVocabAsset, VocabManifest } from "../embeddings/vocabAsset";
-import { AnalogyRecord, GameRecord, openLexicalDb } from "../persistence/db";
+import { AnalogyRecord, GameRecord, openLexicalDb, PlayContext, PlayEventType } from "../persistence/db";
 import { GameResult, LexicalRepository } from "../persistence/LexicalRepository";
 import { dealWords } from "../game/dealer";
 import { analogyPoints } from "../game/timedGame";
@@ -15,6 +15,7 @@ import stopwordsText from "../../data/vocab/stopwords.txt?raw";
 import relationPairsText from "../../data/vocab/relation-pairs.txt?raw";
 import { dealRelationPairs, DealRelationOptions, parseRelationBank, RelationBank, RelationDeal } from "../game/relationPairs";
 import { RelationStats } from "../game/relationHint";
+import { playLogExport, PlayLogExport, summarizePlayLog, PlayLogSummary } from "../game/playLog";
 import { logger } from "../utils/logger";
 
 export type AddWordOutcome =
@@ -66,6 +67,8 @@ interface Loaded {
 export class SemanticEngine {
     private loaded: Loaded | undefined;
     private startPromise: Promise<void> | undefined;
+    /** Groups this page load's plays in the play log without identifying the player. */
+    readonly sessionId = crypto.randomUUID();
 
     constructor(private readonly vocabBaseUrl: string, private readonly dbName?: string) {}
 
@@ -230,6 +233,24 @@ export class SemanticEngine {
             stopwords: STOPWORDS,
             size: index.baseSize,
         });
+    }
+
+    /** Appends to the local play log (research telemetry; never leaves the device yet). */
+    async logPlay(type: PlayEventType, context: PlayContext, payload: Record<string, unknown>): Promise<void> {
+        const { repo, manifest } = this.require();
+        try {
+            await repo.logPlayEvent({ type, sessionId: this.sessionId, vocabVersion: manifest.version, context, payload });
+        } catch (error) {
+            logger.warn("Could not record play", error);
+        }
+    }
+
+    async playLogSummary(): Promise<PlayLogSummary> {
+        return summarizePlayLog(await this.require().repo.listPlayEvents());
+    }
+
+    async exportPlayLog(): Promise<PlayLogExport> {
+        return playLogExport(await this.require().repo.listPlayEvents());
     }
 
     recentAnalogies(limit = 5): Promise<AnalogyRecord[]> {
