@@ -1,6 +1,6 @@
 # Analogy Scoring: Rewarding Answers That Connect to the Third Word
 
-**Status**: research complete, rule proposed (not built), plan in [Epic 2 · Feature 2.11](../../proj-mgmt/epic-2-gamification.md) · **Date**: 2026-09-24 · **Reproduce**: `npx vitest run --config docs/research/experiments/vitest.research.config.ts analogyScoring` (data: [`experiments/results/analogy-scoring.json`](experiments/results/analogy-scoring.json))
+**Status**: research complete; held-out validation (§5) shows vectors alone cannot score analogies fairly, so a design pivot is proposed (not built), plan in [Epic 2 · Feature 2.11](../../proj-mgmt/epic-2-gamification.md) · **Date**: 2026-09-24 · **Reproduce**: `npx vitest run --config docs/research/experiments/vitest.research.config.ts analogyScoring` (data: [`experiments/results/analogy-scoring.json`](experiments/results/analogy-scoring.json))
 
 ## 1. Question
 
@@ -64,7 +64,7 @@ Offset cosine deciles (10/25/50/75/90%): canonical 0.09/0.31/0.39/0.43/0.54; dea
 
 Under the guarded rule, typical timed-game plays earn 0%. The dealer deals related pairs (dog/puppy, lily/lilly), but two random pairs rarely share a relation, so there is no analogy on the board to find. A fair scoring rule therefore needs a **dealer that deals analogy quads**: two pairs that share a relation (man/king + woman/queen), mined offline, where both pairs are links and the offset cosine is ≥ 0.35.
 
-## 4. Decision (proposed; to confirm by play-testing)
+## 4. First proposal (superseded by the revised proposal in §5)
 
 1. Replace "answer connects to *c*" with the guarded rule in §3.2. Keep the user's intent: connecting to the third word is required, and falling back onto the question pair loses points.
 2. Make the penalty small and explained: "−10: *d* is closer to *a / b* than to *c*". Consider no penalty when the model's answer is also wrong by the model's own runner-ups (the penalty should punish the play, not the embedding).
@@ -72,9 +72,31 @@ Under the guarded rule, typical timed-game plays earn 0%. The dealer deals relat
 4. Deal analogy quads in timed rounds, so a good play always exists; the Connect-All generator (Feature 2.10) can share the quad miner.
 5. Sandbox stays unscored by this rule; it shows the verdict as a learning hint ("relation carried over ✓").
 
-## 5. Limitations
+## 5. Held-out validation (2026-09-25)
 
-* 30 canonical analogies, and the thresholds were chosen on the same data. Before shipping, validate on a held-out set (a subset of the Google analogy set / BATS restricted to the vocabulary).
+**Data**: the Google analogy test set (Mikolov et al. 2013; `questions-words.txt` from the word2vec repository, Apache 2.0), keeping analogies whose four words are all in the vocabulary. Up to 40 per category were sampled with a fixed seed: 492 analogies in 13 categories ([`experiments/data/google-analogies-vocab.txt`](experiments/data/google-analogies-vocab.txt)). Plural verbs drop out entirely, because the vocabulary keeps singulars only. The model returns the expected answer for 59% of them.
+
+**The proposed rule fails the gate.** It rewards 42% of held-out analogies (gate: ≥ 60%), penalizes 4%, and still rewards ≤ 1% of exploit plays. The 0.25 offset threshold was overfit to the 30 hand-picked analogies: their median offset is 0.39, the held-out median 0.25.
+
+| Rule (reward / penalty %) | canonical | held-out | dealtPair | exploitSynonym | random |
+|---|---|---|---|---|---|
+| sAB ≥ p99, sDC ≥ p95, offset ≥ 0.25 | 70 / 7 | **42 / 4** | 0 / 0 | 1 / 1 | 0 / 35 |
+| sAB ≥ p99, sDC ≥ p95, offset ≥ 0.20 | 70 / 7 | **51 / 4** | 1 / 0 | 4 / 1 | 0 / 35 |
+
+By category (offset ≥ 0.25): nationality-adjective 93%, common capitals 85%, world capitals 68%, family 57%, comparative 40%, city-in-state 35%, present participle 28%, currency 25% (38% penalized: the model fails currencies), past tense 20%, adjective → adverb 18%, **opposites 0%**.
+
+**Why a better threshold cannot fix it.** Of the correct answers the rule rejects, the offset check fails for 40%. In MiniLM the relation direction is weak next to word identity: aware : unaware :: ethical → unethical is correct, yet its offset cosine is 0.04, because *unethical* is simply *ethical*'s nearest word. 42% of held-out analogies have that shape. From the vectors, that is the same as the synonym exploit (file : document :: bike → bicycle), which is itself a true analogy (the synonym relation), only a cheap one. A tiered "insight" rule was also tested: an answer that is not among *c*'s nearest neighbours, plus the reverse analogy *c : d :: a* leading back to *b*. It does not separate the two either. The synonym exploit round-trips (synonymy is symmetric): 33% of exploit plays earn "insight" vs 42% of held-out analogies.
+
+**Conclusion.** Vector checks can tell nonsense (0–1% rewarded) and collapse (penalty) apart from plausible analogies, but not a cheap true analogy from an insightful one. Fair scoring needs the game to control the question, not a sharper threshold.
+
+**Revised proposal.**
+1. **Verdict as a learning hint**, in the sandbox and the timed game: offset ≥ 0.20 (held-out 51% "relation carried over ✓", exploits ≤ 4%, nonsense 0%), plus the collapse warning. It teaches which analogies the embedding actually encodes, and changes no points.
+2. **Scoring by designed questions**: timed rounds deal analogy quads (Google-set categories that work in this model: capitals, nationality adjectives, family, comparatives). A play scores when its answer lands on the board word that completes a dealt quad (full points), or on another board word linked to *c* (partial); a collapse costs points. Synonym pairs are not dealt, so the exploit has nothing to work with. This measures what the user proposed (the answer connects to the right word) against a known answer instead of a heuristic.
+3. Validate (2) by simulation before building it: every dealt board has ≥ 2 completable quads, and random play earns < 10% of skilled play.
+
+## 6. Limitations
+
+* The thresholds were first chosen on 30 canonical analogies; the held-out check in §5 showed they were overfit.
 * MiniLM is weak at analogies (it finds the expected answer in 53% of the canonical set), so many "wrong" answers are reasonable (florence, seville, classroom).
 * Trivial ≠ wrong: japan → tokyo is both correct and Japan's nearest word. The proposed rule doesn't use the trivial flag; the offset does the work.
 * Player behaviour is simulated by populations, not observed. Log real plays (question, answer, the three similarities, offset, verdict) to re-run this analysis on actual games.

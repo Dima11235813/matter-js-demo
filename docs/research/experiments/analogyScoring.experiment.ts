@@ -45,15 +45,33 @@ const CANONICAL: [string, string, string, string][] = [
   ['japan', 'japanese', 'france', 'french'], ['car', 'road', 'train', 'track'], ['winter', 'snow', 'summer', 'sun'],
 ];
 
-interface Play { a: string; b: string; c: string; expected?: string; population: string }
+interface Play { a: string; b: string; c: string; expected?: string; population: string; category?: string }
 interface Scored extends Play {
   d: string; similarity: number; sAB: number; sDA: number; sDB: number; sDC: number;
   offsetCos: number; trivial: boolean; correct?: boolean;
+  /** Position of d among c's nearest words (0 = nearest, -1 = not in the top 10). */
+  rankInC: number;
+  /** Reverse check: does c : d :: a lead back to b? Position of b in that answer list (-1 = not in top 6). */
+  roundTrip: number;
   current: number; literal: -1 | 0 | 1; nearest: -1 | 1; transfer: -1 | 0 | 1;
 }
 
 const vec = (w: string) => index.getVector(w)!;
 const sim = (x: string, y: string) => dot(vec(x), vec(y));
+
+/** Where d sits among c's nearest words, under the solver's exclusions (-1 = beyond the top 10). */
+function rankAmongNeighbours(a: string, b: string, c: string, d: string): number {
+  const inputs = [a, b, c];
+  const near = index.nearest(vec(c), { k: 10, exclude: new Set(inputs), allow: w => !inputs.some(i => sharesStem(w, i)) });
+  return near.findIndex(n => n.word === d);
+}
+
+/** Reverse analogy c : d :: a -> ?, and where b lands in its answers (-1 = not in the top 6). */
+function roundTripRank(a: string, b: string, c: string, d: string): number {
+  const reverse = solveAnalogy(index, c, d, a);
+  if (!reverse) return -1;
+  return [reverse.answer, ...reverse.alternatives.map(n => n.word)].indexOf(b);
+}
 
 /** c's nearest word under the same exclusions the solver uses: what c alone would give. */
 function nearestToC(a: string, b: string, c: string): string | undefined {
@@ -93,6 +111,7 @@ function score(play: Play): Scored | undefined {
     ...play, d, similarity: result.similarity,
     sAB: sim(a, b), sDA: sim(d, a), sDB: sim(d, b), sDC: sim(d, c),
     offsetCos: offsetCosine(a, b, c, d), trivial: nearestToC(a, b, c) === d,
+    rankInC: rankAmongNeighbours(a, b, c, d), roundTrip: roundTripRank(a, b, c, d),
     correct: play.expected ? d === play.expected : undefined,
     current: analogyPoints(result.similarity),
   };
@@ -109,6 +128,15 @@ function populations(): Play[] {
   const known = (...w: string[]) => w.every(x => index.has(x));
 
   for (const [a, b, c, expected] of CANONICAL) if (known(a, b, c, expected)) plays.push({ a, b, c, expected, population: 'canonical' });
+
+  // Held-out validation: the Google analogy test set, vocabulary-filtered (data/google-analogies-vocab.txt).
+  let category = '';
+  for (const line of fs.readFileSync(path.join(ROOT, 'docs/research/experiments/data/google-analogies-vocab.txt'), 'utf8').split(/\r?\n/)) {
+    if (!line.trim() || line.startsWith('#')) continue;
+    if (line.startsWith(':')) { category = line.slice(1).trim(); continue; }
+    const [a, b, c, expected] = line.trim().split(/\s+/);
+    plays.push({ a, b, c, expected, population: 'heldout', category });
+  }
 
   // Timed-game plays: dealt boards (related pairs); a, b from one pair, c from another ("pair"),
   // or any three board words ("board").
@@ -195,6 +223,39 @@ it('analogy scoring: current rule vs candidates', () => {
       }
     }
   }
+  // The proposed rule (analogy-scoring.md section 3.2) per held-out category.
+  const proposed = (s: Scored) => s.sAB >= LINK && s.sDC >= P95 && s.offsetCos >= 0.25;
+  const collapsed = (s: Scored) => s.sDC < P95 && Math.max(s.sDA, s.sDB) >= LINK;
+  const heldout = scored.filter(s => s.population === 'heldout');
+  const byCategory = [...new Set(heldout.map(s => s.category!))].map(category => {
+    const rows = heldout.filter(s => s.category === category);
+    const pct = (f: (s: Scored) => boolean) => Math.round((rows.filter(f).length / rows.length) * 100);
+    return { category, n: rows.length, correct: pct(s => !!s.correct), reward: pct(proposed), penalty: pct(collapsed),
+      rewardWhenCorrect: pct(s => !!s.correct && proposed(s)), penaltyWhenCorrect: pct(s => !!s.correct && collapsed(s)) };
+  });
+  console.table(byCategory);
+  // Tiered rule: score how much insight a play took, not whether it is "true".
+  //   insight = related pair, answer connects to c, the answer is NOT among c's top-k neighbours
+  //             (the relation moved it), and the reverse analogy leads back to b (top-r)
+  //   easy    = related pair, answer connects to c, but it is c's near neighbour (small points)
+  //   penalty = answer connects to a or b but not to c
+  const tiers: { rule: string; [population: string]: string | number }[] = [];
+  for (const k of [1, 2, 3]) {
+    for (const r of [0, 2, 5]) {
+      const row: { rule: string; [population: string]: string | number } = { rule: `insight: rankInC>=${k} or none, roundTrip<=${r}` };
+      for (const population of Object.keys(byPopulation)) {
+        const rows = scored.filter(s => s.population === population);
+        const base = (s: Scored) => s.sAB >= LINK && s.sDC >= P95;
+        const insight = rows.filter(s => base(s) && (s.rankInC < 0 || s.rankInC >= k) && s.roundTrip >= 0 && s.roundTrip <= r).length / rows.length;
+        const easy = rows.filter(s => base(s) && s.rankInC >= 0 && s.rankInC < k).length / rows.length;
+        const penalty = rows.filter(s => s.sDC < P95 && Math.max(s.sDA, s.sDB) >= LINK).length / rows.length;
+        row[population] = `${Math.round(insight * 100)}/${Math.round(easy * 100)}/${Math.round(penalty * 100)}`;
+      }
+      tiers.push(row);
+    }
+  }
+  console.log('insight%/easy%/penalty% per population');
+  console.table(tiers);
   console.log('reward%/penalty% per population');
   console.table(grid);
   const offsetDeciles = Object.fromEntries(Object.keys(byPopulation).map(p => {
@@ -202,7 +263,13 @@ it('analogy scoring: current rule vs candidates', () => {
     return [p, [0.1, 0.25, 0.5, 0.75, 0.9].map(q => +values[Math.floor(q * (values.length - 1))].toFixed(2))];
   }));
 
-  const out = { vocabVersion: manifest.version, linkThreshold: LINK, offsetMin: OFFSET_MIN, byPopulation, grid, offsetDeciles, canonical,
+  const rowsOf = (population: string) => scored.filter(s => s.population === population).map(s => ({
+    category: s.category, q: `${s.a}:${s.b}::${s.c}`, d: s.d, expected: s.expected, correct: s.correct, trivial: s.trivial,
+    sAB: +s.sAB.toFixed(3), sDA: +s.sDA.toFixed(3), sDB: +s.sDB.toFixed(3), sDC: +s.sDC.toFixed(3), off: +s.offsetCos.toFixed(3), sim: +s.similarity.toFixed(3),
+    rankInC: s.rankInC, roundTrip: s.roundTrip,
+  }));
+  const rows = Object.fromEntries(Object.keys(byPopulation).map(p => [p, rowsOf(p)]));
+  const out = { vocabVersion: manifest.version, linkThreshold: LINK, offsetMin: OFFSET_MIN, byPopulation, grid, tiers, offsetDeciles, byCategory, canonical, rows,
     examples: { exploitSynonym: examples('exploitSynonym'), exploitNearB: examples('exploitNearB'), dealtPair: examples('dealtPair'), random: examples('random') } };
   fs.writeFileSync(path.join(ROOT, 'docs/research/experiments/results/analogy-scoring.json'), JSON.stringify(out, null, 2));
   console.log(JSON.stringify(byPopulation, null, 1));
