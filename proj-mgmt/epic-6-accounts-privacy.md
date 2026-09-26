@@ -3,7 +3,7 @@
 ## 📋 Overview
 Optional accounts on top of local-first play, and the privacy engineering that lets real players' plays be collected for research: consent, pseudonymous research ids, age screening, export, and deletion. Anonymous play keeps working with nothing leaving the device. Driven by [docs/research/platform-plan.md](../docs/research/platform-plan.md) and [accounts-auth.md](../docs/research/accounts-auth.md). The backend side (sync API, telemetry ingest) is in [Epic 3](epic-3-enterprise-architecture.md); hosting and CI are in [Epic 7](epic-7-delivery-operations.md).
 
-### Decisions (proposed 2026-09-25; open ones in platform-plan.md §5)
+### Decisions (2026-09-25; D1 hosting = Cloudflare + Cloud Run, D3 region = US, D5 age screen = yes, decided by the user; the rest in platform-plan.md §5)
 * **Auth provider**: Firebase Authentication / Identity Platform (Google + email-link sign-in, popup flow, custom `authDomain`). Anonymous players get **no** provider account: they stay local until they choose to sign in, which keeps auth billing to people who create accounts.
 * **Three ids, three purposes**:
   * `deviceId`: exists today; used for sync provenance.
@@ -20,10 +20,10 @@ Optional accounts on top of local-first play, and the privacy engineering that l
 
 ### Feature 6.1: Local Identity & Data-Model Fixes (Stage A · before any data leaves the device)
 * **Story 6.1.1**: *As a player on two devices, I want my points and play counts to add up after syncing, never to be lost or doubled.*
-  * [ ] **Task 6.1.1.1**: Per-device counters: `profile.score` → `{deviceId: points}` (or derive the score from `games`), and `analogies.timesPlayed` → `{deviceId: n}`. The total is the sum. Add an IndexedDB migration and two-device merge unit tests.
-  * [ ] **Task 6.1.1.2**: One key normalizer (trim, lowercase, Unicode NFC) for words and `a:b::c` keys, with a migration that re-keys existing analogies.
+  * [x] **Task 6.1.1.1** (2026-09-25): Per-device counters: `profile.scoreByDevice` and `analogies.playsByDevice` (`src/persistence/counters.ts`: increment only this device's entry, max-merge per device, total = sum; decrements rejected, because a shrinking entry would break the merge). `score` and `timesPlayed` stay as derived totals for readers. The IndexedDB v4 migration credits existing totals to the device that recorded them. Tests: two devices playing offline and syncing in either order lose and double nothing (commutative, idempotent, associative with stale copies). On the real dev database, the score of 1,516 and all 15 analogies (20 plays) migrated intact.
+  * [x] **Task 6.1.1.2** (2026-09-25): `src/persistence/keys.ts` `normalizeKey` (trim, lowercase, NFC) used by `normalizeWord` and `analogyKey`. The v4 migration re-keys analogies and merges the play counts of keys that collide. A test caught a bug in the first version: it ignored the counts of a colliding record that had not been migrated yet, and worked from a stale snapshot.
 * **Story 6.1.2**: *As a developer, I want the identity records in place now, so accounts and consent don't need schema churn later.*
-  * [ ] **Task 6.1.2.1**: A local `meta` store: `deviceSecret` (random, never shown), `accountUid`, `consent {policyVersion, grantedAt, scopes}`, `ageBand {band, at}`.
+  * [x] **Task 6.1.2.1** (2026-09-25): The v4 `meta` store holds the device record: `deviceSecret` (32 random bytes, created once, never shown), `accountUid`, `consent {policyVersion, grantedAt, scopes, researchId}`, `ageBand {band, at}`, and `consentPromptDismissedAt`. It is never synced.
 
 ### Feature 6.2: Consent, Age Screen & Privacy Notice (Stage A)
 * **Story 6.2.1**: *As a player, I want to choose whether my plays help research, and change my mind any time.*

@@ -3,7 +3,7 @@
 ## 📋 Overview
 Take the game from a local dev server to a public site with checked PRs, preview deploys, production releases, monitoring, and rollback, within the workspace security standards: secrets in GCP Secret Manager, short-lived credentials via OIDC, installs with scripts ignored, and a documented audit baseline. Driven by [docs/research/delivery-cicd.md](../docs/research/delivery-cicd.md) and [platform-plan.md](../docs/research/platform-plan.md).
 
-### Decisions (proposed 2026-09-25; open ones in platform-plan.md §5)
+### Decisions (2026-09-25; D1 hosting = **Cloudflare Workers + Cloud Run**, decided by the user; the rest in platform-plan.md §5)
 * **Hosting**: Cloudflare Workers static assets ($0 at 100k MAU; 25 MiB per-file cap), with PR previews from preview aliases. A Worker route proxies `/api/*` to Cloud Run when the backend lands, keeping the API on the same origin. Fallback: Firebase Hosting + Cloud Run (decision D1).
 * **CI**: GitHub Actions (free on the public repo). e2e runs against a production-like build with the dev handle turned on by an explicit build flag; the production build is checked to contain no dev handle.
 * **Credentials**: GitHub OIDC → GCP Workload Identity Federation, with no JSON keys. The Cloudflare deploy token (Cloudflare has no OIDC yet) lives in Secret Manager: scoped to Workers, 90-day expiry, fetched at job time.

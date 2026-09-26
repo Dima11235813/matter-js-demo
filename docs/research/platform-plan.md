@@ -1,6 +1,6 @@
 # Platform Plan: From Local Game to Public Launch with Research Telemetry
 
-**Status**: research complete, decisions pending (§5) · **Date**: 2026-09-25 · **Drives**: [Epic 6 (accounts and privacy)](../../proj-mgmt/epic-6-accounts-privacy.md), [Epic 3 (backend)](../../proj-mgmt/epic-3-enterprise-architecture.md), [Epic 7 (delivery and operations)](../../proj-mgmt/epic-7-delivery-operations.md)
+**Status**: research complete; D1, D3 and D5 decided 2026-09-25 (§5); Stage A in progress · **Date**: 2026-09-25 · **Drives**: [Epic 6 (accounts and privacy)](../../proj-mgmt/epic-6-accounts-privacy.md), [Epic 3 (backend)](../../proj-mgmt/epic-3-enterprise-architecture.md), [Epic 7 (delivery and operations)](../../proj-mgmt/epic-7-delivery-operations.md)
 
 **Sources**: three delegated research reports (each with its own sources and "(verify)" price flags):
 * [accounts-auth.md](accounts-auth.md)
@@ -74,11 +74,11 @@ Each stage ends with tests and a measured number, per the working agreements.
 
 | # | Decision | Recommendation | Why it matters |
 |---|---|---|---|
-| D1 | Hosting: Cloudflare Workers + a Worker `/api` proxy to Cloud Run, **or** all-GCP Firebase Hosting | Cloudflare | $0 vs ~$16–180/month; one long-lived, narrowly scoped Cloudflare token vs fully keyless deploys |
+| D1 | Hosting: Cloudflare Workers + a Worker `/api` proxy to Cloud Run, **or** all-GCP Firebase Hosting | **Decided 2026-09-25: Cloudflare + Cloud Run** | $0 vs ~$16–180/month; one long-lived, narrowly scoped Cloudflare token vs fully keyless deploys |
 | D2 | Database: Cloud SQL (~$10, IAM login) **or** Neon ($0–5, password in Secret Manager) | Cloud SQL once telemetry ships; Neon is fine before that | Workspace preference for short-lived credentials |
-| D3 | Region: EU (`europe-west1`) or US | Decide before stage C | Moving personal data later is painful |
+| D3 | Region: EU (`europe-west1`) or US | **Decided 2026-09-25: United States** (`us-central1` for Cloud Run, Cloud SQL, and GCS) | Moving personal data later is painful |
 | D4 | Commercial ever (ads, payments)? Domain name? | — | Affects the privacy policy and CCPA; the domain is needed in stage B |
-| D5 | Age policy: neutral age screen, local-only play for under-13s (US) and under the local consent age (EU) | Yes, before stage C | The largest legal exposure is minors' identifiers |
+| D5 | Age policy: neutral age screen, local-only play for under-13s (US) and under the local consent age (EU) | **Decided 2026-09-25: yes**. The birth year is asked before sign-in or research sharing, never before play; the age band only is stored | The largest legal exposure is minors' identifiers |
 | D6 | May player-added (out-of-vocabulary) words ever reach research data? | Never (default); maybe opt-in later | Re-identification risk |
 | D7 | Who are the researchers: you only (DuckDB on Parquet) or collaborators (BigQuery)? | You only, for now | Storage and access design |
 | D8 | Retention periods: raw events 6 months, Parquet 24 months, inactive accounts 24 months | As proposed | Needed for the privacy notice |

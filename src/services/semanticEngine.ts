@@ -3,6 +3,7 @@ import { Calibration } from "../embeddings/calibration";
 import { LiveEncoder } from "../embeddings/liveEncoder";
 import { createProfanityPolicy, isProfanityFilterEnabled, parseWordList, ProfanityPolicy } from "../embeddings/profanity";
 import { centerAndNormalize, dot, Vector } from "../embeddings/vectorMath";
+import { normalizeKey } from "../persistence/keys";
 import { Neighbor, VectorIndex } from "../embeddings/VectorIndex";
 import { fetchVocabAsset, VocabManifest } from "../embeddings/vocabAsset";
 import { AnalogyRecord, GameRecord, openLexicalDb, PlayContext, PlayEventType } from "../persistence/db";
@@ -293,8 +294,7 @@ export class SemanticEngine {
     }
 }
 
-export function normalizeWord(word: string): string {
-    return word.trim().toLowerCase();
-}
+/** Words are keyed like every other natural key (persistence/keys.ts). */
+export const normalizeWord = normalizeKey;
 
 export const semanticEngine = new SemanticEngine(`${import.meta.env.BASE_URL}vocab/`);

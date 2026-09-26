@@ -1,5 +1,7 @@
 import { AnalogyResult } from "../embeddings/analogy";
-import { AnalogyRecord, GameRecord, LexicalDb, PLAY_EVENT_SCHEMA, PlayEventRecord, PlayerWordRecord, ProfileRecord, SyncStamp } from "./db";
+import { AgeBand, AnalogyRecord, ConsentState, GameRecord, LexicalDb, MetaRecord, PLAY_EVENT_SCHEMA, PlayEventRecord, PlayerWordRecord, ProfileRecord, SyncStamp } from "./db";
+import { counterTotal, incrementCounter } from "./counters";
+import { analogyKey } from "./keys";
 
 export type GameResult = Omit<GameRecord, keyof SyncStamp | "id">;
 export type PlayEventInput = Omit<PlayEventRecord, keyof SyncStamp | "id" | "schema" | "at"> & { at?: number };
@@ -11,8 +13,11 @@ export interface PendingSyncCounts {
     playEvents: number;
 }
 
-export function analogyKey(a: string, b: string, c: string): string {
-    return `${a}:${b}::${c}`;
+export { analogyKey };
+
+/** 32 random bytes as hex: proves this device's ownership of `deviceId` when an account claims it. */
+function newDeviceSecret(): string {
+    return Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, "0")).join("");
 }
 
 /**
@@ -20,21 +25,28 @@ export function analogyKey(a: string, b: string, c: string): string {
  * syncing implementation later only changes this class.
  */
 export class LexicalRepository {
-    private constructor(private readonly db: LexicalDb, readonly deviceId: string, private profile: ProfileRecord) {}
+    private constructor(private readonly db: LexicalDb, readonly deviceId: string, private profile: ProfileRecord, private meta: MetaRecord) {}
 
-    /** Loads (or creates) the local profile, which also owns this device's stable id. */
+    /** Loads (or creates) the local profile, which owns this device's stable id, and the device's meta record. */
     static async open(db: LexicalDb): Promise<LexicalRepository> {
         let profile = await db.get("profile", "local");
         if (!profile) {
             const t = Date.now();
-            profile = { id: "local", score: 0, createdAt: t, updatedAt: t, syncState: "pending", deviceId: crypto.randomUUID() };
+            const deviceId = crypto.randomUUID();
+            profile = { id: "local", score: 0, scoreByDevice: {}, createdAt: t, updatedAt: t, syncState: "pending", deviceId };
             await db.put("profile", profile);
         }
-        return new LexicalRepository(db, profile.deviceId, profile);
+        let meta = await db.get("meta", "device");
+        if (!meta) {
+            meta = { id: "device", deviceSecret: newDeviceSecret() };
+            await db.put("meta", meta);
+        }
+        return new LexicalRepository(db, profile.deviceId, profile, meta);
     }
 
+    /** Lifetime points: the sum over every device that played on this profile. */
     get score(): number {
-        return this.profile.score;
+        return this.profile.scoreByDevice ? counterTotal(this.profile.scoreByDevice) : this.profile.score;
     }
 
     get hintMode(): boolean {
@@ -56,9 +68,29 @@ export class LexicalRepository {
     }
 
     async addScore(points: number): Promise<number> {
-        this.profile = { ...this.profile, score: this.profile.score + points, ...this.touch(this.profile) };
+        const scoreByDevice = incrementCounter(this.profile.scoreByDevice, this.deviceId, points);
+        this.profile = { ...this.profile, scoreByDevice, score: counterTotal(scoreByDevice), ...this.touch(this.profile) };
         await this.db.put("profile", this.profile);
         return this.profile.score;
+    }
+
+    // --- device meta: consent and age (Epic 6 · Features 6.1, 6.2); never synced -------------------
+
+    get consent(): ConsentState | undefined {
+        return this.meta.consent;
+    }
+
+    get ageBand(): AgeBand | undefined {
+        return this.meta.ageBand?.band;
+    }
+
+    get consentPromptDismissedAt(): number | undefined {
+        return this.meta.consentPromptDismissedAt;
+    }
+
+    async updateMeta(changes: Partial<Omit<MetaRecord, "id" | "deviceSecret">>): Promise<void> {
+        this.meta = { ...this.meta, ...changes };
+        await this.db.put("meta", this.meta);
     }
 
     listPlayerWords(): Promise<PlayerWordRecord[]> {
@@ -81,7 +113,7 @@ export class LexicalRepository {
             id,
             ...result,
             vocabVersion,
-            timesPlayed: (existing?.timesPlayed ?? 0) + 1,
+            ...this.countPlay(existing),
             ...(existing ? this.touch(existing) : this.stamp()),
         };
         await tx.store.put(record);
@@ -138,6 +170,13 @@ export class LexicalRepository {
             this.db.countFromIndex("playEvents", "bySyncState", "pending"),
         ]);
         return { words, analogies, games, playEvents };
+    }
+
+    /** One more play of an analogy on this device; the total is derived from the per-device counts. */
+    private countPlay(existing: AnalogyRecord | undefined): Pick<AnalogyRecord, "playsByDevice" | "timesPlayed"> {
+        const base = existing?.playsByDevice ?? (existing ? { [existing.deviceId]: existing.timesPlayed } : undefined);
+        const playsByDevice = incrementCounter(base, this.deviceId);
+        return { playsByDevice, timesPlayed: counterTotal(playsByDevice) };
     }
 
     private stamp(): SyncStamp {
