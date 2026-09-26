@@ -16,7 +16,7 @@ By merging a **2D rigid-body physics engine (Matter.js + p5.js)** with **word em
 
 ## 🗺️ High-Level Roadmap (The Epics)
 
-The project is deconstructed into five key Epics. Click each file link to explore detailed features, user stories, and tasks:
+The project is deconstructed into seven Epics. Click each file link to explore detailed features, user stories, and tasks:
 
 ### 🧬 [Epic 1: Semantic Word Embeddings & Advanced Collision Engine](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/epic-1-embeddings-collision.md)
 * **Goal**: Transition from simple string concatenations to vector-based semantic similarity calculations.
@@ -33,7 +33,8 @@ The project is deconstructed into five key Epics. Click each file link to explor
 
 ### 🏢 [Epic 3: Enterprise Architecture & Backend Transition](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/epic-3-enterprise-architecture.md)
 * **Goal**: Scale the monolithic frontend to a clean, DRY monorepo structure with a backend service, shared type definitions, and proper state management.
-* **Core Tech**: NestJS / Express, TypeScript interfaces, Shared DTOs, MobX 6 state architecture.
+* **Core Tech**: a thin TypeScript API (Hono) on GCP Cloud Run + Postgres (decided by [research](file:///D:/GDrive/Dev/matter-js-demo/docs/research/platform-plan.md) 2026-09-25; NestJS superseded), zod schemas as shared DTOs, MobX 6 state architecture.
+* **Next**: research telemetry ingest with consent (Feature 3.6), then the sync API (Feature 3.7).
 * **Key Features**: Client-Server Separation, `/shared` DTO Package, API Cache & Vector Storage, Domain-Driven Frontend Structure.
 
 ### ⚡ [Epic 4: Modernization & Dependency Upgrades](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/epic-4-modernization.md)
@@ -47,6 +48,31 @@ The project is deconstructed into five key Epics. Click each file link to explor
 * **Key Features**: All-pairs layout (2D first), 3D orbits, raycast selection, 2D ↔ 3D toggle gated on hint mode.
 * **Shipped**: embedding-shaped 3D layout ([research](file:///D:/GDrive/Dev/matter-js-demo/docs/research/embedding-shape.md)): lines, rings, and clusters from the board's own embedding distances; focus on new words, HUD analogy links, and an "Analogies on this board" menu that focuses in 2D and 3D (Feature 5.16).
 * **Next**: cross-dimension continuity without re-rendering ([research](file:///D:/GDrive/Dev/matter-js-demo/docs/research/cross-dimension-continuity.md)), selection metadata HUD, live drag with physics, Create mode in 3D, zoom, spin to detangle, saved views, color hint mode (semantic colours by group and molecule, 2D and 3D, Feature 5.17).
+
+---
+
+### 🔐 [Epic 6: Accounts, Consent & Privacy](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/epic-6-accounts-privacy.md)
+* **Goal**: Optional accounts on top of local-first play, and the consent, age screening, pseudonymous ids, export, and deletion that let real plays be collected for research.
+* **Core Tech**: Firebase Authentication / Identity Platform (Google + email link), a local `meta` store, a MobX `ConsentStore`.
+* **Next (Stage A)**: per-device counters, key normalization, consent and age UI, local export and erase.
+
+### 🚀 [Epic 7: Delivery & Operations](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/epic-7-delivery-operations.md)
+* **Goal**: CI on every PR, previews, a public production site, monitoring, and rollback, within the workspace security standards.
+* **Core Tech**: GitHub Actions, Cloudflare Workers static assets, GCP Workload Identity Federation + Secret Manager, Sentry, UptimeRobot.
+* **Next (Stage A)**: `ci.yml` with the vocabulary cache, an e2e build mode, and guards; branch ruleset.
+
+---
+
+## 🌍 Path to Public Launch (researched 2026-09-25, [platform plan](file:///D:/GDrive/Dev/matter-js-demo/docs/research/platform-plan.md))
+| Stage | Ships | Cost |
+|---|---|---|
+| A. Local hardening | per-device counters, consent + age UI, local export/erase (Epic 6); CI on PRs (Epic 7) | $0 |
+| B. Public static launch | Cloudflare hosting + previews, cache headers, Sentry v11, uptime (Epic 7) | ~$1–2/mo |
+| C. Research telemetry | Cloud Run ingest + Postgres + Parquet with consent (Epic 3 · 3.6) | ~$0–12/mo |
+| D. Accounts & sync | Firebase Auth, claim on sign-in, sync API, export/delete (Epics 6, 3 · 3.7) | + ~$0 |
+| E. Competitive & social | server-verified leaderboards, saved views, URL import, molecule research | ~$35–70 at 100k MAU |
+
+Open decisions D1–D10 (hosting, database, region, domain, age policy, research data scope, retention) are in the platform plan §5.
 
 ---
 
