@@ -12,7 +12,12 @@ import { solveAnalogy } from '../src/embeddings/analogy';
 const dir = path.resolve(__dirname, '../public/vocab');
 const present = fs.existsSync(path.join(dir, 'vocab.json')) && fs.existsSync(path.join(dir, 'vocab.bin'));
 
-describe.skipIf(!present)('built vocabulary quality', () => {
+// CI sets REQUIRE_VOCAB=1: a missing vocabulary then fails loudly here instead of skipping five test files.
+it.runIf(!!process.env.REQUIRE_VOCAB)('the built vocabulary is present (REQUIRE_VOCAB)', () => {
+  expect(present, 'public/vocab/vocab.json and vocab.bin must exist: restore the vocab cache or run yarn vocab:build').toBe(true);
+});
+
+describe.skipIf(!present && !process.env.REQUIRE_VOCAB)('built vocabulary quality', () => {
   const load = () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'vocab.json'), 'utf8')) as VocabManifest;
     const bin = fs.readFileSync(path.join(dir, 'vocab.bin'));

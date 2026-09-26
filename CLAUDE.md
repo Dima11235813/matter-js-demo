@@ -14,7 +14,9 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 ## Commands
 
 - Type-check: `npx tsc --noEmit -p .` · Unit tests: `yarn test:unit` · Build: `yarn build`
-- End-to-end: `yarn test:e2e` (Playwright, reuses the dev server on port 3000, runs serially; new specs use the `window.__lexical` handle for setup, including `focusedWords()`, and the real UI for the feature under test)
+- End-to-end: `yarn test:e2e` (Playwright, reuses the dev server on port 3000, runs serially; new specs use the `window.__lexical` handle for setup, including `focusedWords()`, and the real UI for the feature under test). CI mode, against the built bundle: `yarn build:e2e` then `CI=1 E2E_SERVER=preview yarn test:e2e` (port 3000 must be free)
+- CI: `.github/workflows/ci.yml` (verify: frozen install with scripts ignored, cached vocabulary, typecheck, unit tests with `REQUIRE_VOCAB=1`, production and e2e builds, guards; e2e: Playwright against the e2e bundle). The dev handle exists only in dev and `--mode e2e`; the guard fails the build if `__lexical` reaches `dist/`
+- Sentry initializes only when a build sets `VITE_SENTRY_DSN` (dev and e2e never report)
 - Research experiments (kept out of the unit suite): `yarn research:cross-dim` runs all of them; run one with `npx vitest run --config docs/research/experiments/vitest.research.config.ts <name>`
 - Rebuild vocabulary: `yarn vocab:build`
 - Dev server: `npx vite --port 3000 --strictPort --open false`

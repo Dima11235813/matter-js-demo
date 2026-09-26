@@ -24,7 +24,7 @@ function flatScatter(count: number, seed: number): Array<[number, number]> {
   return Array.from({ length: count }, () => [(next() - 0.5) * 1100, (next() - 0.5) * 560]);
 }
 
-describe.skipIf(!present)('3D space simulation on the real vocabulary (Phase 2 exit criteria)', () => {
+describe.skipIf(!present && !process.env.REQUIRE_VOCAB)('3D space simulation on the real vocabulary (Phase 2 exit criteria)', () => {
   const manifest = present ? (JSON.parse(fs.readFileSync(path.join(dir, 'vocab.json'), 'utf8')) as VocabManifest) : undefined;
   const index = present ? (() => {
     const bin = fs.readFileSync(path.join(dir, 'vocab.bin'));

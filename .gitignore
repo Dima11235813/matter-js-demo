@@ -29,6 +29,19 @@ yarn-error.log*
 /playwright-report
 .env
 
+# secrets never live in the repo (workspace standard SEC-03); .env.example is the only env file tracked
+.env.*
+!.env.example
+secrets/
+credentials*.json
+*.pem
+*.key
+.mcp.json
+
+# CI / deploy outputs
+/dist-e2e
+/.wrangler
+
 # generated embedding vocabulary (yarn vocab:build)
 /public/vocab
 /.playwright-mcp

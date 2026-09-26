@@ -15,21 +15,21 @@ Take the game from a local dev server to a public site with checked PRs, preview
 
 ### Feature 7.1: CI on Pull Requests (Stage A, $0)
 * **Story 7.1.1**: *As the developer, I want every PR checked automatically, so nothing regresses silently.*
-  * [ ] **Task 7.1.1.1**: `.github/workflows/ci.yml`, `verify` job:
+  * [x] **Task 7.1.1.1** (2026-09-25, not yet run on GitHub): `.github/workflows/ci.yml`, `verify` job. Actions are pinned to commit SHAs (checkout v7.0.1, setup-node v7.0.0, cache v6.1.0, upload-artifact v7.0.1, download-artifact v8.0.1). A frozen install with scripts ignored was verified outside Drive: 18 s, and esbuild runs from its optional platform package. Found while wiring it: the research sketch's `require('@huggingface/transformers/package.json')` fails under that package's `exports`, so the cache key reads the file directly. Audit: report-only `yarn audit --level high`, with no new dependency. Plan:
     * `yarn install --frozen-lockfile --ignore-scripts` (none of the six packages with install scripts needs them);
     * restore the model and vocabulary caches (keyed by *every* input the build script reads, including `src/utils/Dictionary/*` and `src/mitDict.txt`), or build on a miss;
     * typecheck, unit tests, both builds, guards;
     * a report-only `audit-ci`.
-  * [ ] **Task 7.1.1.2**: `e2e` job: Playwright against `vite preview` of a `--mode e2e` build (`VITE_E2E_HANDLE=on`); upload the report on failure. `playwright.config.ts` switches its web server by env var. **Watch for flakes**: on 2026-09-25 one full local run of 20 had a single failure that three reruns didn't reproduce. CI keeps `retries: 1` plus the failure report, so the next occurrence names the test.
-  * [ ] **Task 7.1.1.3**: Guards:
+  * [x] **Task 7.1.1.2** (2026-09-25): `e2e` job, downloading the e2e bundle artifact. Locally in CI mode (`CI=1 E2E_SERVER=preview`) against the minified bundle with the profanity filter on: 20/20. Plan: Playwright against `vite preview` of a `--mode e2e` build (`VITE_E2E_HANDLE=on`); upload the report on failure. `playwright.config.ts` switches its web server by env var. **Watch for flakes**: on 2026-09-25 one full local run of 20 had a single failure that three reruns didn't reproduce. CI keeps `retries: 1` plus the failure report, so the next occurrence names the test.
+  * [x] **Task 7.1.1.3** (2026-09-25): Guards, verified locally: the production `dist/` has no `__lexical` (the devtools module is tree-shaken because both gate conditions are build-time constants), the e2e bundle has it, and no file is over 24 MiB. Plan:
     * `__lexical` must not appear in `dist/`;
     * no file in `dist/` may exceed 24 MiB;
     * `vocab.bin` must be present.
-  * [ ] **Task 7.1.1.4**: Vocabulary-dependent unit tests fail instead of skipping when `REQUIRE_VOCAB=1` (today 5 files skip silently without `public/vocab`).
-  * [ ] **Task 7.1.1.5**: Devtools gate: `import.meta.env.DEV || import.meta.env.VITE_E2E_HANDLE === 'on'`; `.env.e2e`; `.gitignore` gets `dist-e2e/` and `.wrangler/`.
+  * [x] **Task 7.1.1.4** (2026-09-25): The `describe.skipIf` guards also check `REQUIRE_VOCAB`, and an explicit test fails with a clear message if the vocabulary is missing. With `REQUIRE_VOCAB=1` locally: 249 tests, none skipped.
+  * [x] **Task 7.1.1.5** (2026-09-25): Devtools gate `DEV || MODE === "e2e"` (a build mode instead of a `.env.e2e` file, which the SEC-03 ignore rules would block); scripts `build:e2e` and `preview:e2e`; `playwright.config.ts` switches its web server on `E2E_SERVER=preview`. `.gitignore` gets `/dist-e2e`, `/.wrangler`, and the SEC-03 patterns it was missing (`.env.*` except `.env.example`, `secrets/`, `credentials*.json`, `*.pem`, `*.key`, `.mcp.json`).
   * [ ] **Task 7.1.1.6**: A ruleset on `master` requiring `verify` and `e2e`; no force pushes; 0 required approvals (solo developer; the checks are the gate).
   * [ ] **Task 7.1.1.7**: `.gitattributes` (`* text=auto eol=lf`, binaries marked) so the CRLF churn stops and Linux CI and Windows agree on hashes. **This renormalizes line endings across the repo in one commit: coordinate it and verify with `git diff --stat`.**
-  * [ ] **Task 7.1.1.8**: Dependabot (npm + github-actions, grouped weekly), CodeQL default setup, secret scanning with push protection.
+  * [~] **Task 7.1.1.8**: Dependabot (npm + github-actions, grouped weekly) ✅ `.github/dependabot.yml`. ⬜ CodeQL default setup and secret scanning with push protection are repository settings on GitHub (owner's action).
 * **Exit criteria**: a green PR run; cold and warm vocabulary-build timings; total CI minutes; the unit-test count in CI equals the local count (no skips).
 
 ### Feature 7.2: Production & Previews (Stage B, ~$1–2/month)
@@ -47,7 +47,7 @@ Take the game from a local dev server to a public site with checked PRs, preview
 * **Exit criteria**: a preview URL posted on a PR; production `curl -I` shows the expected cache headers; first-visit transfer (expected ~7.8 MB) and repeat-visit transfer (expected under 100 KB) measured in a browser; a Lighthouse / Web Vitals baseline.
 
 ### Feature 7.3: Observability (Stage B)
-* [ ] **Task 7.3.1**: Sentry `@sentry/browser` 5 → current major: initialise only when a DSN is configured (per environment; dev never reports); `environment` and `release` = git SHA; hidden source maps uploaded from CI and kept out of the deploy; a low trace rate with spans for "vocab loaded" and "engine ready". Issue a fresh DSN key with allowed domains and a rate limit. **Settles Epic 4 · Task 4.5.2.**
+* [~] **Task 7.3.1** (DSN gate ✅ 2026-09-25: the hard-coded DSN is removed; Sentry initializes only when `VITE_SENTRY_DSN` is set, with `environment` = build mode, so dev never reports. ⬜ The rest): Sentry `@sentry/browser` 5 → current major: initialise only when a DSN is configured (per environment; dev never reports); `environment` and `release` = git SHA; hidden source maps uploaded from CI and kept out of the deploy; a low trace rate with spans for "vocab loaded" and "engine ready". Issue a fresh DSN key with allowed domains and a rate limit. **Settles Epic 4 · Task 4.5.2.**
 * [ ] **Task 7.3.2**: UptimeRobot (the page and `vocab.bin`); Cloudflare Web Analytics (MAU and Core Web Vitals, which validates the cost model); a nightly UI-only Playwright smoke test against production.
 * [ ] **Task 7.3.3**: Alerts: Sentry issues and spikes; uptime; Actions failures; GCP budget alerts ($10 / $25 / $50); Cloudflare usage notifications.
 

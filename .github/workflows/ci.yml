@@ -1,0 +1,120 @@
+# CI on every PR and on master (Epic 7 · Feature 7.1; docs/research/delivery-cicd.md §4).
+# Stage A: verify + e2e only. Preview and production deploys arrive in Stage B.
+# Actions are pinned to full commit SHAs (tag in the comment); Dependabot keeps them current.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read # least privilege; jobs widen explicitly when they need to
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: '22'
+  REQUIRE_VOCAB: '1' # vocabulary-dependent unit tests fail instead of skipping
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      # No install scripts (workspace standard DEP-03). None of the packages that have them is needed:
+      # esbuild's binary comes from its optional platform package; onnxruntime-node's script only fetches CUDA.
+      - name: Install (frozen lockfile, no install scripts)
+        run: yarn install --frozen-lockfile --ignore-scripts --non-interactive
+
+      - name: Vocabulary cache key parts
+        id: vk
+        run: |
+          v() { node -p "JSON.parse(require('fs').readFileSync('node_modules/$1/package.json','utf8')).version"; }
+          echo "rt=tf$(v @huggingface/transformers)-ort$(v onnxruntime-node)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore model cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/@huggingface/transformers/.cache
+          key: hf-model-all-MiniLM-L6-v2-q8-${{ steps.vk.outputs.rt }}
+
+      # Keyed by every input scripts/build-vocab.mjs reads, plus the model runtime versions.
+      - name: Restore vocabulary
+        id: vocab
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: public/vocab
+          key: vocab-${{ steps.vk.outputs.rt }}-${{ hashFiles('scripts/build-vocab.mjs', 'data/vocab/**', 'src/utils/Dictionary/googleMostCommonDict.js', 'src/utils/Dictionary/combinationOfAllDict.js', 'src/utils/Dictionary/scribdDict.js', 'src/utils/Dictionary/Dict3.ts', 'src/utils/Dictionary/corporaExplitives.js', 'src/mitDict.txt') }}
+
+      - name: Build vocabulary (cache miss only; several minutes)
+        if: steps.vocab.outputs.cache-hit != 'true'
+        run: yarn vocab:build
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p .
+
+      - name: Unit tests
+        run: yarn test:unit
+
+      - name: Dependency audit (report-only until the High baseline is triaged, Epic 7 · Task 7.5.1)
+        run: yarn audit --groups dependencies --level high
+        continue-on-error: true
+
+      - name: Production build
+        run: npx vite build
+
+      - name: E2E build (dev handle on; never deployed)
+        run: yarn build:e2e
+
+      - name: Guards
+        run: |
+          if grep -rl "__lexical" dist/; then echo "::error::the dev handle leaked into the production build"; exit 1; fi
+          big=$(find dist -type f -size +24M)
+          if [ -n "$big" ]; then echo "::error::files over 24 MiB (Cloudflare's per-file limit is 25 MiB): $big"; exit 1; fi
+          test -s dist/vocab/vocab.bin || { echo "::error::dist/vocab/vocab.bin is missing"; exit 1; }
+          grep -rl "__lexical" dist-e2e/ > /dev/null || { echo "::error::the e2e build lacks the dev handle"; exit 1; }
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-e2e
+          path: dist-e2e
+          retention-days: 3
+
+  e2e:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+      - run: yarn install --frozen-lockfile --ignore-scripts --non-interactive
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist-e2e
+          path: dist-e2e
+      - name: Playwright against the built e2e bundle
+        run: yarn test:e2e
+        env:
+          E2E_SERVER: preview
+      - if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

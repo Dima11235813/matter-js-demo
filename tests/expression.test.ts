@@ -43,7 +43,7 @@ describe('focusTargets', () => {
 const dir = path.resolve(__dirname, '../public/vocab');
 const present = fs.existsSync(path.join(dir, 'vocab.json')) && fs.existsSync(path.join(dir, 'vocab.bin'));
 
-describe.skipIf(!present)('expressions on the built vocabulary', () => {
+describe.skipIf(!present && !process.env.REQUIRE_VOCAB)('expressions on the built vocabulary', () => {
   const load = () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'vocab.json'), 'utf8')) as VocabManifest;
     const bin = fs.readFileSync(path.join(dir, 'vocab.bin'));

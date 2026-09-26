@@ -60,6 +60,8 @@
     "prebuild": "node scripts/build-vocab.mjs --if-missing",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "build:e2e": "vite build --mode e2e --outDir dist-e2e",
+    "preview:e2e": "vite preview --outDir dist-e2e --port 3000 --strictPort",
     "test:e2e": "playwright test",
     "test:unit": "vitest run --exclude **/*.spec.ts --exclude src/App.test.tsx",
     "research:cross-dim": "vitest run --config docs/research/experiments/vitest.research.config.ts"
