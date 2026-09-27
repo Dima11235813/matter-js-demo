@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
+import { $ZodError } from "zod/v4/core";
 import {
     AccountExport, analogyKey, ClaimRequest, ClaimResponse, DeleteResponse, MAX_PULL_RECORDS, mergeRecords, PullResponse,
     PushRequest, PushResponse, sameRecord, SyncRecord, wordKey,
@@ -27,7 +28,7 @@ export function createApp({ db, verifier }: { db: Db; verifier: Verifier }) {
     app.onError((error, c) => {
         if (error instanceof HttpError) return c.json({ error: { code: error.code, message: error.message } }, error.status);
         if (error instanceof AuthError) return c.json({ error: { code: "unauthorized", message: error.message } }, 401);
-        if (error instanceof z.ZodError) {
+        if (error instanceof $ZodError) {
             return c.json({ error: { code: "invalid-request", message: error.issues.slice(0, 3).map(i => `${i.path.join(".")}: ${i.message}`).join("; ") } }, 400);
         }
         console.error(error);

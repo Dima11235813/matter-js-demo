@@ -5,7 +5,6 @@ import deps from "./Deps";
 import shapeOptions from "./Shapes/shapeOptions";
 import { Box } from "./Shapes/Box";
 import { TypographyDisplay } from "./TypographyDisplay";
-import { DictionaryTools } from "../utils/textUtils";
 import { CollisionHandler } from "./CollisionHandler";
 import { stores } from "../stores";
 import { AppModes } from "./models/appMode";

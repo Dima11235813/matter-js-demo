@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import "./App.css";
-import { WorldContainer } from "./matterJsComp/WorldContainer";
 import { inject, observer } from "mobx-react";
 import { MenuStore } from "./stores/MenuStore";
 import { GameStore } from "./stores/GameStore";
@@ -27,7 +26,8 @@ function captureHandoff(view: string) {
 
 /**
  * Mounts the 2D world (Matter + p5) or, with hint mode on and 3D selected, the three.js space.
- * The 3D module (and three.js) is code-split and only loaded the first time 3D is shown.
+ * Both are code-split: the page (menu, dashboard) renders first, while the world's engine downloads in
+ * parallel with the vocabulary (p5 alone is ~1 MB; see Epic 4 · Task 4.5.6).
  */
 const WordWorld = inject("menuStore", "gameStore")(observer((props: WordWorldProps) => {
   const view = props.menuStore!.view;
@@ -43,7 +43,9 @@ const WordWorld = inject("menuStore", "gameStore")(observer((props: WordWorldPro
         if (!disposed) world = new SpaceWorld(container);
       });
     } else {
-      world = new WorldContainer(container);
+      import("./matterJsComp/WorldContainer").then(({ WorldContainer }) => {
+        if (!disposed) world = new WorldContainer(container);
+      });
     }
     return () => {
       disposed = true;

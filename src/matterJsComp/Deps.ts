@@ -1,6 +1,6 @@
-import p5 from "p5"
+import type p5 from "p5"
 import { AppModes } from "./models/appMode"
-import { Box } from "./Shapes/Box"
+import type { Box } from "./Shapes/Box"
 import type { WordWorld } from "./wordWorld"
 import type { BoardHandoff } from "../space/handoff"
 

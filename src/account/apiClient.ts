@@ -1,8 +1,7 @@
 import {
     AccountExport, ApiError, ClaimResponse, DeleteResponse, PullResponse, PushResponse,
-    type ClaimRequest, type PushRequest,
+    type ClaimRequest, type Parser, type PushRequest,
 } from "@lexical/shared";
-import type { z } from "zod";
 
 /**
  * The web app's side of the API (Epic 3 · Feature 3.8). Same-origin `/api/v1` (Vite proxies it in dev; the
@@ -43,7 +42,7 @@ export class ApiClient {
         return this.request("DELETE", "/me", DeleteResponse);
     }
 
-    private async request<T>(method: string, path: string, schema: z.ZodType<T>, body?: unknown): Promise<T> {
+    private async request<T>(method: string, path: string, schema: Parser<T>, body?: unknown): Promise<T> {
         const token = await this.getToken();
         if (!token) throw new ApiRequestError(401, "signed-out", "Sign in first");
         let response: Response;

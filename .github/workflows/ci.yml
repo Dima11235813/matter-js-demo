@@ -92,6 +92,9 @@ jobs:
           big=$(find dist -type f -size +24M)
           if [ -n "$big" ]; then echo "::error::files over 24 MiB (Cloudflare's per-file limit is 25 MiB): $big"; exit 1; fi
           test -s dist/vocab/vocab.bin || { echo "::error::dist/vocab/vocab.bin is missing"; exit 1; }
+          # Startup bundle budget (Epic 4 · Task 4.5.6): the 2D/3D engines, Sentry, and the letters dictionary are lazy chunks.
+          fat=$(find dist/assets -name 'index-*.js' -size +600k)
+          if [ -n "$fat" ]; then echo "::error::main chunk over the 600 KB budget: $fat"; ls -la dist/assets/*.js; exit 1; fi
           grep -rl "__lexical" dist-e2e/ > /dev/null || { echo "::error::the e2e build lacks the dev handle"; exit 1; }
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

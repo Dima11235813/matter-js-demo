@@ -1,7 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import * as Sentry from "@sentry/browser";
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 import { Provider } from "mobx-react";
@@ -14,7 +13,7 @@ import { applyTheme } from "./theme/palette";
 // Sentry only runs when a build supplies a DSN (Epic 7 · Task 7.3.1, Epic 4 · Task 4.5.2): dev and
 // e2e builds never report. A DSN is not a secret (it only allows sending events), so a VITE_ variable is fine.
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
-if (sentryDsn) Sentry.init({ dsn: sentryDsn, environment: import.meta.env.MODE });
+if (sentryDsn) void import("@sentry/browser").then(Sentry => Sentry.init({ dsn: sentryDsn, environment: import.meta.env.MODE }));
 
 applyTheme(stores.menuStore.theme);
 bootSemanticPlayground(stores);

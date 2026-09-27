@@ -337,3 +337,17 @@ test('two devices sign in to the same account and sync their plays through the A
   await expect(laptop.getByTestId('sync-status')).toContainText('Synced');
   await Promise.all(devices.map(context => context.close()));
 });
+
+test('the letters dictionary is not part of startup; it loads on the first letter collision', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
+  const dictionaryLoaded = () => page.evaluate(() => performance.getEntriesByType('resource').some(e => e.name.includes('combinationOfAllDict')));
+  expect(await dictionaryLoaded()).toBe(false);
+  await page.locator('#sandbox-toggle').click();
+  const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
+  for (let i = 0; i < 12; i++) {
+    await page.mouse.click(canvas.x + 400 + (i % 3) * 6, canvas.y + 150);
+    await page.waitForTimeout(120);
+  }
+  await expect.poll(dictionaryLoaded, { timeout: 10_000 }).toBe(true);
+});

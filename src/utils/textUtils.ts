@@ -1,6 +1,5 @@
 // import source from './Dictionary/scribdDict'
 // import source from './Dictionary/corporaExplitives'
-import source from './Dictionary/combinationOfAllDict'
 import { letterFreqLookupRatio } from './letterFreqLookupSource'
 // import source from './Dictionary/googleMostCommonDict'
 // import source from './Dictionary/Dictionary'
@@ -88,6 +87,17 @@ const checkIfDynamicKeysCharsNotValid = (index: number, array: string[]): boolea
     return longestKeyIsNotValid
 }
 
+let toolsPromise: Promise<DictionaryTools> | undefined
+
+/**
+ * The letters mode's dictionary loads on first use instead of with the app: it was ~134 KB of the main
+ * bundle, and building the lookups took CPU on every world, even in word modes that never merge letters.
+ */
+export function loadDictionaryTools(): Promise<DictionaryTools> {
+    toolsPromise ??= import('./Dictionary/combinationOfAllDict').then(module => new DictionaryTools(module.default))
+    return toolsPromise
+}
+
 export class DictionaryTools {
     dict: Record<string, number>
     commonLetterPairs: Record<string, number> = {}
@@ -101,9 +111,9 @@ export class DictionaryTools {
 
     arrayOfKeys: string[] = []
     wordLookup: Map<string, number> = new Map<string, number>()
-    constructor() {
+    constructor(dictionary: Record<string, number>) {
         const arrayOfLetterComboLookUps: Record<string, number>[] = []
-        this.dict = source
+        this.dict = dictionary
         this.initializeWordLookup()
         this.processLetterCombinations(arrayOfLetterComboLookUps)
         this.sortAndPopulateCombinations(arrayOfLetterComboLookUps)

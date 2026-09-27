@@ -1,12 +1,13 @@
 import { ShapesFactory } from "./ShapesFactory";
 import { ShapeTypes, getShapeTypeForLength } from "./models/boxOptions";
-import { DictionaryTools, sizeOfLargestWord, determineMergeText } from "../utils/textUtils";
+import { DictionaryTools, sizeOfLargestWord, determineMergeText, loadDictionaryTools } from "../utils/textUtils";
 import Matter, { Body, World, Pair } from "matter-js";
 import deps from "./Deps";
 import { logger } from "../utils/logger";
 
 export class CollisionHandler {
-    tools: DictionaryTools
+    /** Loaded on the first letter collision (see loadDictionaryTools). */
+    tools: DictionaryTools | undefined
     lettersChecked: Record<string, number> = {}
     private static readonly seperationThresholdLowerBound = .02
     private static readonly seperationThresholdUpperBound = 10
@@ -45,7 +46,6 @@ export class CollisionHandler {
     constructor(
         public shapesFac: ShapesFactory
     ) {
-        this.tools = new DictionaryTools()
 
         this.logInterval = setInterval(() => this.logData(), 2500)
 
@@ -129,6 +129,10 @@ export class CollisionHandler {
         this._firstBoxText = this.shapesFac.boxIdToTextLookup[this._firstBoxId]
         this._secondBoxText = this.shapesFac.boxIdToTextLookup[this._secondBoxId]
 
+        if (!this.tools) {
+            void loadDictionaryTools().then(tools => { this.tools = tools })
+            return false
+        }
         const mergeResult = determineMergeText(this._firstBoxText, this._secondBoxText, this.tools.letterCombos)
         if (!mergeResult.shouldMerge) return false
 
@@ -141,8 +145,8 @@ export class CollisionHandler {
             this.resetValues()
             return false
         }
-        let firstIsWord: number | undefined = this.tools.wordLookup.get(this._firstBoxText)
-        let secondIsWord: number | undefined = this.tools.wordLookup.get(this._secondBoxText)
+        let firstIsWord: number | undefined = this.tools?.wordLookup.get(this._firstBoxText)
+        let secondIsWord: number | undefined = this.tools?.wordLookup.get(this._secondBoxText)
 
         if (firstIsWord &&
             this._firstBoxText.length >= CollisionHandler.minLettersToConsiderPointsForWord

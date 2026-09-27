@@ -54,3 +54,11 @@ Replace outdated build processes (like Create React App scripts) with a ultra-fa
 * [~] **Task 4.5.3** (new coverage ✅ 2026-09-24/25: `tests/semanticPlayground.spec.ts` via the dev handle, runs serially, 17/17; ⬜ the legacy `gameplay.spec.ts` still writes to a hard-coded path): Fix the Playwright e2e suite: `tests/gameplay.spec.ts` writes screenshots to a hard-coded `~/.gemini/...` path and predates the sandbox/timed/3D modes; add e2e coverage using the `window.__lexical` dev handle.
 * [ ] **Task 4.5.4**: Remove the Babel `decorators-legacy` plugin from `vite.config.ts` (no decorators remain).
 * [ ] **Task 4.5.5** (found by the delivery research, 2026-09-25): Vite 4.5 → current major (4.x is out of support; part of the 37-High `yarn audit` baseline), with `@vitejs/plugin-react` and the Sass modern API (the build prints legacy-JS-API deprecation warnings).
+* [x] **Task 4.5.6** (2026-09-27, owner request: "bundle minimization"): Measured with source maps (bytes attributed per package). Main chunk **1,880 KB → 469 KB** (−75%); first-load JS for the 2D game 1,880 → ~1,623 KB (−14%):
+  * `@lexical/shared` schemas moved to `zod/mini`: 94 → 28 KB. The server's error handler now checks the core `$ZodError`.
+  * Sentry loads only when a DSN is configured: −54 KB, in its own chunk.
+  * The letters-mode dictionary loads on the first letter collision: −134 KB, and no more lookup building on every world.
+  * The 2D world (p5 + matter-js) is code-split like the 3D world: 1,154 KB chunk; the menu and dashboard render first.
+
+  Guards: the CI budget fails the build if any `index-*.js` exceeds 600 KB; an e2e test checks that the dictionary isn't loaded at startup and loads on letter collisions. All 272 unit tests and 22 e2e tests pass.
+* [ ] **Task 4.5.7** (roadmap): Replace p5 (1,040 KB, not tree-shakable in 1.x) with a thin Canvas2D renderer for the word boxes, threads, and overlays. It is the largest remaining chunk: the 2D world would go from ~1.15 MB to ~120 KB. Measure first-render time before and after.
