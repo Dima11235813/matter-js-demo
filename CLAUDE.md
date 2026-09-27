@@ -29,6 +29,8 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 
 - Branches: work on `feature/*`, PR into `develop` (the owner tests locally), PR `develop` into `main`; a push to `main` deploys to production (CI job `deploy-production`, enabled by the `DEPLOY_ENABLED` repository variable). Never commit straight to `main` or `develop` once the rulesets are on.
 - Accounts, secrets, and env variable names: `docs/setup/accounts-and-deploy.md` (human steps), `.env.example`, `server/.env.example`.
+- Owner actions (accounts, `.env.local` values, console settings, reviews, decisions) go in `proj-mgmt/human-todo/` as numbered items with steps, what they unblock, and a "done when"; detailed account steps stay in `docs/setup/accounts-and-deploy.md` (single source) and the items link to it.
+- Early stage (owner, 2026-09-27): the agent may merge its own feature branches into `develop` and `main` (fast-forward when possible) after tests pass; once the rulesets are on, merges go through PRs.
 
 - Work in small, testable milestones; each ends with tests plus a measured number from the running app, recorded in the epic.
 - Complex features start with research in `docs/research/` (question, experiments, findings, decision), then a proj-mgmt plan, then an MVP. Measure before claiming; a metric that disagrees with a screenshot means the metric is incomplete.
@@ -37,7 +39,7 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 
 ## Lessons learned (environment and harness)
 
-- The repo is on Google Drive: folder locks make git fail mid-operation ("Permission denied"). Retry `git add` on lock errors. Never split or verify commits with `git stash --include-untracked`, `git restore --source=<commit> -- .`, or `git checkout -- .`; a partial tree as `--source` deletes every tracked file it lacks. Stage files explicitly; verify a commit by `git archive <sha>` into a scratch folder outside Drive with a `node_modules` junction.
+- The repo is on Google Drive: folder locks make git fail mid-operation ("Permission denied"). Retry `git add` on lock errors. Never split or verify commits with `git stash --include-untracked`, `git restore --source=<commit> -- .`, or `git checkout -- .`; a partial tree as `--source` deletes every tracked file it lacks. Stage files explicitly; verify a commit by `git archive <sha>` into a scratch folder outside Drive with `node_modules` junctions for the root **and each workspace** (`server/node_modules`: it holds Node 22 types, while the root has Node 18 types).
 - Files written with LF show as modified after git rewrites them with CRLF (`core.autocrlf=true`); `git diff` empty means line endings only.
 - An occluded browser window throttles `requestAnimationFrame` to ~1 fps and silently freezes physics: bring the page to front (Playwright `page.bringToFront()`) and reject measurements below 50 fps.
 - Vite reloads the page the first time a lazily imported dependency is optimized; list every lazily imported dependency in `optimizeDeps.include` (three.js, zod/mini, firebase/app, firebase/auth). An unlisted one made the sync e2e test take 1.8 min and flake. The first test run after a `vite.config.ts` change can still hit one reload: rerun before investigating.

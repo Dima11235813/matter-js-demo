@@ -87,6 +87,15 @@ graph TD
     D -->|Production Release| E
 ```
 
+### Status snapshot (2026-09-27)
+* **Branches**: `feature/*` → `develop` → `main`; `main` and `develop` are at `019c3aa` (everything through multi-account personas). Merging to `main` deploys once the owner finishes [human-todo](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/human-todo/README.md) items 1–5.
+* **Stage A (local hardening)**: ✅ per-device counters, consent + age, export/erase, CI on PRs (Epics 6, 7).
+* **Accounts & sync (Stage D, local)**: ✅ monorepo with shared DTOs (`@lexical/shared`), Hono API on PGlite/Postgres, Google sign-in (awaiting Firebase config), sync with shared merge rules, several accounts per device (test personas), local sign-in without Google (Epics 3 · 3.8, 6 · 6.4, 6.7). ⬜ Server deploy to Cloud Run (Epic 3 · Task 3.8.4).
+* **Bundle**: main chunk 1,880 → 469 KB; p5 replacement roadmapped (Epic 4 · 4.5.6, 4.5.7).
+* **Tests**: 278 unit, 23 e2e (dev and CI modes).
+* **Owner actions**: [proj-mgmt/human-todo/](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/human-todo/README.md) (accounts, `.env.local` values, reviews, decisions).
+* **Next candidates**: server deploy (Cloud Run + DB), research telemetry ingest (Epic 3 · 3.6), personas & skill rating (Epic 2 · 2.12), Connect-All puzzles (2.10), color hint mode (5.17), p5 → Canvas2D (4.5.7).
+
 ### Status snapshot (2026-09-23)
 * **Phase 1 (Foundation)**: done (Epic 4 mostly complete; follow-ups in Feature 4.5).
 * **Phase 2 (Semantic Engine)**: done in a different shape than planned: MiniLM vocabulary + live encoder, analogy solver, calibrated similarity (Epic 1 status note).
