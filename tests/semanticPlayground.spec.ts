@@ -297,47 +297,6 @@ test.describe('privacy: consent, age question, export, erase', () => {
   });
 });
 
-test('two devices sign in to the same account and sync their plays through the API', async ({ browser }) => {
-  const subject = `e2e-player-${Date.now()}`;
-  const devices = await Promise.all([browser.newContext(), browser.newContext()]);
-  const [laptop, phone] = await Promise.all(devices.map(context => context.newPage()));
-  await openSandbox(laptop, '2d');
-  await openSandbox(phone, '2d');
-
-  // Offline play: a different analogy on each device.
-  const play = async (page: Page, expression: string) => {
-    await wordBox(page).fill(expression);
-    await wordBox(page).press('Enter');
-    await expect(page.getByTestId('last-play')).toBeVisible();
-  };
-  await play(laptop, 'king - man + woman');
-  await play(phone, 'paris - france + italy');
-  const scoreOf = (page: Page) => page.evaluate(() => (window.__lexical.stores.menuStore as unknown as { score: number }).score);
-  await expect.poll(() => scoreOf(laptop)).toBeGreaterThan(0);
-  await expect.poll(() => scoreOf(phone)).toBeGreaterThan(0);
-  const expected = (await scoreOf(laptop)) + (await scoreOf(phone));
-
-  type Account = { account: { devSignIn(s: string): Promise<void>; syncNow(): Promise<void>; state(): { status: string; message: string } } };
-  for (const page of [laptop, phone]) await page.evaluate(s => (window.__lexical as unknown as Account).account.devSignIn(s), subject);
-  // The laptop synced first, so it needs one more pass to receive the phone's plays.
-  await laptop.evaluate(() => (window.__lexical as unknown as Account).account.syncNow());
-
-  for (const page of [laptop, phone]) {
-    await expect.poll(() => scoreOf(page)).toBe(expected);
-    expect(await page.evaluate(() => (window.__lexical as unknown as Account).account.state().status)).toBe('synced');
-    await expect.poll(() => page.evaluate(async () => {
-      const data = await (window.__lexical.semanticEngine as unknown as { exportAllData(): Promise<{ analogies: { id: string }[] }> }).exportAllData();
-      return data.analogies.map(a => a.id).sort();
-    })).toEqual(['france:paris::italy', 'man:king::woman']);
-  }
-
-  // The account section shows the signed-in state and sync status.
-  await laptop.locator('#privacy-toggle').click();
-  await expect(laptop.getByTestId('account-user')).toHaveText(subject);
-  await expect(laptop.getByTestId('sync-status')).toContainText('Synced');
-  await Promise.all(devices.map(context => context.close()));
-});
-
 test('the letters dictionary is not part of startup; it loads on the first letter collision', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
@@ -350,4 +309,98 @@ test('the letters dictionary is not part of startup; it loads on the first lette
     await page.waitForTimeout(120);
   }
   await expect.poll(dictionaryLoaded, { timeout: 10_000 }).toBe(true);
+});
+
+// ---- accounts: sign-in without Google (local test personas), sync, and several accounts per device ----
+
+type AccountHandle = { account: { devSignIn(s: string): Promise<void>; signOut(): Promise<void>; syncNow(): Promise<void>; state(): { user?: { uid: string }; status: string } } };
+const accountOf = (page: Page) => page.evaluate(() => (window.__lexical as unknown as AccountHandle).account.state());
+const scoreOf = (page: Page) => page.evaluate(() => (window.__lexical.stores.menuStore as unknown as { score: number }).score);
+const analogyIds = (page: Page) => page.evaluate(async () => {
+  const data = await (window.__lexical.semanticEngine as unknown as { exportAllData(): Promise<{ analogies: { id: string }[] }> }).exportAllData();
+  return data.analogies.map(a => a.id).sort();
+});
+const readyAfterReload = (page: Page) =>
+  page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
+
+/** Signs in as a local test persona. Switching accounts reloads into that account's own database. */
+async function signInAs(page: Page, subject: string) {
+  await Promise.all([
+    page.waitForEvent('load'),
+    page.evaluate(s => { void (window.__lexical as unknown as AccountHandle).account.devSignIn(s); }, subject),
+  ]);
+  await readyAfterReload(page);
+  await expect.poll(async () => (await accountOf(page)).user?.uid, { timeout: 20_000 }).toBe(`dev:${subject}`);
+  await expect.poll(async () => (await accountOf(page)).status, { timeout: 20_000 }).toBe('synced');
+}
+
+async function playAs(page: Page, expression: string) {
+  await wordBox(page).fill(expression);
+  await wordBox(page).press('Enter');
+  await expect(page.getByTestId('last-play')).toBeVisible();
+}
+
+test('two devices sign in to the same account (no Google) and converge through the API', async ({ browser }) => {
+  test.setTimeout(120_000); // two browsers, each reloading into the account's database
+  const subject = `e2e-player-${Date.now()}`;
+  const devices = await Promise.all([browser.newContext(), browser.newContext()]);
+  const [laptop, phone] = await Promise.all(devices.map(context => context.newPage()));
+  await openSandbox(laptop, '2d');
+  await openSandbox(phone, '2d');
+
+  // Offline play as a guest on each device; the first account signed in on a device adopts that progress.
+  await playAs(laptop, 'king - man + woman');
+  await playAs(phone, 'paris - france + italy');
+  await expect.poll(() => scoreOf(laptop)).toBeGreaterThan(0);
+  await expect.poll(() => scoreOf(phone)).toBeGreaterThan(0);
+  const expected = (await scoreOf(laptop)) + (await scoreOf(phone));
+
+  await test.step('laptop signs in', () => signInAs(laptop, subject));
+  await test.step('phone signs in', () => signInAs(phone, subject));
+  await test.step('laptop syncs again', () => laptop.evaluate(() => (window.__lexical as unknown as AccountHandle).account.syncNow())); // receive the phone's plays
+
+  await test.step('both converge', async () => {
+    for (const page of [laptop, phone]) {
+      await expect.poll(() => scoreOf(page)).toBe(expected);
+      await expect.poll(() => analogyIds(page)).toEqual(['france:paris::italy', 'man:king::woman']);
+    }
+  });
+  await laptop.locator('#privacy-toggle').click();
+  await expect(laptop.getByTestId('account-user')).toHaveText(subject);
+  await expect(laptop.getByTestId('sync-status')).toContainText('Synced');
+  await Promise.all(devices.map(context => context.close()));
+});
+
+test('test personas are separate accounts on one device, each with its own progress', async ({ page }) => {
+  test.setTimeout(120_000); // four account switches, each a reload
+  const stamp = Date.now();
+  const [novice, expert] = [`novice-${stamp}`, `expert-${stamp}`];
+  await openSandbox(page, '2d');
+
+  // First persona on this device: adopts the guest's (empty) progress, then plays.
+  await signInAs(page, novice);
+  await playAs(page, 'king - man + woman');
+  await expect.poll(() => scoreOf(page)).toBeGreaterThan(0);
+  const noviceScore = await scoreOf(page);
+  await page.evaluate(() => (window.__lexical as unknown as AccountHandle).account.syncNow());
+
+  // Second persona: a fresh account, nothing carried over.
+  await signInAs(page, expert);
+  expect(await scoreOf(page)).toBe(0);
+  expect(await analogyIds(page)).toEqual([]);
+  await playAs(page, 'paris - france + italy');
+  await expect.poll(() => analogyIds(page)).toEqual(['france:paris::italy']);
+
+  // Back to the first persona: its own progress, untouched by the other.
+  await signInAs(page, novice);
+  expect(await scoreOf(page)).toBe(noviceScore);
+  expect(await analogyIds(page)).toEqual(['man:king::woman']);
+
+  // The UI lists both personas for switching, and "Play as guest" returns to the guest's data.
+  await page.locator('#privacy-toggle').click();
+  await expect(page.getByTestId('account-switcher')).toContainText(expert);
+  await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Play as guest' }).click()]);
+  await readyAfterReload(page);
+  expect((await accountOf(page)).user).toBeUndefined();
+  expect(await scoreOf(page)).toBe(0);
 });

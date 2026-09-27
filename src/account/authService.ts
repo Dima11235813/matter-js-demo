@@ -59,12 +59,21 @@ export async function createFirebaseAuth(config: FirebaseWebConfig): Promise<Aut
 }
 
 /**
- * Dev and e2e only: tokens minted by the local API server (DEV_AUTH_SECRET), reachable only through the
- * dev handle. Never offered in the UI and never built for production (see devtools.ts).
+ * Dev and e2e builds only: test personas signed in with tokens from the local API (dev sign-in is on by
+ * default for local servers). Offered in the dev UI and the dev handle; production builds never use it.
  */
 export function createDevAuth(subject: string): AuthService {
-    let token: string | undefined;
     let user: AuthUser | undefined;
+    // A fresh token per call: the local API picks a new random dev secret on every restart (tsx watch).
+    const mint = async (): Promise<string> => {
+        const response = await fetch("/api/v1/dev/token", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ subject }),
+        });
+        if (!response.ok) throw new Error(`Dev sign-in failed (${response.status}): is the local API running (yarn dev:server)?`);
+        return (await response.json()).token;
+    };
     const listeners = new Set<(user: AuthUser | undefined) => void>();
     const emit = () => listeners.forEach(l => l(user));
     return {
@@ -72,25 +81,20 @@ export function createDevAuth(subject: string): AuthService {
         currentUser: () => user,
         onChange(listener) {
             listeners.add(listener);
-            listener(user);
+            // Like Firebase, report only a known state: before signIn() finishes there is nothing to report
+            // (reporting "signed out" here would bounce a persona's reload back to the guest database).
+            if (user) listener(user);
             return () => listeners.delete(listener);
         },
         async signIn() {
-            const response = await fetch("/api/v1/dev/token", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ subject }),
-            });
-            if (!response.ok) throw new Error(`Dev sign-in failed (${response.status}): is the API running with DEV_AUTH_SECRET?`);
-            token = (await response.json()).token;
+            await mint(); // fails loudly if the local API has no dev sign-in
             user = { uid: `dev:${subject}`, displayName: subject, provider: "dev" };
             emit();
         },
         async signOut() {
-            token = undefined;
             user = undefined;
             emit();
         },
-        getToken: async () => token,
+        getToken: async () => (user ? mint() : undefined),
     };
 }

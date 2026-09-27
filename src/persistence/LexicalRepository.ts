@@ -221,6 +221,18 @@ export class LexicalRepository {
         ];
     }
 
+    /** Every syncable record (pending or not): what another local profile adopts (Epic 6 · Feature 6.7). */
+    async allSyncRecords(): Promise<SyncRecord[]> {
+        const [words, analogies, games] = await Promise.all([this.db.getAll("words"), this.db.getAll("analogies"), this.db.getAll("games")]);
+        return [profileToSync(this.profile), ...words.map(wordToSync), ...analogies.map(analogyToSync), ...games.map(gameToSync)];
+    }
+
+    /** Folds another local profile's record into this one with the shared merge rules; it stays pending (to sync). */
+    async adoptRecord(record: SyncRecord): Promise<void> {
+        const local = await this.localAsSync(record);
+        await this.writeLocal(local ? mergeRecords(local, record) : record, "pending");
+    }
+
     /** Marks a pushed record synced, unless it changed locally while the push was in flight. */
     async markSynced(record: SyncRecord): Promise<void> {
         const current = await this.localAsSync(record);

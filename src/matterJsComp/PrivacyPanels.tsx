@@ -3,7 +3,7 @@ import { observer } from "mobx-react";
 import { stores } from "../stores";
 import { downloadPlayLog } from "../services/playground";
 import { AgeOutcome, answerAge, answerAgeAndConsent, dismissConsentPrompt, downloadAllData, eraseThisDevice, grantConsent, withdrawConsent } from "../services/privacy";
-import { deleteAccount, downloadAccountData, signIn, signOut, syncNow } from "../services/account";
+import { deleteAccount, devSignIn, downloadAccountData, signIn, signOut, syncNow } from "../services/account";
 import { canHaveAccount, canShareResearch } from "../game/privacyRules";
 import styles from "./PrivacyPanels.module.scss";
 
@@ -85,14 +85,57 @@ async function answerForAccount(year: number): Promise<AgeOutcome> {
   return { status: "shared", message: "" };
 }
 
-/** Optional Google sign-in and sync (Epic 3 · Feature 3.8, Epic 6 · Feature 6.4). Hidden when not configured. */
+/** Local test personas (dev builds with a local API only): each is its own account and local database. */
+const PERSONAS = ["novice", "intermediate", "expert"];
+
+const PersonaPicker = () => {
+  const [name, setName] = useState("");
+  return (
+    <div className={styles.Actions} data-testid="persona-picker">
+      <span className={styles.Fine}>Test personas (local only, no Google):</span>
+      {PERSONAS.map(p => (
+        <button key={p} type="button" className={styles.Secondary} onClick={() => void devSignIn(p)}>{p}</button>
+      ))}
+      <form className={styles.AgeForm} onSubmit={e => { e.preventDefault(); if (name.trim()) void devSignIn(name.trim()); }}>
+        <input className={styles.YearInput} style={{ width: 110 }} value={name} onChange={e => setName(e.target.value)} placeholder="other name" aria-label="Test persona name" />
+        <button type="submit" className={styles.Secondary} disabled={!name.trim()}>Sign in</button>
+      </form>
+    </div>
+  );
+};
+
+/** Other accounts used on this device, one click to switch (each has its own local data). */
+const AccountSwitcher = observer(() => {
+  const { accountStore } = stores;
+  const others = accountStore.accounts.filter(a => a.uid !== accountStore.user?.uid);
+  if (others.length === 0) return null;
+  return (
+    <div className={styles.Actions} data-testid="account-switcher">
+      <span className={styles.Fine}>Accounts on this device:</span>
+      {others.map(a => (
+        <button
+          key={a.uid}
+          type="button"
+          className={styles.Secondary}
+          onClick={() => void (a.provider === "dev" ? devSignIn(a.label) : signIn())}
+          disabled={a.provider === "dev" ? !accountStore.devPersonas : !accountStore.googleAvailable}
+          title={a.provider === "google" ? "Sign in with this Google account" : "Local test persona"}
+        >
+          {a.label}
+        </button>
+      ))}
+    </div>
+  );
+});
+
+/** Optional sign-in and sync (Epic 3 · Feature 3.8, Epic 6 · Features 6.4, 6.7). Hidden when no sign-in exists. */
 const AccountSection = observer(() => {
   const { accountStore, privacyStore } = stores;
   const [askAge, setAskAge] = useState(false);
   const [note, setNote] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   if (!accountStore.available) return null;
-  const { user, status, message, lastSyncAt } = accountStore;
+  const { user, status, message, lastSyncAt, googleAvailable, devPersonas } = accountStore;
 
   if (!user) {
     const blocked = privacyStore.ageBand !== undefined && !canHaveAccount(privacyStore.ageBand);
@@ -100,13 +143,15 @@ const AccountSection = observer(() => {
       <div className={styles.Section} data-testid="account-section">
         <div className={styles.Title}>Account</div>
         <p className={styles.Fine}>Sign in to keep your score, words, analogies, and games in sync on all your devices. Optional: the game works fully without it.</p>
-        {blocked ? (
+        {googleAvailable && (blocked ? (
           <p className={styles.Fine}>Accounts are for players 13 and older. Your game stays on this device.</p>
         ) : askAge ? (
           <AgeQuestion answer={answerForAccount} onDone={setNote} />
         ) : (
           <button type="button" className={styles.Primary} onClick={() => (privacyStore.ageBand ? void signIn() : setAskAge(true))}>Sign in with Google</button>
-        )}
+        ))}
+        {devPersonas && <PersonaPicker />}
+        <AccountSwitcher />
         {(note || message) && <p className={styles.Fine}>{note || message}</p>}
       </div>
     );
@@ -117,13 +162,18 @@ const AccountSection = observer(() => {
       : lastSyncAt ? `Synced ${new Date(lastSyncAt).toLocaleTimeString()}${message ? ` · ${message}` : ""}` : "";
   return (
     <div className={styles.Section} data-testid="account-section">
-      <div className={styles.Title}>Signed in as <strong data-testid="account-user">{user.email ?? user.displayName ?? "you"}</strong></div>
+      <div className={styles.Title}>
+        Signed in as <strong data-testid="account-user">{user.email ?? user.displayName ?? "you"}</strong>
+        {user.provider === "dev" && <span className={styles.Fine}> (test persona)</span>}
+      </div>
       <p className={status === "error" ? styles.Error : styles.Fine} data-testid="sync-status">{statusText}</p>
       <div className={styles.Actions}>
         <button type="button" className={styles.Secondary} onClick={() => void syncNow()} disabled={status === "syncing"}>Sync now</button>
-        <button type="button" className={styles.Secondary} onClick={() => void signOut()}>Sign out</button>
+        <button type="button" className={styles.Secondary} onClick={() => void signOut()}>Play as guest</button>
         <button type="button" className={styles.Secondary} onClick={() => void downloadAccountData()}>Download account data</button>
       </div>
+      <AccountSwitcher />
+      {devPersonas && <PersonaPicker />}
       {confirmDelete ? (
         <div className={styles.Actions}>
           <span className={styles.Warning}>Delete your account and everything synced to it? This device keeps its own copy.</span>

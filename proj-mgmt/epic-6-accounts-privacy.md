@@ -58,3 +58,21 @@ Optional accounts on top of local-first play, and the privacy engineering that l
 * [ ] **Task 6.6.2** (roadmap): Sign in with Apple (needs the $99/yr Apple Developer Program), when players ask or an iOS wrapper exists.
 
 **Exit criteria (Stage D)**: two devices converge with no lost points (property-based merge tests); claim-flow e2e test; export matches the local format; deletion reaches the Parquet copies (verified by the ledger); sign-in works on Chrome, Firefox, and Safari iOS with third-party storage blocked.
+
+### Feature 6.7: Several Accounts per Device & Local Sign-in without Google (shipped 2026-09-27)
+* **Why (owner, 2026-09-27)**: different personas will be tested, each with its own rating level and therefore different puzzle complexity (Epic 2 · Feature 2.12); and local tests and play must never need a Google login.
+* [x] **Task 6.7.1**: One local database per account (`lexical-fountain@<uid>`); the signed-out guest keeps `lexical-fountain`. Switching accounts reloads into that account's database (`src/account/profiles.ts`: pure `planSwitch`/`applySwitch`, with unit tests). Each account has its own device id and secret, so personas never mix and no device is ever claimed by two accounts.
+* [x] **Task 6.7.2**: The first account ever signed in on a device adopts the guest's progress (the guest keeps its copy). Later accounts start fresh. Adoption merges with the shared rules and marks everything pending to sync (unit test: 70 guest points + 5 = 75, nothing lost or doubled).
+* [x] **Task 6.7.3**: Local sign-in without Google:
+  * The local API enables dev sign-in by default, only when not in production **and** using the in-process database. A deployed server always has `DATABASE_URL`, so it can't get this default even if `NODE_ENV` is forgotten. `DEV_AUTH=off` turns it off; `/health` reports `devAuth`.
+  * Dev and e2e builds offer **test personas** in Account, privacy & your data (novice / intermediate / expert / any name), plus `window.__lexical.account.devSignIn(name)`. The persona survives reloads (session storage).
+  * Production builds contain none of it; the CI guard fails if `/dev/token` or `__lexical` reach `dist/`.
+* [x] **Task 6.7.4**: The account section lists the accounts used on this device, each with a one-click switch, plus "Play as guest".
+* **Result (2026-09-27)**:
+  * Unit: 278 (profiles 4, adoption 1, auto dev-auth rules).
+  * e2e: 23/23, twice against the dev server and once against the e2e bundle. Two devices converge through the API with no Google. Personas `novice` and `expert` keep separate progress across four account switches, and "Play as guest" returns to the guest's data.
+  * Found and fixed along the way:
+    * the dev auth service reported "signed out" before sign-in finished, which would have bounced a persona's reload back to the guest in a loop;
+    * sync skipped when sign-in finished before the local data had opened after a reload;
+    * the dev server reloading the page mid-test on newly imported dependencies made the sync test slow (up to 1.8 min) and flaky; they are now pre-bundled, and the test takes 7.5 s.
+* [ ] **Task 6.7.5** (roadmap): Switching between two *Google* accounts uses the account chooser (`prompt=select_account`); verify it with real accounts once Firebase is set up (human to-do).

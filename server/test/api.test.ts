@@ -48,7 +48,7 @@ const analogy = (deviceId: string, at: number, plays: Record<string, number>): S
 
 describe('API basics and auth', () => {
   it('reports health without auth', async () => {
-    expect(await (await call('GET', '/health')).json()).toEqual({ ok: true, db: 'pglite' });
+    expect(await (await call('GET', '/health')).json()).toEqual({ ok: true, db: 'pglite', devAuth: true });
   });
 
   it('rejects requests without a valid token', async () => {
@@ -75,6 +75,17 @@ describe('API basics and auth', () => {
   it('refuses the dev token issuer in production configuration', () => {
     expect(() => loadConfig({ NODE_ENV: 'production', DEV_AUTH_SECRET: DEV_SECRET, DATABASE_URL: 'postgres://x' })).toThrow(/DEV_AUTH_SECRET/);
     expect(() => loadConfig({ NODE_ENV: 'production' })).toThrow(/DATABASE_URL/);
+    expect(loadConfig({ NODE_ENV: 'production', DATABASE_URL: 'postgres://x' })).toMatchObject({ devAuthSecret: undefined, devAuthSource: 'off' });
+  });
+
+  it('enables dev sign-in by default only for local runs on the in-process database', () => {
+    const local = loadConfig({});
+    expect(local.devAuthSource).toBe('local-default');
+    expect(local.devAuthSecret).toMatch(/^[0-9a-f]{64}$/);
+    expect(loadConfig({}).devAuthSecret).not.toBe(local.devAuthSecret); // random per start
+    expect(loadConfig({ DATABASE_URL: 'postgres://x' })).toMatchObject({ devAuthSecret: undefined, devAuthSource: 'off' });
+    expect(loadConfig({ DEV_AUTH: 'off' })).toMatchObject({ devAuthSecret: undefined, devAuthSource: 'off' });
+    expect(loadConfig({ DEV_AUTH_SECRET: DEV_SECRET })).toMatchObject({ devAuthSecret: DEV_SECRET, devAuthSource: 'explicit' });
   });
 });
 

@@ -21,5 +21,5 @@ const app = createApp({ db, verifier });
 serve({ fetch: app.fetch, port: config.port }, info => {
     console.log(`Lexical API on http://localhost:${info.port}/api/v1 · db=${db.kind}${config.pgliteDataDir ? ` (${config.pgliteDataDir})` : ""}`
         + ` · migrations applied: ${ran.length ? ran.join(", ") : "none"}`
-        + ` · auth: ${[config.firebaseProjectId && `firebase:${config.firebaseProjectId}`, config.devAuthSecret && "dev-tokens"].filter(Boolean).join(", ") || "none (sign-in disabled)"}`);
+        + ` · auth: ${[config.firebaseProjectId && `firebase:${config.firebaseProjectId}`, config.devAuthSecret && `dev-tokens (${config.devAuthSource})`].filter(Boolean).join(", ") || "none (sign-in disabled)"}`);
 });

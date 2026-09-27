@@ -12,8 +12,10 @@ export default defineConfig({
     }),
   ],
   optimizeDeps: {
-    // three.js is only imported lazily (first 3D toggle); pre-bundle it so dev doesn't reload then.
-    include: ['three', 'three/examples/jsm/controls/OrbitControls.js'],
+    // Lazily imported dependencies, pre-bundled so the dev server doesn't reload the page the first time
+    // one is needed (three.js on the first 3D toggle; zod/mini and Firebase on first sign-in/sync). Such a
+    // reload mid-test made the sync e2e test slow and flaky.
+    include: ['three', 'three/examples/jsm/controls/OrbitControls.js', 'zod/mini', 'firebase/app', 'firebase/auth'],
   },
   server: {
     port: 3000,

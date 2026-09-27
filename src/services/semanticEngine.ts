@@ -10,6 +10,7 @@ import { AnalogyRecord, GameRecord, MetaRecord, openLexicalDb, PlayContext, Play
 import { GameResult, LexicalRepository, LocalDataExport } from "../persistence/LexicalRepository";
 import type { PrivacySnapshot } from "../stores/PrivacyStore";
 import type { SyncPort } from "../account/syncService";
+import { activeAccount, clearAdoption, dbNameFor, GUEST_DB_NAME, pendingAdoption } from "../account/profiles";
 import { dealWords } from "../game/dealer";
 import { analogyPoints } from "../game/timedGame";
 import { extractKeywords, KeywordResult } from "../game/keywords";
@@ -317,11 +318,14 @@ export class SemanticEngine {
     }
 
     private async load(): Promise<void> {
-        const [asset, db] = await Promise.all([fetchVocabAsset(this.vocabBaseUrl), openLexicalDb(this.dbName)]);
+        // Each account on this device has its own database (Epic 6 · Feature 6.7); tests pass dbName directly.
+        const account = this.dbName ? undefined : activeAccount();
+        const [asset, db] = await Promise.all([fetchVocabAsset(this.vocabBaseUrl), openLexicalDb(this.dbName ?? dbNameFor(account))]);
         const { manifest } = asset;
         const index = VectorIndex.fromAsset(asset);
         const policy = createProfanityPolicy(isProfanityFilterEnabled(), manifest.profane.map(i => manifest.words[i]));
         const repo = await LexicalRepository.open(db);
+        if (account && pendingAdoption() === account) await this.adoptGuestProgress(repo);
 
         for (const record of await repo.listPlayerWords()) {
             if (record.model !== manifest.model || record.dtype !== manifest.dtype) {
@@ -332,6 +336,20 @@ export class SemanticEngine {
         }
         this.loaded = { manifest, index, policy, encoder: new LiveEncoder(manifest.model, manifest.dtype), repo };
         logger.log(`Semantic engine ready: vocab ${manifest.version}, ${index.baseSize} base + ${index.extraSize} player words`);
+    }
+
+    /** The first account signed in on a device takes over the guest's progress (the guest keeps its copy). */
+    private async adoptGuestProgress(repo: LexicalRepository): Promise<void> {
+        const guestDb = await openLexicalDb(GUEST_DB_NAME);
+        try {
+            const guest = await LexicalRepository.open(guestDb);
+            const records = await guest.allSyncRecords();
+            for (const record of records) await repo.adoptRecord(record);
+            logger.log(`Adopted ${records.length} guest records into the signed-in account`);
+        } finally {
+            guestDb.close();
+            clearAdoption();
+        }
     }
 
     private require(): Loaded {

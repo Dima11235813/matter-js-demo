@@ -35,7 +35,8 @@ export function createApp({ db, verifier }: { db: Db; verifier: Verifier }) {
         return c.json({ error: { code: "internal", message: "Internal error" } }, 500);
     });
 
-    app.get("/health", c => c.json({ ok: true, db: db.kind }));
+    // devAuth tells local dev builds whether to offer test-persona sign-in (never true in production).
+    app.get("/health", c => c.json({ ok: true, db: db.kind, devAuth: Boolean(verifier.mintDevToken) }));
 
     if (verifier.mintDevToken) {
         // Dev and e2e only (config.ts refuses DEV_AUTH_SECRET in production).

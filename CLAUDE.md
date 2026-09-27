@@ -20,6 +20,7 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - Sentry initializes only when a build sets `VITE_SENTRY_DSN` (dev and e2e never report)
 - Research experiments (kept out of the unit suite): `yarn research:cross-dim` runs all of them; run one with `npx vitest run --config docs/research/experiments/vitest.research.config.ts <name>`
 - Rebuild vocabulary: `yarn vocab:build`
+- Local sign-in without Google: the local API has dev sign-in on by default (only without `DATABASE_URL` and not in production); dev builds show **test personas** in the account panel, or run `window.__lexical.account.devSignIn("name")`. Each account/persona has its own local database (`lexical-fountain@<uid>`); switching reloads.
 - API server: `yarn dev:server` (watch mode) or `yarn start:server` (port 8787; Vite proxies `/api`, `vite preview` too; config in `server/.env.local`, see `server/.env.example`). Server typecheck: `npx tsc --noEmit -p server`. Shared and server tests run in `yarn test:unit` (PGlite in memory)
 - Dev server: `npx vite --port 3000 --strictPort --open false`
 - Dev handle in the browser console: `window.__lexical` (`wordBoxes()`, `layoutFidelity()`, `semanticEngine`, `stores`, `deps`)
@@ -39,7 +40,8 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - The repo is on Google Drive: folder locks make git fail mid-operation ("Permission denied"). Retry `git add` on lock errors. Never split or verify commits with `git stash --include-untracked`, `git restore --source=<commit> -- .`, or `git checkout -- .`; a partial tree as `--source` deletes every tracked file it lacks. Stage files explicitly; verify a commit by `git archive <sha>` into a scratch folder outside Drive with a `node_modules` junction.
 - Files written with LF show as modified after git rewrites them with CRLF (`core.autocrlf=true`); `git diff` empty means line endings only.
 - An occluded browser window throttles `requestAnimationFrame` to ~1 fps and silently freezes physics: bring the page to front (Playwright `page.bringToFront()`) and reject measurements below 50 fps.
-- Vite reloads the page the first time a lazily imported dependency is optimized; list such deps (three.js) in `optimizeDeps.include`.
+- Vite reloads the page the first time a lazily imported dependency is optimized; list every lazily imported dependency in `optimizeDeps.include` (three.js, zod/mini, firebase/app, firebase/auth). An unlisted one made the sync e2e test take 1.8 min and flake. The first test run after a `vite.config.ts` change can still hit one reload: rerun before investigating.
+- Measure the bundle before shrinking it: build with `--sourcemap hidden` into the scratchpad and attribute bytes per package via the source map. The guess (zod) was 94 KB; the real weight was p5 at 1,040 KB.
 - Stopping an `npx vite` background task leaves the Vite node process holding port 3000: find the PID on the port and stop it before restarting.
 - q8 ONNX models quantize activations per batch: embed vocabulary words one at a time so build-time vectors match the browser's single-word encodes.
 - Matter.js clears forces after every step: apply custom forces in `Events.on(engine, "beforeUpdate")`, not in the p5 draw loop; start the engine with `Runner.run` and stop it with `Runner.stop` on teardown.
