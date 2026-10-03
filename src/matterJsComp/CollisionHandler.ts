@@ -16,7 +16,9 @@ export class CollisionHandler {
     private toolsRequested = false
     lettersChecked: Record<string, number> = {}
     private static readonly seperationThresholdLowerBound = .02
-    private static readonly seperationThresholdUpperBound = 10
+    // Was 10: a letter dropped from high onto another (overlap 10–27) never merged. At 40, 5 of 6 high
+    // T/H/E drops spell "the" (1 of 5 at 10); sprinkled letters merge as before (Epic 4 · Task 4.5.9).
+    private static readonly seperationThresholdUpperBound = 40
     private static readonly maxAmountOfChecksForCombo = 25
     private static readonly minLettersToConsiderPointsForWord = 3
 
