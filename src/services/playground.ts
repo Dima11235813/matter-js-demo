@@ -4,7 +4,7 @@ import { RootStore } from "../stores/RootStore";
 import { stores as rootStores } from "../stores";
 import { logger } from "../utils/logger";
 import { semanticEngine } from "./semanticEngine";
-import { isRoundRunning, recordRoundAnalogy } from "./timedGameController";
+import { isRoundRunning, recordRoundAnalogy, recordRoundGuess } from "./timedGameController";
 import { applyTheme, saveThemePreference } from "../theme/palette";
 import { saveLayout3d } from "../physics/layoutPresets";
 import { handoffQueue } from "../space/handoff";
@@ -12,7 +12,7 @@ import { expressionAsAnalogy, ExpressionTerm, formatExpression } from "../game/w
 import { Keyword } from "../game/keywords";
 import { relationHint } from "../game/relationHint";
 import { analogyPayload, expressionPayload } from "../game/playLog";
-import { designedAnswer } from "../game/relationPairs";
+import { categoryLabel, designedAnswer } from "../game/relationPairs";
 import { TIMED_RULES_VERSION } from "../game/timedGame";
 import type { PlayContext } from "../persistence/db";
 import { syncSoon } from "./account";
@@ -94,22 +94,69 @@ export async function submitPlayerWord(store: MenuStore, input: string): Promise
     }
 }
 
+/** Words a play takes: Discovery asks the model for the fourth word; Guess mode picks all four (Feature 2.13). */
+export function picksFor(view: string): number {
+    return view === "game" ? 4 : 3;
+}
+
 /**
- * Word selection shared by the 2D and 3D worlds: free in the sandbox, only while the clock runs
- * in a timed round. The third selection completes "a is to b as c is to ?". Returns whether the
- * click was consumed by selection.
+ * Word selection shared by the 2D and 3D worlds: free in Discovery, only while the clock runs in a
+ * Guess round. In Discovery the third pick asks "a is to b as c is to ?" and the answer lands on the
+ * board; in Guess mode the fourth pick is graded and nothing spawns. Returns whether the click was
+ * consumed by selection.
  */
 export function selectWordForAnalogy(stores: RootStore, id: number, text: string): boolean {
     const { menuStore } = stores;
-    const canSelect = menuStore.view === "fountain" || (menuStore.view === "game" && isRoundRunning(stores));
+    const isGuess = menuStore.view === "game";
+    const canSelect = menuStore.view === "fountain" || (isGuess && isRoundRunning(stores));
     if (!canSelect) return false;
-    menuStore.toggleWordSelection(id, text);
-    if (menuStore.selectedWordTexts.length === 3) {
-        const [a, b, c] = menuStore.selectedWordTexts;
+    const picks = picksFor(menuStore.view);
+    menuStore.toggleWordSelection(id, text, picks);
+    if (menuStore.selectedWordTexts.length === picks) {
+        const [a, b, c, d] = menuStore.selectedWordTexts;
         menuStore.clearWordSelection();
-        void playAnalogy(stores, a, b, c);
+        void (isGuess ? playGuess(stores, a, b, c, d) : playAnalogy(stores, a, b, c));
     }
     return true;
+}
+
+/**
+ * Guess mode: grades a : b :: c : d against the round's dealt pairs (+100 for a real analogy, else 0)
+ * and shows the model's own answer and the relation hint as feedback. Nothing spawns.
+ */
+export async function playGuess(stores: RootStore, a: string, b: string, c: string, d: string): Promise<void> {
+    const { menuStore } = stores;
+    const round = recordRoundGuess(stores, a, b, c, d);
+    if (!round) return;
+    const result = await semanticEngine.playGuess(a, b, c, round.points);
+    const stats = semanticEngine.relationStats(a, b, c, d);
+    const { p90, p95, p99 } = semanticEngine.calibration;
+    const hint = stats ? relationHint(stats, { related: p90, near: p95, link: p99 }) : undefined;
+    const ranked = result ? [{ word: result.answer, similarity: result.similarity }, ...result.alternatives] : [];
+    const lastPlay = {
+        a, b, c,
+        answer: d,
+        similarity: ranked.find(n => n.word === d)?.similarity ?? stats?.dc ?? 0,
+        alternatives: ranked.filter(n => n.word !== d).slice(0, 3),
+        points: round.points,
+        isNewQuestion: !round.duplicate,
+        hint,
+        verdict: round.duplicate ? undefined : round.correct ? "full" as const : "none" as const,
+        modelAnswer: result && result.answer !== d ? result.answer : undefined,
+        guess: true,
+        relation: round.category ? categoryLabel(round.category) : undefined,
+    };
+    menuStore.setLastPlay(lastPlay);
+    menuStore.addBoardAnalogy(lastPlay);
+    stores.privacyStore.notePlay();
+    syncSoon();
+    void semanticEngine.logPlay("analogy", playContext(stores), analogyPayload({
+        a, b, c, answer: d, modelAnswer: lastPlay.modelAnswer,
+        ranked, input: "click", stats, hint, verdict: lastPlay.verdict,
+        designed: round.correct, points: round.points, duplicate: round.duplicate, guess: true,
+    }));
+    menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${d}: ${round.correct ? `a real analogy (+${round.points} pts)` : "not an analogy from this round"}`);
+    await refreshStats(menuStore);
 }
 
 /** Saves the local play log as a JSON file the player can share for research. */

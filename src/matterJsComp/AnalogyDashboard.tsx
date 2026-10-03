@@ -3,7 +3,7 @@ import { inject, observer } from "mobx-react";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores as rootStores } from "../stores";
-import { focusWords } from "../services/playground";
+import { focusWords, picksFor } from "../services/playground";
 import { analogyWords } from "../game/boardAnalogies";
 import { relationHintText } from "../game/relationHint";
 import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle } from "./GamePanels";
@@ -17,8 +17,9 @@ interface AnalogyDashboardProps {
   gameStore?: GameStore;
 }
 
-const Formula = ({ words }: { words: string[] }) => {
-  const [wordA, wordB, wordC] = [0, 1, 2].map(i => words[i] || "?");
+/** The analogy being picked. Discovery: three picks, the model fills the fourth. Guess: all four are picks. */
+const Formula = ({ words, picks }: { words: string[]; picks: number }) => {
+  const [wordA, wordB, wordC, wordD] = [0, 1, 2, 3].map(i => words[i] || "?");
   const cls = (w: string) => (w !== "?" ? styles.ActiveWord : styles.EmptyWord);
   return (
     <div className={styles.Formula}>
@@ -28,7 +29,9 @@ const Formula = ({ words }: { words: string[] }) => {
       <span className={styles.Connector}>as</span>
       <span className={cls(wordC)}>{wordC}</span>
       <span className={styles.Connector}>is to</span>
-      <span className={styles.EmptyWord}>?</span>
+      {picks === 4
+        ? <span className={cls(wordD)} title="Your fourth pick">{wordD}</span>
+        : <span className={styles.EmptyWord} title="The model answers">?</span>}
     </div>
   );
 };
@@ -58,7 +61,7 @@ const WordLink = ({ word, strong = false }: { word: string; strong?: boolean }) 
 const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
   const { lastPlay } = store;
   if (!lastPlay) return null;
-  const { a, b, c, answer, similarity, points, isNewQuestion, alternatives, hint, verdict, modelAnswer } = lastPlay;
+  const { a, b, c, answer, similarity, points, isNewQuestion, alternatives, hint, verdict, modelAnswer, guess, relation } = lastPlay;
   return (
     <div className={styles.LogCard} data-testid="last-play">
       <div className={styles.LogText}>
@@ -74,11 +77,14 @@ const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
           ⌖
         </button>
       </div>
-      {(verdict || hint) && (
+      {(verdict || hint || guess) && (
         <div className={styles.Verdict} data-testid="play-verdict">
-          {verdict === "full" && <span className={styles.VerdictGood}>completes a dealt pair{modelAnswer ? ` (the model's first choice was ${modelAnswer})` : ""} · </span>}
-          {verdict === "penalty" && <span className={styles.VerdictBad}>fell back onto your first pair · </span>}
-          {verdict === "none" && <span>not one of this round's relation pairs · </span>}
+          {guess && verdict === "full" && <span className={styles.VerdictGood}>✓ a real analogy: both pairs are {relation} · </span>}
+          {guess && verdict === "none" && <span>✗ not an analogy from this round's pairs{modelAnswer ? ` (the model would answer ${modelAnswer})` : ""} · </span>}
+          {guess && verdict === undefined && <span>already guessed this round · </span>}
+          {!guess && verdict === "full" && <span className={styles.VerdictGood}>completes a dealt pair{modelAnswer ? ` (the model's first choice was ${modelAnswer})` : ""} · </span>}
+          {!guess && verdict === "penalty" && <span className={styles.VerdictBad}>fell back onto your first pair · </span>}
+          {!guess && verdict === "none" && <span>not one of this round's relation pairs · </span>}
           {hint && <span className={styles.Hint}>{relationHintText(hint, a, b)}</span>}
         </div>
       )}
@@ -109,7 +115,7 @@ const AnalogyDashboardComponent = (props: AnalogyDashboardProps) => {
         <div className={styles.DragHandle} {...placement.handleProps} title="Drag to move · double-click to reset">
           <span className={styles.Grip} aria-hidden="true">⠿</span>
           <span className={styles.Logo}>Lexical Fountain</span>
-          <span className={styles.ModeTag}>{isGame ? "Timed" : "Sandbox"}</span>
+          <span className={styles.ModeTag} data-testid="mode-tag">{isGame ? "Guess" : "Discovery"}</span>
         </div>
         <div className={styles.TopControls}>
           {collapsed && isGame && <CompactClock gameStore={gameStore} />}
@@ -143,7 +149,7 @@ const DashboardBody = observer(({ store, gameStore, isGame }: { store: MenuStore
       {isGame ? <GameHud gameStore={gameStore} /> : <StatusLine store={store} />}
       <GameOverCard stores={rootStores} />
       <div className={styles.AnalogyRow}>
-        <Formula words={store.selectedWordTexts} />
+        <Formula words={store.selectedWordTexts} picks={picksFor(store.view)} />
       </div>
       <LastPlayCard store={store} />
       <ConsentPrompt />

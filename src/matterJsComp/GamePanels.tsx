@@ -89,7 +89,7 @@ export const GameHud = observer(({ gameStore }: { gameStore: GameStore }) => {
       <div className={styles.HudRow}>
         <span className={styles.Clock}>{formatClock(remainingMs)}</span>
         {gameStore.relationDeal && (
-          <span data-testid="round-relation" title="Three dealt pairs share this relation: a → b with c → ? completes a pair for 100 points">
+          <span data-testid="round-relation" title="Three dealt pairs share this relation: pick a → b, then c → d from another pair of the same relation, for 100 points">
             relation: <strong>{categoryLabel(gameStore.relationDeal.category)}</strong>
           </span>
         )}

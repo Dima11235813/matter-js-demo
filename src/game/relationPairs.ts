@@ -162,3 +162,35 @@ export function scoreDesignedPlay(
     }
     return { verdict: "none", points: 0, answer };
 }
+
+export interface GuessGrade {
+    /** a → b and c → d are two different dealt pairs of one relation, in the same direction. */
+    correct: boolean;
+    /** The shared relation of a correct guess. */
+    category?: string;
+    points: number;
+}
+
+/** Guess mode: a correct four-word analogy earns this; anything else earns nothing (no penalty). */
+export const GUESS_POINTS = 100;
+
+/**
+ * Grades a four-word guess a : b :: c : d against the round's dealt pairs (Epic 2 · Feature 2.13).
+ * Correct when a → b and c → d are different pairs of the same category, both forward or both
+ * reversed. This is research §7's "board-only" case: skilled 94.6 points per play, random −0.7.
+ */
+export function gradeGuess(pairs: readonly RelationPair[], a: string, b: string, c: string, d: string): GuessGrade {
+    const [wa, wb, wc, wd] = [a, b, c, d].map(w => w.toLowerCase());
+    for (const p of pairs) {
+        const forward = p.x === wa && p.y === wb;
+        const backward = p.y === wa && p.x === wb;
+        if (!forward && !backward) continue;
+        for (const q of pairs) {
+            if (q === p || q.category !== p.category) continue;
+            if ((forward && q.x === wc && q.y === wd) || (backward && q.y === wc && q.x === wd)) {
+                return { correct: true, category: p.category, points: GUESS_POINTS };
+            }
+        }
+    }
+    return { correct: false, points: 0 };
+}

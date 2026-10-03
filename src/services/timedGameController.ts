@@ -1,7 +1,7 @@
 import deps from "../matterJsComp/Deps";
 import { AnalogyResult } from "../embeddings/analogy";
 import { applyPlay, PlayOutcome, startGame, tick, TIMED_RULES_VERSION, TimedGameState } from "../game/timedGame";
-import { DesignedScore, scoreDesignedPlay } from "../game/relationPairs";
+import { DesignedScore, GuessGrade, gradeGuess, scoreDesignedPlay } from "../game/relationPairs";
 import { analogyKey } from "../persistence/LexicalRepository";
 import { RootStore } from "../stores/RootStore";
 import { logger } from "../utils/logger";
@@ -50,6 +50,28 @@ export function recordRoundAnalogy(stores: RootStore, result: AnalogyResult): (P
     const { p95, p99 } = semanticEngine.calibration;
     const scored = scoreDesignedPlay(deal.pairs, a, b, c, ranked, stats ?? { dc: 1, da: 0, db: 0 }, { link: p99, near: p95 });
     const outcome = applyPlay(gameStore.game, analogyKey(a, b, c), scored.points, Date.now(), gameStore.rules);
+    settlePlay(stores, outcome);
+    return { ...outcome, ...scored, points: outcome.points };
+}
+
+/**
+ * Guess mode (Epic 2 · Feature 2.13): grades four picked board words against the dealt pairs and
+ * scores them through the round rules (a repeated guess scores 0, rewards deal more pairs).
+ */
+export function recordRoundGuess(stores: RootStore, a: string, b: string, c: string, d: string): (PlayOutcome & GuessGrade) | undefined {
+    const { gameStore } = stores;
+    const deal = gameStore.relationDeal;
+    if (!gameStore.game || !deal) return undefined;
+    const grade = gradeGuess(deal.pairs, a, b, c, d);
+    const outcome = applyPlay(gameStore.game, `${analogyKey(a, b, c)}:${d.toLowerCase()}`, grade.points, Date.now(), gameStore.rules);
+    settlePlay(stores, outcome);
+    return { ...outcome, ...grade, points: outcome.points };
+}
+
+/** Stores a scored play's round state and deals the reward pairs it earned. */
+function settlePlay(stores: RootStore, outcome: PlayOutcome): void {
+    const { gameStore } = stores;
+    const deal = gameStore.relationDeal!;
     gameStore.setGame(outcome.state);
     gameStore.setLastRoundPoints({ points: outcome.points, duplicate: outcome.duplicate });
     if (outcome.wordsToDeal > 0) {
@@ -58,7 +80,6 @@ export function recordRoundAnalogy(stores: RootStore, result: AnalogyResult): (P
         queueWords(reward.words);
     }
     if (outcome.state.phase === "over") void finishRound(stores, outcome.state);
-    return { ...outcome, ...scored, points: outcome.points };
 }
 
 export function isRoundRunning(stores: RootStore): boolean {

@@ -33,6 +33,10 @@ export interface LastPlay {
     verdict?: PlayVerdict
     /** Timed rounds: the solver's first choice when a dealt word from its top 3 was taken instead. */
     modelAnswer?: string
+    /** Guess mode: the fourth word was the player's pick (graded, nothing spawned), not the model's answer. */
+    guess?: boolean
+    /** Guess mode: the relation both pairs share, when the guess was correct. */
+    relation?: string
 }
 
 /** An analogy played on the current board (newest first in `boardAnalogies`). */
@@ -124,7 +128,8 @@ export class MenuStore extends CommonStore {
     addScore = (points: number) => {
         this.score += points
     }
-    toggleWordSelection = (id: number, text: string) => {
+    /** Selects or deselects a word; at most `maxPicks` (3 in Discovery, 4 in Guess mode) are held. */
+    toggleWordSelection = (id: number, text: string, maxPicks: number = 3) => {
         const idIndex = this.selectedWordIds.indexOf(id)
         if (idIndex > -1) {
             this.selectedWordIds.splice(idIndex, 1)
@@ -133,7 +138,7 @@ export class MenuStore extends CommonStore {
                 this.selectedWordTexts.splice(textIndex, 1)
             }
         } else {
-            if (this.selectedWordIds.length < 3) {
+            if (this.selectedWordIds.length < maxPicks) {
                 this.selectedWordIds.push(id)
                 this.selectedWordTexts.push(text)
             }

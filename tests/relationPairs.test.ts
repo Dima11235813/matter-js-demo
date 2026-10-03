@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  categoryLabel, dealRelationPairs, designedAnswer, DESIGNED_POINTS, parseRelationBank, RelationPair, scoreDesignedPlay,
+  categoryLabel, dealRelationPairs, designedAnswer, DESIGNED_POINTS, gradeGuess, GUESS_POINTS, parseRelationBank, RelationPair, scoreDesignedPlay,
 } from '../src/game/relationPairs';
 import { relationHint } from '../src/game/relationHint';
 import { VocabManifest } from '../src/embeddings/vocabAsset';
@@ -130,5 +130,28 @@ describe('relationHint', () => {
   it('is unclear for unrelated pairs or weak offsets (the synonym-style play)', () => {
     expect(relationHint({ ab: 0.02, dc: 0.4, da: 0, db: 0.3, offset: 0.4 }, t)).toBe('unclear');
     expect(relationHint({ ab: 0.7, dc: 0.6, da: 0, db: 0, offset: 0.05 }, t)).toBe('unclear');
+  });
+});
+
+describe('guess mode: four picks graded against the dealt pairs', () => {
+  const pairs: RelationPair[] = [
+    { x: 'france', y: 'paris', category: 'capital-world' },
+    { x: 'japan', y: 'tokyo', category: 'capital-world' },
+    { x: 'man', y: 'woman', category: 'family' },
+    { x: 'king', y: 'queen', category: 'family' },
+  ];
+
+  it('is correct for two pairs of one relation in the same direction, either way round', () => {
+    expect(gradeGuess(pairs, 'france', 'paris', 'japan', 'tokyo')).toEqual({ correct: true, category: 'capital-world', points: GUESS_POINTS });
+    expect(gradeGuess(pairs, 'tokyo', 'japan', 'paris', 'france').correct).toBe(true);
+    expect(gradeGuess(pairs, 'King', 'Queen', 'MAN', 'woman')).toMatchObject({ correct: true, category: 'family' });
+  });
+
+  it('earns nothing for mixed directions, mixed relations, the same pair twice, or words not dealt', () => {
+    expect(gradeGuess(pairs, 'france', 'paris', 'tokyo', 'japan')).toEqual({ correct: false, points: 0 });
+    expect(gradeGuess(pairs, 'france', 'paris', 'man', 'woman').correct).toBe(false);
+    expect(gradeGuess(pairs, 'france', 'paris', 'france', 'paris').correct).toBe(false);
+    expect(gradeGuess(pairs, 'france', 'paris', 'japan', 'kyoto').correct).toBe(false);
+    expect(gradeGuess(pairs, 'paris', 'france', 'japan', 'tokyo').correct).toBe(false);
   });
 });

@@ -29,7 +29,7 @@ const BoardAnalogiesPanel = ({ menuStore }: BoardAnalogiesProps) => {
         </button>
       </div>
       {boardAnalogies.length === 0 ? (
-        <div className={styles.Empty}>Select three words to play an analogy. It will appear here.</div>
+        <div className={styles.Empty}>Discovery: pick three words and the model answers. Guess: pick four that form an analogy. Plays appear here.</div>
       ) : (
         <ul className={styles.List}>
           {boardAnalogies.map(item => {

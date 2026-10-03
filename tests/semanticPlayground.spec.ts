@@ -154,51 +154,74 @@ test('board analogies survive a 2D <-> 3D switch', async ({ page }) => {
   await expect.poll(() => boardWords(page), { timeout: 10_000 }).toEqual(expect.arrayContaining(['king', 'man', 'woman', 'queen']));
 });
 
-test('a timed round deals relation pairs and scores a designed play (2D clicks)', async ({ page }) => {
+test('Guess mode: four picks are graded against the dealt pairs; nothing spawns (2D clicks)', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
   await page.evaluate(() => { window.__lexical.stores.gameStore.setHintMode(true); window.__lexical.stores.gameStore.setDimension('2d'); });
   await page.locator('#game-toggle').click();
   await expect(page.getByTestId('round-relation')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('mode-tag')).toHaveText('Guess');
   await page.waitForFunction(() => (window.__lexical.deps.activeWorld?.wordTexts().length ?? 0) >= 10, null, { timeout: 20_000 });
 
-  // A designed play the model completes within its top 3 (skilled play earns full points ~69% of the time).
-  const play = await page.evaluate(() => {
-    const lexical = window.__lexical as unknown as {
-      stores: { gameStore: { relationDeal: { pairs: { x: string; y: string; category: string }[] } } };
-      semanticEngine: { evaluateExpression(t: { word: string; sign: number }[]): { kind: string; result?: { answer: string; alternatives: { word: string }[] } } };
-    };
-    const { pairs } = lexical.stores.gameStore.relationDeal;
-    for (const p of pairs) for (const q of pairs) {
-      if (p === q || p.category !== q.category) continue;
-      const outcome = lexical.semanticEngine.evaluateExpression([{ word: p.y, sign: 1 }, { word: p.x, sign: -1 }, { word: q.x, sign: 1 }]);
-      const top = outcome.result ? [outcome.result.answer, ...outcome.result.alternatives.map(n => n.word)].slice(0, 3) : [];
-      if (top.includes(q.y)) return { a: p.x, b: p.y, c: q.x, d: q.y };
-    }
-    return null;
+  type Pair = { x: string; y: string; category: string };
+  type GuessStores = {
+    gameStore: { relationDeal: { pairs: Pair[]; words: string[] }; game: { analogies: number; score: number } };
+    menuStore: { selectedWordTexts: string[]; lastPlay: Record<string, unknown> | null };
+  };
+  const state = () => page.evaluate(() => {
+    const { gameStore, menuStore } = window.__lexical.stores as unknown as GuessStores;
+    return { pairs: gameStore.relationDeal.pairs, dealt: gameStore.relationDeal.words, analogies: gameStore.game.analogies, score: gameStore.game.score, selected: [...menuStore.selectedWordTexts] };
   });
-  test.skip(!play, 'no designed play on this deal is within the top 3 answers');
-
-  const canvas = await page.locator('#worldContainter canvas').first().boundingBox();
-  for (const word of [play!.a, play!.b, play!.c]) {
+  const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
+  /** Clicks a board word until the click lands (labels move while physics settles). */
+  const pick = async (word: string) => {
+    const before = await state();
     await expect.poll(async () => {
       const probe = (await page.evaluate(() => (window.__lexical as unknown as { wordBoxes(): { text: string; x: number; y: number }[] }).wordBoxes()))
         .find(w => w.text === word)!;
-      await page.mouse.move(canvas!.x + probe.x, canvas!.y + probe.y);
+      await page.mouse.move(canvas.x + probe.x, canvas.y + probe.y);
       await page.mouse.down();
       await page.mouse.up();
       await page.waitForTimeout(250);
-      return page.evaluate(w => {
-        const store = window.__lexical.stores.menuStore as unknown as { selectedWordTexts: string[]; lastPlay: { a: string } | null };
-        return store.selectedWordTexts.includes(w) || store.lastPlay !== null;
-      }, word);
+      const now = await state();
+      return now.selected.includes(word) || now.analogies > before.analogies;
     }, { timeout: 10_000 }).toBe(true);
-  }
+  };
 
-  await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: play!.a, b: play!.b, c: play!.c, answer: play!.d, points: 100, verdict: 'full' });
-  await expect(page.getByTestId('play-verdict')).toContainText('completes a dealt pair');
-  await expect(page.getByTestId('game-hud')).toBeVisible();
-  await expect.poll(() => boardWords(page)).toContain(play!.d);
+  // A correct quad: two dealt pairs of the round's relation, same direction, whose words are not
+  // under the dashboard (clicks there reach the dashboard, not the canvas).
+  const { pairs } = await state();
+  const related = pairs.filter(pair => pair.category === pairs[0].category);
+  const onCanvas = (words: string[]) => page.evaluate(([words, left, top]) => {
+    const boxes = (window.__lexical as unknown as { wordBoxes(): { text: string; x: number; y: number }[] }).wordBoxes();
+    return words.every(word => {
+      const box = boxes.find(b => b.text === word);
+      return !!box && document.elementFromPoint(left + box.x, top + box.y)?.tagName === 'CANVAS';
+    });
+  }, [words, canvas.x, canvas.y] as const);
+  let quad: [Pair, Pair] | undefined;
+  await expect.poll(async () => {
+    for (const p of related) for (const q of related) {
+      if (p !== q && await onCanvas([p.x, p.y, q.x, q.y])) { quad = [p, q]; return true; }
+    }
+    return false;
+  }, { timeout: 15_000 }).toBe(true);
+  const [p, q] = quad!;
+  for (const word of [p.x, p.y, q.x, q.y]) await pick(word);
+  await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: p.x, b: p.y, c: q.x, answer: q.y, points: 100, verdict: 'full', guess: true });
+  await expect(page.getByTestId('play-verdict')).toContainText('a real analogy');
+  expect((await state()).score).toBe(100);
+
+  // A wrong quad (the second pair reversed) earns nothing.
+  for (const word of [p.x, p.y, q.y, q.x]) await pick(word);
+  await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: p.x, b: p.y, c: q.y, answer: q.x, points: 0, verdict: 'none', guess: true });
+  await expect(page.getByTestId('play-verdict')).toContainText('not an analogy');
+  expect((await state()).score).toBe(100);
+
+  // Nothing spawned: every word on the board was dealt (opening hand or reward pairs).
+  const { dealt } = await state();
+  await page.waitForTimeout(500);
+  expect((await boardWords(page)).every(word => dealt.includes(word))).toBe(true);
 });
 
 test('plays are recorded in the local play log and can be downloaded without the device id', async ({ page }) => {

@@ -28,6 +28,8 @@ export interface AnalogyPlayInput {
     designed?: boolean;
     points: number;
     duplicate?: boolean;
+    /** Guess mode: `answer` is the player's fourth pick and `modelAnswer` the solver's choice. */
+    guess?: boolean;
 }
 
 const round3 = (value: number) => Math.round(value * 1000) / 1000;

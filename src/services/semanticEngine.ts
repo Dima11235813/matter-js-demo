@@ -189,6 +189,17 @@ export class SemanticEngine {
     }
 
     /**
+     * A Guess-mode play (Feature 2.13): the model's own answer to a : b :: c, for feedback only (not
+     * recorded as an analogy), and the guess's points added to the lifetime score.
+     */
+    async playGuess(a: string, b: string, c: string, points: number): Promise<AnalogyResult | undefined> {
+        const { index, policy, repo } = this.require();
+        const result = solveAnalogy(index, normalizeWord(a), normalizeWord(b), normalizeWord(c), policy.isAllowed);
+        if (points > 0) await repo.addScore(points);
+        return result;
+    }
+
+    /**
      * Evaluates `b - a + c` as the analogy a : b :: c (same solver as clicking three words) and any
      * other signed sum as "nearest to the sum". Words the vocabulary lacks come back as "unknown" so
      * the caller can embed them first.
