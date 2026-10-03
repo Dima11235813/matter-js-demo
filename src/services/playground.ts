@@ -1,13 +1,13 @@
 import deps from "../matterJsComp/Deps";
-import { MenuStore } from "../stores/MenuStore";
+import { isWordView, MenuStore } from "../stores/MenuStore";
 import { RootStore } from "../stores/RootStore";
 import { stores as rootStores } from "../stores";
 import { logger } from "../utils/logger";
 import { semanticEngine } from "./semanticEngine";
-import { isRoundRunning, recordRoundAnalogy, recordRoundGuess } from "./timedGameController";
+import { isRoundRunning, recordRoundAnalogy, recordRoundGuess, startTimedRound } from "./timedGameController";
 import { applyTheme, saveThemePreference } from "../theme/palette";
 import { saveLayout3d } from "../physics/layoutPresets";
-import { handoffQueue } from "../space/handoff";
+import { boardTransfer, BoardTransfer, SpawnRequest } from "../space/handoff";
 import { expressionAsAnalogy, ExpressionTerm, formatExpression } from "../game/wordEntry";
 import { Keyword } from "../game/keywords";
 import { relationHint } from "../game/relationHint";
@@ -176,11 +176,29 @@ export function focusWords(words: readonly string[]): void {
     deps.activeWorld?.focusWords(words);
 }
 
-/** Takes the board (and queued spawns) handed over by the previous world if it showed the same view. */
-export function takeHandoff(view: string) {
+/**
+ * Takes the board the previous world left: the whole board after a 2D <-> 3D switch ("continue"),
+ * or its words when the view changed ("carry": letters -> Discovery, Discovery <-> Guess).
+ */
+export function takeBoardTransfer(view: string): BoardTransfer | undefined {
     const handoff = deps.worldHandoff;
     deps.worldHandoff = undefined;
-    return handoffQueue(handoff, view);
+    return boardTransfer(handoff, view, isWordView(view as Parameters<typeof isWordView>[0]));
+}
+
+/**
+ * Starts a word view's board once the engine is ready. Words carried from another view stay: Discovery
+ * shows them instead of a random board, and a Guess round deals its pairs next to them (Feature 2.14).
+ */
+export function startWordBoard(stores: RootStore, carried: readonly SpawnRequest[], initialWords: number): void {
+    const { view } = stores.menuStore;
+    if (view === "game") {
+        if (!isRoundRunning(stores)) startTimedRound(stores, carried);
+        return;
+    }
+    stores.menuStore.clearBoardAnalogies();
+    const board = carried.length > 0 ? carried : semanticEngine.randomWords(initialWords).map(word => ({ word }));
+    board.forEach(request => deps.pendingWordSpawns.push(request));
 }
 
 /** 2D <-> 3D; only meaningful with hint mode on. Persisted per device like hint mode. */

@@ -7,6 +7,7 @@ import { RootStore } from "../stores/RootStore";
 import { logger } from "../utils/logger";
 import { semanticEngine } from "./semanticEngine";
 import { syncSoon } from "./account";
+import type { SpawnRequest } from "../space/handoff";
 
 /**
  * Runs timed rounds: deals the opening hand, ticks the clock, scores analogies through the pure
@@ -16,11 +17,13 @@ import { syncSoon } from "./account";
 const TICK_MS = 200;
 let timer: ReturnType<typeof setInterval> | undefined;
 
-export function startTimedRound(stores: RootStore): void {
+/** Starts a round. `carried` words (from another view, Feature 2.14) stay on the board next to the deal. */
+export function startTimedRound(stores: RootStore, carried: readonly SpawnRequest[] = []): void {
     if (!semanticEngine.isReady) return;
     stopTimer();
     const { gameStore, menuStore } = stores;
     deps.activeWorld?.clearWordBoxes();
+    carried.forEach(request => deps.pendingWordSpawns.push(request));
     menuStore.clearWordSelection();
     menuStore.clearLastPlay();
     menuStore.clearBoardAnalogies();
@@ -30,7 +33,7 @@ export function startTimedRound(stores: RootStore): void {
     gameStore.setNow(now);
     gameStore.setGame(startGame(now, gameStore.rules));
     // Designed questions: 3 pairs share the round's relation, 2 more come from another relation.
-    const deal = semanticEngine.dealRelationPairs({ mainPairs: 3, otherPairs: 2 });
+    const deal = semanticEngine.dealRelationPairs({ mainPairs: 3, otherPairs: 2, inPlay: carried.map(r => r.word) });
     gameStore.setRelationDeal(deal);
     queueWords(deal.words);
     timer = setInterval(() => tickRound(stores), TICK_MS);

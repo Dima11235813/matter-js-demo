@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { boundingSphere, canvasToSpace, fitDistance, handoffQueue, ndcToCanvas, pixelMatchedDistance, spaceToCanvas } from '../src/space/handoff';
+import { boardTransfer, boundingSphere, canvasToSpace, fitDistance, handoffQueue, ndcToCanvas, pixelMatchedDistance, spaceToCanvas } from '../src/space/handoff';
 
 const size: [number, number] = [1200, 800];
 
@@ -68,5 +68,25 @@ describe('handoffQueue', () => {
     expect(handoffQueue({ view: 'game', words, pending: [] }, 'fountain')).toBeUndefined();
     expect(handoffQueue({ view: 'fountain', words: [], pending: [] }, 'fountain')).toBeUndefined();
     expect(handoffQueue(undefined, 'fountain')).toBeUndefined();
+  });
+});
+
+describe('boardTransfer (one board across modes, Feature 2.14)', () => {
+  const words = [{ word: 'eat', x: 10, y: 20, color: '#fff' }, { word: 'tea', x: 30, y: 40 }, { word: 'eat', x: 50, y: 60 }];
+
+  it('continues the whole board, queue included, after a 2D <-> 3D switch of the same view', () => {
+    const transfer = boardTransfer({ view: 'game', words, pending: [{ word: 'paris' }] }, 'game', true);
+    expect(transfer).toEqual({ kind: 'continue', queue: handoffQueue({ view: 'game', words, pending: [{ word: 'paris' }] }, 'game') });
+  });
+
+  it('carries only the words, once each, at their positions when the view changes', () => {
+    const transfer = boardTransfer({ view: 'sandbox', words, pending: [{ word: 'dog' }] }, 'fountain', true);
+    expect(transfer).toEqual({ kind: 'carry', words: [{ word: 'eat', x: 10, y: 20, color: '#fff' }, { word: 'tea', x: 30, y: 40, color: undefined }] });
+  });
+
+  it('carries nothing into a view without words, from an empty board, or without a handoff', () => {
+    expect(boardTransfer({ view: 'fountain', words, pending: [] }, 'sandbox', false)).toBeUndefined();
+    expect(boardTransfer({ view: 'sandbox', words: [], pending: [{ word: 'dog' }] }, 'fountain', true)).toBeUndefined();
+    expect(boardTransfer(undefined, 'fountain', true)).toBeUndefined();
   });
 });

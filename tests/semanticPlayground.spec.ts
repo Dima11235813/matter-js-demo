@@ -188,6 +188,9 @@ test('Guess mode: four picks are graded against the dealt pairs; nothing spawns 
     }, { timeout: 10_000 }).toBe(true);
   };
 
+  // Words already on the board: the dealt pairs plus the Discovery board carried into the round.
+  await page.waitForTimeout(1_000);
+  const boardBefore = await boardWords(page);
   // A correct quad: two dealt pairs of the round's relation, same direction, whose words are not
   // under the dashboard (clicks there reach the dashboard, not the canvas).
   const { pairs } = await state();
@@ -218,10 +221,10 @@ test('Guess mode: four picks are graded against the dealt pairs; nothing spawns 
   await expect(page.getByTestId('play-verdict')).toContainText('not an analogy');
   expect((await state()).score).toBe(100);
 
-  // Nothing spawned: every word on the board was dealt (opening hand or reward pairs).
+  // Nothing spawned: every word on the board was there before the guesses or dealt as a reward pair.
   const { dealt } = await state();
   await page.waitForTimeout(500);
-  expect((await boardWords(page)).every(word => dealt.includes(word))).toBe(true);
+  expect((await boardWords(page)).filter(word => !boardBefore.includes(word) && !dealt.includes(word))).toEqual([]);
 });
 
 test('plays are recorded in the local play log and can be downloaded without the device id', async ({ page }) => {
@@ -366,6 +369,45 @@ test('letters mode: dropped letters combine into words on a fresh page (T + H + 
   await expect.poll(letters, { timeout: 5_000 }).toEqual(['th']);
   await drop('E', 160);
   await expect.poll(letters, { timeout: 5_000 }).toEqual(['the']);
+});
+
+test('one board across modes: a word spelled in letters mode carries into Discovery, then into Guess', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
+  await page.evaluate(() => { window.__lexical.stores.gameStore.setHintMode(true); window.__lexical.stores.gameStore.setDimension('2d'); });
+  await page.bringToFront();
+  await page.locator('#sandbox-toggle').click();
+  await page.waitForFunction(`(${lettersWorld})()?.collisionHandler.tools !== undefined`, null, { timeout: 15_000 });
+
+  const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
+  const letters = () => page.evaluate(`(${lettersWorld})().shapesFac.boxes.filter(b => b.body).map(b => b.text)`) as Promise<string[]>;
+  const drop = async (letter: string, heightAboveFloor: number) => {
+    const preview = await page.evaluate(`(${lettersWorld})().shapesFac.previewBoxes.find(b => b.text.toUpperCase() === '${letter}').body.position`) as { x: number; y: number };
+    await page.mouse.click(canvas.x + preview.x, canvas.y + preview.y);
+    await page.mouse.click(canvas.x + canvas.width / 2, canvas.y + canvas.height - heightAboveFloor);
+  };
+  // E + A + T merge into "eat" or "tea" (the merge picks the more frequent letter order); both are words.
+  await drop('E', 90);
+  await page.waitForTimeout(800);
+  await drop('A', 150);
+  await expect.poll(async () => (await letters()).length, { timeout: 5_000 }).toBe(1);
+  await drop('T', 160);
+  await expect.poll(async () => (await letters()).map(t => t.length), { timeout: 5_000 }).toEqual([3]);
+  const [word] = await letters();
+  expect(['eat', 'tea']).toContain(word);
+
+  // Discovery shows the carried word instead of a random board.
+  await page.locator('#fountain-toggle').click();
+  await expect(page.getByTestId('mode-tag')).toHaveText('Discovery');
+  await expect.poll(() => boardWords(page), { timeout: 15_000 }).toEqual([word]);
+  await page.waitForTimeout(1_000);
+  expect(await boardWords(page)).toEqual([word]);
+
+  // Guess deals its relation pairs next to the carried word.
+  await page.locator('#game-toggle').click();
+  await expect(page.getByTestId('round-relation')).toBeVisible({ timeout: 20_000 });
+  await expect.poll(async () => (await boardWords(page)).length, { timeout: 20_000 }).toBeGreaterThanOrEqual(11);
+  expect(await boardWords(page)).toContain(word);
 });
 
 // ---- accounts: sign-in without Google (local test personas), sync, and several accounts per device ----

@@ -5,8 +5,7 @@ import { focusTargets, WordProbe, WordWorld } from "../matterJsComp/wordWorld";
 import { SpaceSimulation } from "../physics/spaceSimulation";
 import { Layout3d, layout3dConfig } from "../physics/layoutPresets";
 import { semanticEngine } from "../services/semanticEngine";
-import { selectWordForAnalogy, takeHandoff } from "../services/playground";
-import { isRoundRunning, startTimedRound } from "../services/timedGameController";
+import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { stores } from "../stores";
 import { getRandomColor } from "../utils/colorUtils";
 import { CameraDirector, FOV } from "./CameraDirector";
@@ -116,17 +115,13 @@ export class SpaceWorld implements WordWorld {
         if (deps.activeWorld === this) deps.activeWorld = undefined;
     }
 
-    /** Adopt the 2D board if we came from it; otherwise start the view like the 2D world does. */
+    /** Adopt the 2D board if we came from it; otherwise start the view like the 2D world does (carried words stay). */
     private seed(): void {
-        const { view } = stores.menuStore;
-        const handoff = takeHandoff(view);
-        if (handoff) {
-            handoff.forEach(request => deps.pendingWordSpawns.push(request));
-        } else if (view === "game") {
-            if (!isRoundRunning(stores)) startTimedRound(stores);
+        const transfer = takeBoardTransfer(stores.menuStore.view);
+        if (transfer?.kind === "continue") {
+            transfer.queue.forEach(request => deps.pendingWordSpawns.push(request));
         } else {
-            stores.menuStore.clearBoardAnalogies();
-            semanticEngine.randomWords(INITIAL_WORDS).forEach(word => deps.pendingWordSpawns.push({ word }));
+            startWordBoard(stores, transfer?.words ?? [], INITIAL_WORDS);
         }
     }
 

@@ -9,9 +9,8 @@ import { CollisionHandler } from "./CollisionHandler";
 import { stores } from "../stores";
 import { AppModes } from "./models/appMode";
 import { semanticEngine } from "../services/semanticEngine";
-import { selectWordForAnalogy, takeHandoff } from "../services/playground";
+import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { focusTargets, WordProbe, WordWorld } from "./wordWorld";
-import { isRoundRunning, startTimedRound } from "../services/timedGameController";
 import { isWordView } from "../stores/MenuStore";
 import { SemanticPhysics } from "./SemanticPhysics";
 import { SemanticOverlay } from "./SemanticOverlay";
@@ -82,21 +81,16 @@ export class CustomWorld implements WordWorld {
         deps.activeWorld = this
         const { view } = stores.menuStore
         if (isWordView(view)) {
-            // Words handed over by a 3D world of the same view keep their on-screen positions.
-            const handoff = takeHandoff(view)
-            handoff?.forEach(request => deps.pendingWordSpawns.push(request))
+            // A 3D world of the same view hands over its whole board; another view (letters, Discovery,
+            // Guess) carries its words over. Both keep their on-screen positions.
+            const transfer = takeBoardTransfer(view)
+            if (transfer?.kind === "continue") transfer.queue.forEach(request => deps.pendingWordSpawns.push(request))
             stores.menuStore.clearWordSelection()
             // StrictMode mounts twice; only the world whose engine is still live may seed words.
             semanticEngine.start()
                 .then(() => {
-                    if (deps.engine !== engine || handoff) return
-                    if (view === "game") {
-                        if (!isRoundRunning(stores)) startTimedRound(stores)
-                    } else {
-                        stores.menuStore.clearBoardAnalogies()
-                        semanticEngine.randomWords(CustomWorld.initialWordCount)
-                            .forEach(word => deps.pendingWordSpawns.push({ word }))
-                    }
+                    if (deps.engine !== engine || transfer?.kind === "continue") return
+                    startWordBoard(stores, transfer?.words ?? [], CustomWorld.initialWordCount)
                 })
                 .catch(() => { /* status surfaced by bootSemanticPlayground */ })
         }

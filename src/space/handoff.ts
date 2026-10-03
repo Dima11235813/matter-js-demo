@@ -89,3 +89,27 @@ export function boundingSphere(points: ReadonlyArray<{ position: number[]; radiu
     const radius = Math.max(...points.map(p => Math.hypot(p.position[0] - center[0], p.position[1] - center[1], p.position[2] - center[2]) + p.radius));
     return { center, radius };
 }
+
+/**
+ * What a new world does with the board the previous world left (Epic 2 · Feature 2.14):
+ * - "continue": same view (a 2D <-> 3D switch): the board and its queued spawns, as before;
+ * - "carry": another view (letters -> Discovery, Discovery <-> Guess): only the words, at their
+ *   positions; the old view's queued spawns (its fresh board, its dealt words) stay behind.
+ * Undefined when there is nothing to adopt or the new view does not show words (letters mode).
+ */
+export type BoardTransfer =
+    | { kind: "continue"; queue: SpawnRequest[] }
+    | { kind: "carry"; words: SpawnRequest[] };
+
+export function boardTransfer(handoff: BoardHandoff | undefined, view: string, showsWords: boolean): BoardTransfer | undefined {
+    if (!handoff || !showsWords) return undefined;
+    if (handoff.view === view) {
+        const queue = handoffQueue(handoff, view);
+        return queue ? { kind: "continue", queue } : undefined;
+    }
+    const seen = new Set<string>();
+    const words = handoff.words
+        .filter(({ word }) => !seen.has(word) && seen.add(word))
+        .map(({ word, x, y, color }) => ({ word, x, y, color }));
+    return words.length > 0 ? { kind: "carry", words } : undefined;
+}
