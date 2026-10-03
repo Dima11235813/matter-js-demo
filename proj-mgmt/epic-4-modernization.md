@@ -57,8 +57,12 @@ Replace outdated build processes (like Create React App scripts) with a ultra-fa
 * [x] **Task 4.5.6** (2026-09-27, owner request: "bundle minimization"): Measured with source maps (bytes attributed per package). Main chunk **1,880 KB → 469 KB** (−75%); first-load JS for the 2D game 1,880 → ~1,623 KB (−14%):
   * `@lexical/shared` schemas moved to `zod/mini`: 94 → 28 KB. The server's error handler now checks the core `$ZodError`.
   * Sentry loads only when a DSN is configured: −54 KB, in its own chunk.
-  * The letters-mode dictionary loads on the first letter collision: −134 KB, and no more lookup building on every world.
+  * The letters-mode dictionary loads on the first letter collision: −134 KB, and no more lookup building on every world. ⚠ This dropped the contacts made while it loaded, so the first letters never merged; fixed in Task 4.5.8.
   * The 2D world (p5 + matter-js) is code-split like the 3D world: 1,154 KB chunk; the menu and dashboard render first.
 
   Guards: the CI budget fails the build if any `index-*.js` exceeds 600 KB; an e2e test checks that the dictionary isn't loaded at startup and loads on letter collisions. All 272 unit tests and 22 e2e tests pass.
 * [ ] **Task 4.5.7** (roadmap): Replace p5 (1,040 KB, not tree-shakable in 1.x) with a thin Canvas2D renderer for the word boxes, threads, and overlays. It is the largest remaining chunk: the 2D world would go from ~1.15 MB to ~120 KB. Measure first-render time before and after.
+* [x] **Task 4.5.8** (2026-10-03, owner report: "the original version … where you drop letters and the letters combine … is lost"): Regression from Task 4.5.6. The lazy dictionary was requested on the first letter collision, and that collision (and every other one before the dictionary arrived) was dropped. Letters resting on each other never collide again, so the first letters stayed apart. Merge rules, dictionary, and box physics are unchanged since the original game (diffed against `52c4db3`).
+  * Fix (`CollisionHandler`): letters mode fetches the dictionary when it opens (still outside the main bundle), and contacts that arrive before it loads are kept and merged once it does.
+  * Measured on fresh pages, drop T, H, E from high on the screen: before, 1 of 3 trials merged anything, and the first contact never did (production-mode bundle); after, 5 of 5 trials merged (all three into "the" in 1 of 5). The remaining misses are the original strength band: an impact deeper than 10 units never merges (`seperationThresholdUpperBound`, unchanged).
+  * Guard: e2e test "letters mode: dropped letters combine into words on a fresh page (T + H + E → "the")", 5/5 repeats; the laziness test now checks that the dictionary loads when letters mode opens.

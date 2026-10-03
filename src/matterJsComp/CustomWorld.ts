@@ -55,7 +55,8 @@ export class CustomWorld implements WordWorld {
 
         // create a shapes factory
         this.shapesFac = new ShapesFactory()
-        this.collisionHandler = new CollisionHandler(this.shapesFac)
+        // Letters mode fetches its dictionary on open, so the first letters dropped can already merge.
+        this.collisionHandler = new CollisionHandler(this.shapesFac, stores.menuStore.view === "sandbox")
 
         //create a class that applies text to the canvas
         this.typographyDisplay = new TypographyDisplay(this.shapesFac)

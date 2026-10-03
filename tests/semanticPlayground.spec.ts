@@ -297,7 +297,7 @@ test.describe('privacy: consent, age question, export, erase', () => {
   });
 });
 
-test('the letters dictionary is not part of startup; it loads on the first letter collision', async ({ page }) => {
+test('the letters dictionary is not part of startup; it loads when letters mode opens', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
   const dictionaryLoaded = () => page.evaluate(() => performance.getEntriesByType('resource').some(e => e.name.includes('combinationOfAllDict')));
@@ -309,6 +309,40 @@ test('the letters dictionary is not part of startup; it loads on the first lette
     await page.waitForTimeout(120);
   }
   await expect.poll(dictionaryLoaded, { timeout: 10_000 }).toBe(true);
+});
+
+/** The original letter game: dropped letters merge when the pair occurs in dictionary words. */
+type LettersWorld = {
+  collisionHandler: { tools?: unknown };
+  shapesFac: {
+    boxes: { text: string; body?: unknown }[];
+    previewBoxes: { text: string; body: { position: { x: number; y: number } } }[];
+  };
+};
+const lettersWorld = () => (window.__lexical.deps as unknown as { activeWorld?: LettersWorld }).activeWorld;
+
+test('letters mode: dropped letters combine into words on a fresh page (T + H + E -> "the")', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
+  await page.bringToFront();
+  await page.locator('#sandbox-toggle').click();
+  // The dictionary is fetched when letters mode opens, so the very first contact can merge.
+  await page.waitForFunction(`(${lettersWorld})()?.collisionHandler.tools !== undefined`, null, { timeout: 15_000 });
+
+  const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
+  const letters = () => page.evaluate(`(${lettersWorld})().shapesFac.boxes.filter(b => b.body).map(b => b.text)`) as Promise<string[]>;
+  const drop = async (letter: string, heightAboveFloor: number) => {
+    const preview = await page.evaluate(`(${lettersWorld})().shapesFac.previewBoxes.find(b => b.text.toUpperCase() === '${letter}').body.position`) as { x: number; y: number };
+    await page.mouse.click(canvas.x + preview.x, canvas.y + preview.y);
+    // Short drops keep impacts inside the merge strength band (hard impacts never merged, by design).
+    await page.mouse.click(canvas.x + canvas.width / 2, canvas.y + canvas.height - heightAboveFloor);
+  };
+  await drop('T', 90);
+  await page.waitForTimeout(800);
+  await drop('H', 150);
+  await expect.poll(letters, { timeout: 5_000 }).toEqual(['th']);
+  await drop('E', 160);
+  await expect.poll(letters, { timeout: 5_000 }).toEqual(['the']);
 });
 
 // ---- accounts: sign-in without Google (local test personas), sync, and several accounts per device ----

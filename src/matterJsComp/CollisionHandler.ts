@@ -5,9 +5,15 @@ import Matter, { Body, World, Pair } from "matter-js";
 import deps from "./Deps";
 import { logger } from "../utils/logger";
 
+/** The parts of a Matter pair a merge needs; contacts made while the dictionary loads are kept as these. */
+export type Contact = Pick<Pair, "bodyA" | "bodyB" | "separation">
+
 export class CollisionHandler {
-    /** Loaded on the first letter collision (see loadDictionaryTools). */
+    /** Loaded when the letters world opens, or on the first letter collision (see loadDictionaryTools). */
     tools: DictionaryTools | undefined
+    /** Strong-enough letter contacts that arrived before the dictionary; merged as soon as it loads. */
+    private deferredContacts: Contact[] = []
+    private toolsRequested = false
     lettersChecked: Record<string, number> = {}
     private static readonly seperationThresholdLowerBound = .02
     private static readonly seperationThresholdUpperBound = 10
@@ -15,7 +21,7 @@ export class CollisionHandler {
     private static readonly minLettersToConsiderPointsForWord = 3
 
 
-    private pair: Pair | undefined;
+    private pair: Contact | undefined;
 
     private _firstBoxIsntRemovable: boolean = false;
     private _secondBoxIsntRemovable: boolean = false;
@@ -44,11 +50,30 @@ export class CollisionHandler {
     wordsFound: Record<string, number> = {}
     logInterval: NodeJS.Timeout;
     constructor(
-        public shapesFac: ShapesFactory
+        public shapesFac: ShapesFactory,
+        preloadDictionary: boolean = false
     ) {
 
         this.logInterval = setInterval(() => this.logData(), 2500)
+        if (preloadDictionary) this.requestTools()
 
+    }
+    /**
+     * Starts loading the dictionary once. Letters resting on each other never collide again, so contacts
+     * made while it loads are replayed instead of dropped (dropping them lost the first merges).
+     */
+    requestTools = () => {
+        if (this.toolsRequested) return
+        this.toolsRequested = true
+        const { engine } = deps
+        void loadDictionaryTools().then(tools => {
+            this.tools = tools
+            const contacts = this.deferredContacts
+            this.deferredContacts = []
+            // A world torn down while loading (view switch) has nothing left to merge.
+            if (deps.engine !== engine) return
+            contacts.forEach(contact => this.handleCollision(contact))
+        })
     }
     logData() {
         const shouldLog = true
@@ -85,7 +110,7 @@ export class CollisionHandler {
         this.pair = undefined
 
     }
-    checkCollision = (pair: Pair): boolean => {
+    checkCollision = (pair: Contact): boolean => {
         this.pair = pair
         //if separation threshold aka collision stength 
         //isn't big enough ignore the collision
@@ -130,7 +155,9 @@ export class CollisionHandler {
         this._secondBoxText = this.shapesFac.boxIdToTextLookup[this._secondBoxId]
 
         if (!this.tools) {
-            void loadDictionaryTools().then(tools => { this.tools = tools })
+            // Copy: Matter reuses pair objects, so keep the bodies and the strength of this contact.
+            this.deferredContacts.push({ bodyA, bodyB, separation: this.pair.separation })
+            this.requestTools()
             return false
         }
         const mergeResult = determineMergeText(this._firstBoxText, this._secondBoxText, this.tools.letterCombos)
@@ -139,7 +166,7 @@ export class CollisionHandler {
         this._textToUse = mergeResult.textToUse
         return true
     }
-    handleCollision = (pair: Pair) => {
+    handleCollision = (pair: Contact) => {
         let collisionIsOkayToHandle = this.checkCollision(pair)
         if (!collisionIsOkayToHandle) {
             this.resetValues()
