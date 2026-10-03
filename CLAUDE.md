@@ -22,7 +22,7 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - Rebuild vocabulary: `yarn vocab:build`
 - Local sign-in without Google: the local API has dev sign-in on by default (only without `DATABASE_URL` and not in production); dev builds show **test personas** in the account panel, or run `window.__lexical.account.devSignIn("name")`. Each account/persona has its own local database (`lexical-fountain@<uid>`); switching reloads.
 - API server: `yarn dev:server` (watch mode) or `yarn start:server` (port 8787; Vite proxies `/api`, `vite preview` too; config in `server/.env.local`, see `server/.env.example`). Server typecheck: `npx tsc --noEmit -p server`. Shared and server tests run in `yarn test:unit` (PGlite in memory)
-- Dev server: `npx vite --port 3000 --strictPort --open false`
+- Dev server: `npx vite --port 3000 --strictPort --open false`; add `--host 0.0.0.0` so the owner can play-test from another device (they often follow from the Claude mobile app), and run `yarn start:server` alongside for sign-in. At each milestone, share the network URL (`http://<LAN IPv4 from ipconfig>:3000/`), never `localhost`.
 - Dev handle in the browser console: `window.__lexical` (`wordBoxes()`, `layoutFidelity()`, `semanticEngine`, `stores`, `deps`)
 
 ## Working agreements
