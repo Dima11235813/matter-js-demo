@@ -16,6 +16,8 @@ export class Box {
     previewBox: boolean = false
     outOfBounds: boolean = false
     color: string = getRandomColor()
+    /** The box's own color while color hint mode paints it (restored when the mode is turned off). */
+    baseColor: string | undefined
     /** Black or white, whichever meets WCAG AA contrast against this box's fill. */
     textColor: string = readableTextColor(this.color)
     setColor = (color: string) => {

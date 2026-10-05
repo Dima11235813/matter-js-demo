@@ -8,6 +8,7 @@ import { semanticEngine } from "../services/semanticEngine";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { stores } from "../stores";
 import { getRandomColor } from "../utils/colorUtils";
+import { colorHintPainter } from "../services/colorHints";
 import { CameraDirector, FOV } from "./CameraDirector";
 import { canvasToSpace, ndcToCanvas, pixelMatchedDistance, Size } from "./handoff";
 import { SpaceScene } from "./SpaceScene";
@@ -135,7 +136,9 @@ export class SpaceWorld implements WordWorld {
         this.sim.step();
         if (this.view.applyTheme(stores.menuStore.theme)) this.renderer.setClearColor(this.view.scene.background as THREE.Color);
         const selected = new Set(stores.menuStore.selectedWordIds);
-        this.view.syncLabels(this.sim.bodies, id => this.colors.get(id)!, selected, this.director.glowing(this.sim.bodies));
+        const hinted = stores.gameStore.colorHints ? colorHintPainter.colorsFor(this.sim.bodies.map(b => b.word)) : undefined;
+        const wordOf = new Map(this.sim.bodies.map(b => [b.id, b.word]));
+        this.view.syncLabels(this.sim.bodies, id => hinted?.get(wordOf.get(id)!) ?? this.colors.get(id)!, selected, this.director.glowing(this.sim.bodies));
         // Shape layout: draw the nearest-neighbour skeleton so lines, rings, and stars are readable.
         const threads = this.layout === "shape" ? this.sim.skeleton(2) : this.sim.links;
         this.view.syncThreads(this.sim.bodies, threads, this.hovered);

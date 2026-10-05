@@ -3,6 +3,7 @@ import { CommonStore } from './CommonStore';
 import { RootStore } from './RootStore';
 import { defaultTimedRules, remainingMs, TimedGameRules, TimedGameState } from '../game/timedGame';
 import { Layout3d, loadLayout3d } from '../physics/layoutPresets';
+import { loadColorHints } from '../services/colorHints';
 import { RelationDeal } from '../game/relationPairs';
 
 /**
@@ -14,6 +15,8 @@ export class GameStore extends CommonStore {
     dimension: "2d" | "3d" = "2d"
     /** 3D layout model: "shape" (embedding-shaped, default) or "orbits" (Phase 2 model). */
     layout3d: Layout3d = loadLayout3d()
+    /** Color hint mode (Feature 5.17): similar meanings get similar colors. Per device; independent of hint mode. */
+    colorHints: boolean = loadColorHints()
     game: TimedGameState | null = null
     now = Date.now()
     bestScore = 0
@@ -30,6 +33,8 @@ export class GameStore extends CommonStore {
             dimension: observable,
             layout3d: observable,
             setLayout3d: action,
+            colorHints: observable,
+            setColorHints: action,
             spaceActive: computed,
             setDimension: action,
             game: observable.ref,
@@ -60,6 +65,10 @@ export class GameStore extends CommonStore {
 
     setLayout3d = (layout: Layout3d) => {
         this.layout3d = layout
+    }
+
+    setColorHints = (on: boolean) => {
+        this.colorHints = on
     }
 
     get remainingMs(): number {

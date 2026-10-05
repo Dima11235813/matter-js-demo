@@ -7,6 +7,7 @@ import { semanticEngine } from "./semanticEngine";
 import { isRoundRunning, recordRoundAnalogy, recordRoundGuess, startTimedRound } from "./timedGameController";
 import { applyTheme, saveThemePreference } from "../theme/palette";
 import { saveLayout3d } from "../physics/layoutPresets";
+import { saveColorHints } from "./colorHints";
 import { boardTransfer, BoardTransfer, SpawnRequest } from "../space/handoff";
 import { expressionAsAnalogy, ExpressionTerm, formatExpression } from "../game/wordEntry";
 import { Keyword } from "../game/keywords";
@@ -206,6 +207,13 @@ export function toggleDimension(stores: RootStore): void {
     const next = stores.gameStore.dimension === "3d" ? "2d" : "3d";
     stores.gameStore.setDimension(next);
     if (semanticEngine.isReady) void semanticEngine.setDimension(next);
+}
+
+/** Color hint mode on/off (Feature 5.17): an isolated, per-device preference. */
+export function toggleColorHints(stores: RootStore): void {
+    const next = !stores.gameStore.colorHints;
+    stores.gameStore.setColorHints(next);
+    saveColorHints(next);
 }
 
 /** 3D layout: embedding-shaped ("shape") vs the Phase 2 orbital model ("orbits"). Per device. */

@@ -9,6 +9,7 @@ import { CollisionHandler } from "./CollisionHandler";
 import { stores } from "../stores";
 import { AppModes } from "./models/appMode";
 import { semanticEngine } from "../services/semanticEngine";
+import { colorHintPainter } from "../services/colorHints";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { focusTargets, LetterSnapshot, WordProbe, WordWorld } from "./wordWorld";
 import { isWordView } from "../stores/MenuStore";
@@ -145,7 +146,25 @@ export class CustomWorld implements WordWorld {
     wordProbes = (): WordProbe[] => {
         return this.shapesFac.boxes
             .filter(b => b.embedding !== undefined && b.body)
-            .map(b => ({ text: b.text, x: b.body!.position.x, y: b.body!.position.y, position: [b.body!.position.x, b.body!.position.y], color: b.color }))
+            .map(b => ({ text: b.text, x: b.body!.position.x, y: b.body!.position.y, position: [b.body!.position.x, b.body!.position.y], color: b.baseColor ?? b.color }))
+    }
+    /** Color hint mode (Feature 5.17): paint word boxes by meaning (molecules share a hue), or restore their own colors. */
+    applyColorHints = () => {
+        const boxes = this.shapesFac.boxes.filter(b => b.embedding !== undefined && b.body)
+        if (!stores.gameStore.colorHints) {
+            boxes.forEach(b => { if (b.baseColor) { b.setColor(b.baseColor); b.baseColor = undefined } })
+            return
+        }
+        const byId = new Map(boxes.map(b => [b.body!.id, b.text]))
+        const molecules = this.semanticPhysics.molecules.all()
+            .map(m => [...m.offsets.keys()].map(id => byId.get(id)).filter((w): w is string => w !== undefined))
+        const colors = colorHintPainter.colorsFor(boxes.map(b => b.text), molecules)
+        boxes.forEach(b => {
+            const color = colors.get(b.text)
+            if (!color || color === b.color) return
+            if (!b.baseColor) b.baseColor = b.color
+            b.setColor(color)
+        })
     }
     /** Letters mode: every box with its body state, captured when the view changes (Feature 2.14). */
     letterSnapshot = (): LetterSnapshot[] => {
@@ -264,6 +283,7 @@ export class CustomWorld implements WordWorld {
             const { view } = stores.menuStore
             if (isWordView(view)) {
                 this.spawnQueuedWords()
+                this.applyColorHints()
                 this.semanticOverlay.drawThreads(p)
             }
             

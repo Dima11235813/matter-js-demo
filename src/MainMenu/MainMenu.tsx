@@ -28,10 +28,11 @@ import Brightness7Icon from "@material-ui/icons/Brightness7";
 import ThreeDRotationIcon from "@material-ui/icons/ThreeDRotation";
 import ListAltIcon from "@material-ui/icons/ListAlt";
 import PolicyIcon from "@material-ui/icons/Policy";
+import PaletteIcon from "@material-ui/icons/Palette";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores } from "../stores";
-import { toggleDimension, toggleHintMode, toggleTheme } from "../services/playground";
+import { toggleColorHints, toggleDimension, toggleHintMode, toggleTheme } from "../services/playground";
 import { AppModes } from "../matterJsComp/models/appMode";
 //https://material-ui.com/components/material-icons/#material-icons
 
@@ -129,6 +130,15 @@ const MainMenu = (props: MainMenuProps) => {
                 active={dimension === "3d"}
                 onClick={() => toggleDimension(stores)}
                 icon={<ThreeDRotationIcon />}
+              />
+            )}
+            {isWordView(view) && (
+              <MenuButton
+                id="color-hint-toggle"
+                tooltip={stores.gameStore.colorHints ? "Color hints on: similar meanings share similar colors" : "Color hints: color words by meaning, so related words share a hue"}
+                active={stores.gameStore.colorHints}
+                onClick={() => toggleColorHints(stores)}
+                icon={<PaletteIcon />}
               />
             )}
             {isWordView(view) && (

@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { deltaE } from '../src/theme/semanticColors';
 
 /**
  * End-to-end tests for the embedding playground's word features, in 2D and 3D:
@@ -141,6 +142,33 @@ for (const dimension of ['2d', '3d'] as const) {
     });
   });
 }
+
+test('color hint mode: related words get close colors, unrelated words distant ones; off restores them (2D)', async ({ page }) => {
+  await openSandbox(page, '2d');
+  for (const word of ['dog', 'puppy', 'kitten', 'guitar', 'piano']) {
+    await wordBox(page).fill(word);
+    await wordBox(page).press('Enter');
+    await expect.poll(() => boardWords(page)).toContain(word);
+  }
+  type Painted = Record<string, { shown: string; own: string }>;
+  const colors = () => page.evaluate(() => {
+    const world = window.__lexical.deps.activeWorld as unknown as { shapesFac: { boxes: { text: string; color: string; baseColor?: string; embedding?: unknown }[] } };
+    return Object.fromEntries(world.shapesFac.boxes.filter(b => b.embedding).map(b => [b.text, { shown: b.color, own: b.baseColor ?? b.color }]));
+  }) as Promise<Painted>;
+  const before = await colors();
+
+  await page.locator('#color-hint-toggle').click();
+  await expect.poll(async () => (await colors()).dog.shown !== before.dog.shown, { timeout: 5_000 }).toBe(true);
+  const painted = await colors();
+  const close = deltaE(painted.dog.shown, painted.puppy.shown);
+  const far = deltaE(painted.dog.shown, painted.piano.shown);
+  expect(close).toBeLessThan(far);
+  expect(deltaE(painted.guitar.shown, painted.piano.shown)).toBeLessThan(far);
+
+  await page.locator('#color-hint-toggle').click();
+  await expect.poll(async () => (await colors()).dog.shown, { timeout: 5_000 }).toBe(before.dog.shown);
+  expect((await colors()).piano.shown).toBe(before.piano.shown);
+});
 
 test('board analogies survive a 2D <-> 3D switch', async ({ page }) => {
   await openSandbox(page, '2d');

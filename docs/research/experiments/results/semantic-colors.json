@@ -1,0 +1,107 @@
+{
+  "threshold": 0.1835,
+  "results": {
+    "random": {
+      "families15": {
+        "spearman": -0.003,
+        "groups": 5,
+        "multiWordGroups": 5,
+        "minGroupHueGap": 2.5,
+        "maxShiftOnAdd": 25.2,
+        "minContrast": 7.94
+      },
+      "dense24": {
+        "spearman": -0.05,
+        "groups": 7,
+        "multiWordGroups": 6,
+        "minGroupHueGap": 9,
+        "maxShiftOnAdd": 25.5,
+        "minContrast": 7.94
+      },
+      "random30a": {
+        "spearman": 0.009,
+        "groups": 24,
+        "multiWordGroups": 5,
+        "minGroupHueGap": 3,
+        "maxShiftOnAdd": 26,
+        "minContrast": 7.95
+      },
+      "random30b": {
+        "spearman": 0.023,
+        "groups": 22,
+        "multiWordGroups": 7,
+        "minGroupHueGap": 7.7,
+        "maxShiftOnAdd": 25.7,
+        "minContrast": 7.93
+      }
+    },
+    "pcaAngle": {
+      "families15": {
+        "spearman": -0.695,
+        "groups": 5,
+        "multiWordGroups": 5,
+        "minGroupHueGap": 21.2,
+        "maxShiftOnAdd": 2.3,
+        "minContrast": 7.97
+      },
+      "dense24": {
+        "spearman": -0.601,
+        "groups": 7,
+        "multiWordGroups": 6,
+        "minGroupHueGap": 5.7,
+        "maxShiftOnAdd": 4.7,
+        "minContrast": 7.92
+      },
+      "random30a": {
+        "spearman": -0.465,
+        "groups": 24,
+        "multiWordGroups": 5,
+        "minGroupHueGap": 15.3,
+        "maxShiftOnAdd": 1.1,
+        "minContrast": 7.94
+      },
+      "random30b": {
+        "spearman": -0.486,
+        "groups": 22,
+        "multiWordGroups": 7,
+        "minGroupHueGap": 18.2,
+        "maxShiftOnAdd": 22.6,
+        "minContrast": 7.94
+      }
+    },
+    "groupFirst": {
+      "families15": {
+        "spearman": -0.671,
+        "groups": 5,
+        "multiWordGroups": 5,
+        "minGroupHueGap": 60,
+        "maxShiftOnAdd": 0.5,
+        "minContrast": 6.37
+      },
+      "dense24": {
+        "spearman": -0.583,
+        "groups": 7,
+        "multiWordGroups": 6,
+        "minGroupHueGap": 57.9,
+        "maxShiftOnAdd": 8.7,
+        "minContrast": 6.25
+      },
+      "random30a": {
+        "spearman": -0.181,
+        "groups": 24,
+        "multiWordGroups": 5,
+        "minGroupHueGap": 58.8,
+        "maxShiftOnAdd": 0.6,
+        "minContrast": 6.31
+      },
+      "random30b": {
+        "spearman": -0.193,
+        "groups": 22,
+        "multiWordGroups": 7,
+        "minGroupHueGap": 47.5,
+        "maxShiftOnAdd": 14.7,
+        "minContrast": 6.27
+      }
+    }
+  }
+}
