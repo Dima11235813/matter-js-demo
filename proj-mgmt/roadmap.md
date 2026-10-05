@@ -87,6 +87,14 @@ graph TD
     D -->|Production Release| E
 ```
 
+### Progress on the 2026-10-04 plan (owner: "all recommended items except going to production")
+* ✅ 1. Mode split finished: Discovery earns no points; only correct guesses score (2.13.5).
+* ✅ 2. Letters → words: prefix rules from the vocabulary (real words 1.5 → 3.8 per 40 letters), carried words outlined and listed, the letter board returns (4.5.10, 2.14.4).
+* ✅ 3. Test reliability: real app-shell tests; the phone layout fixed (the canvas covered the mode menu below 768 px; the dashboard overflowed); CI failures readable as annotations (4.5.3).
+* ✅ 5a. Color hint mode (5.17), 5b. personas & skill rating (2.12), 5c. Connect-All rules, balance research and puzzle mode MVP (2.10).
+* ⬜ 5d. Molecule gravity (5.15). ⬜ 6. Vite 4 → current (4.5.5), p5 → Canvas2D (4.5.7).
+* Tests: 306 unit, 26 e2e. `develop` at `1c913f2`; `main` unchanged (`0ff0af2`).
+
 ### Status snapshot (2026-10-04)
 * **Branches**: `develop` at `8f1e9cb` (letters fix, Discovery vs Guess, one board across modes); `main` still at `0ff0af2` (waits for owner play-test, then deploy setup in [human-todo](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/human-todo/README.md) 1–5).
 * **Shipped since 09-27**: the original letter game works again (lazy-dictionary regression, Epic 4 · 4.5.8) and merges letters dropped from high (4.5.9); **Discovery** (3 picks, the answer lands) vs **Guess** (4 picks graded against dealt relation pairs, +100 / 0, nothing spawns) (Epic 2 · 2.13); **one board across modes**: letters → Discovery → Guess keep their words (2.14).
