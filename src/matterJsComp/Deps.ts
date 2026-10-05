@@ -1,7 +1,7 @@
 import type p5 from "p5"
 import { AppModes } from "./models/appMode"
 import type { Box } from "./Shapes/Box"
-import type { WordWorld } from "./wordWorld"
+import type { LetterSnapshot, WordWorld } from "./wordWorld"
 import type { BoardHandoff } from "../space/handoff"
 
 export interface BrowserInfo {
@@ -44,6 +44,8 @@ class Deps {
      * view adopts them, so switching 2D <-> 3D keeps the board instead of restarting it.
      */
     public worldHandoff: BoardHandoff | undefined
+    /** The letters board left when leaving letters mode; restored when letters mode opens again. */
+    public lettersBoard: LetterSnapshot[] | undefined
     public overlayRect: OverlayRect | undefined
     browserInfo: BrowserInfo
     p: p5 | undefined

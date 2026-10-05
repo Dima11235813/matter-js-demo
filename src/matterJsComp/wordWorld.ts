@@ -13,8 +13,22 @@ export interface WordProbe {
     color?: string;
 }
 
+/** A letters-mode box as it was left, so returning to letters mode restores the board (Feature 2.14). */
+export interface LetterSnapshot {
+    text: string;
+    x: number;
+    y: number;
+    angle: number;
+    w: number;
+    h: number;
+    color: string;
+    type: number;
+}
+
 export interface WordWorld {
     readonly dimension: "2d" | "3d";
+    /** Letters mode only: every box on the board (letters, fragments, words). */
+    letterSnapshot?(): LetterSnapshot[];
     wordTexts(): string[];
     clearWordBoxes(): void;
     wordProbes(): WordProbe[];

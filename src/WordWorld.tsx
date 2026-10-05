@@ -16,6 +16,7 @@ interface Destroyable {
 
 /** Captures the live board and its spawn queue so a world of the same view can adopt them (2D <-> 3D switch). */
 function captureHandoff(view: string) {
+  if (view === "sandbox") deps.lettersBoard = deps.activeWorld?.letterSnapshot?.();
   const probes = deps.activeWorld?.wordProbes() ?? [];
   deps.worldHandoff = {
     view,

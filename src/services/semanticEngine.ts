@@ -101,6 +101,21 @@ export class SemanticEngine {
         return this.loaded ? this.loaded.policy.isAllowed(word) : true;
     }
 
+    /**
+     * Words letters mode builds its merge rules from (Epic 4 · Task 4.5.10): the vocabulary's allowed
+     * plain-letter words plus common stopwords ("the", "and"), which form but have no embedding.
+     */
+    letterWords(): string[] {
+        const { index, policy } = this.require();
+        const words: string[] = [];
+        for (let i = 0; i < index.baseSize; i++) {
+            const word = index.baseWordAt(i);
+            if (policy.isAllowed(word)) words.push(word);
+        }
+        STOPWORDS.forEach(word => { if (policy.isAllowed(word)) words.push(word); });
+        return words;
+    }
+
     /** Random allowed words drawn from the `maxRank` most frequent base words. */
     randomWords(count: number, maxRank = 4000): string[] {
         const { index, policy } = this.require();

@@ -11,6 +11,7 @@ export class TypographyDisplay {
 
     }
     show = () => {
+        this.showCarryList()
         const { p, world } = deps
         if (p && world && import.meta.env.DEV) {
             const numberOfBodiesInWorld = world?.bodies.length - 1 //subtract for the floor
@@ -28,5 +29,23 @@ export class TypographyDisplay {
             p.text(textToDisplay, 20, 120)
             p.pop()
         }
+    }
+    /** Letters mode: the words that will carry into Discovery and Guess (outlined on the board). */
+    carryList = (): string[] => {
+        const words = this.shapesFac.boxes.filter(box => box.body && box.carriesFromLetters()).map(box => box.text.toLowerCase())
+        return [...new Set(words)]
+    }
+    showCarryList = () => {
+        const { p } = deps
+        if (!p || stores.menuStore.view !== "sandbox") return
+        const words = this.carryList()
+        const palette = palettes[stores.menuStore.theme]
+        p.push()
+        p.noStroke()
+        p.fill(palette.canvasText)
+        p.textSize(14)
+        p.textAlign(p.LEFT, p.TOP)
+        p.text(words.length > 0 ? `Carries into Discovery: ${words.join(", ")}` : "Spell words: outlined words carry into Discovery", 20, 84)
+        p.pop()
     }
 }

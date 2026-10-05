@@ -1,6 +1,8 @@
 import { ShapesFactory } from "./ShapesFactory";
 import { ShapeTypes, getShapeTypeForLength } from "./models/boxOptions";
-import { DictionaryTools, sizeOfLargestWord, determineMergeText, loadDictionaryTools } from "../utils/textUtils";
+import { sizeOfLargestWord, determineMergeText, loadDictionaryTools } from "../utils/textUtils";
+import { LetterRules, prefixLetterRules } from "../game/letterRules";
+import { semanticEngine } from "../services/semanticEngine";
 import Matter, { Body, World, Pair } from "matter-js";
 import deps from "./Deps";
 import { logger } from "../utils/logger";
@@ -9,8 +11,13 @@ import { logger } from "../utils/logger";
 export type Contact = Pick<Pair, "bodyA" | "bodyB" | "separation">
 
 export class CollisionHandler {
-    /** Loaded when the letters world opens, or on the first letter collision (see loadDictionaryTools). */
-    tools: DictionaryTools | undefined
+    /**
+     * Merge rules, prepared when the letters world opens (or on the first letter collision): prefix rules
+     * from the vocabulary, or the original dictionary when the vocabulary failed to load.
+     */
+    tools: LetterRules | undefined
+    /** Restored boards rest in contact: no merges until this time (performance.now()). */
+    quietUntil: number = 0
     /** Strong-enough letter contacts that arrived before the dictionary; merged as soon as it loads. */
     private deferredContacts: Contact[] = []
     private toolsRequested = false
@@ -68,7 +75,10 @@ export class CollisionHandler {
         if (this.toolsRequested) return
         this.toolsRequested = true
         const { engine } = deps
-        void loadDictionaryTools().then(tools => {
+        const rules: Promise<LetterRules> = semanticEngine.start()
+            .then(() => prefixLetterRules(semanticEngine.letterWords(), sizeOfLargestWord))
+            .catch(() => loadDictionaryTools())
+        void rules.then(tools => {
             this.tools = tools
             const contacts = this.deferredContacts
             this.deferredContacts = []
@@ -151,6 +161,7 @@ export class CollisionHandler {
 
         //If colliding with floor return 
         if (this._firstBoxIsntRemovable || this._secondBoxIsntRemovable) return false
+        if (performance.now() < this.quietUntil) return false
         logger.log(pair)
 
         this._firstBoxText = this.shapesFac.boxIdToTextLookup[this._firstBoxId]

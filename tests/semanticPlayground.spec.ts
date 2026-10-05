@@ -54,7 +54,8 @@ async function openSandbox(page: Page, dimension: '2d' | '3d') {
 }
 
 const wordBox = (page: Page) => page.getByRole('textbox', { name: 'Add a word' });
-const boardWords = (page: Page) => page.evaluate(() => window.__lexical.deps.activeWorld!.wordTexts());
+/** Words on the live board; empty while one world is replaced by the next (a view switch). */
+const boardWords = (page: Page) => page.evaluate(() => window.__lexical.deps.activeWorld?.wordTexts() ?? []);
 const focused = (page: Page) => page.evaluate(() => window.__lexical.focusedWords().sort());
 
 async function expectFocused(page: Page, words: string[]) {
@@ -326,23 +327,25 @@ test.describe('privacy: consent, age question, export, erase', () => {
   });
 });
 
-test('the letters dictionary is not part of startup; it loads when letters mode opens', async ({ page }) => {
+test('letters mode builds its merge rules from the vocabulary; the old dictionary is never downloaded', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
   const dictionaryLoaded = () => page.evaluate(() => performance.getEntriesByType('resource').some(e => e.name.includes('combinationOfAllDict')));
-  expect(await dictionaryLoaded()).toBe(false);
   await page.locator('#sandbox-toggle').click();
+  await page.waitForFunction(`(${lettersWorld})()?.collisionHandler.tools?.source === 'vocabulary'`, null, { timeout: 15_000 });
   const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
   for (let i = 0; i < 12; i++) {
     await page.mouse.click(canvas.x + 400 + (i % 3) * 6, canvas.y + 150);
     await page.waitForTimeout(120);
   }
-  await expect.poll(dictionaryLoaded, { timeout: 10_000 }).toBe(true);
+  await page.waitForTimeout(1_000);
+  expect(await dictionaryLoaded()).toBe(false);
 });
 
 /** The original letter game: dropped letters merge when the pair occurs in dictionary words. */
 type LettersWorld = {
-  collisionHandler: { tools?: unknown };
+  collisionHandler: { tools?: { source: string } };
+  typographyDisplay: { carryList(): string[] };
   shapesFac: {
     boxes: { text: string; body?: unknown }[];
     previewBoxes: { text: string; body: { position: { x: number; y: number } } }[];
@@ -398,6 +401,8 @@ test('one board across modes: a word spelled in letters mode carries into Discov
   await expect.poll(async () => (await letters()).map(t => t.length), { timeout: 5_000 }).toEqual([3]);
   const [word] = await letters();
   expect(['eat', 'tea']).toContain(word);
+  // The word is outlined and listed as one that carries into Discovery.
+  expect(await page.evaluate(`(${lettersWorld})().typographyDisplay.carryList()`)).toEqual([word]);
 
   // Discovery shows the carried word instead of a random board.
   await page.locator('#fountain-toggle').click();
@@ -411,6 +416,11 @@ test('one board across modes: a word spelled in letters mode carries into Discov
   await expect(page.getByTestId('round-relation')).toBeVisible({ timeout: 20_000 });
   await expect.poll(async () => (await boardWords(page)).length, { timeout: 20_000 }).toBeGreaterThanOrEqual(11);
   expect(await boardWords(page)).toContain(word);
+
+  // Back in letters mode, the letter board is as it was left.
+  await page.locator('#sandbox-toggle').click();
+  await page.waitForFunction(`(${lettersWorld})()?.collisionHandler.tools !== undefined`, null, { timeout: 15_000 });
+  await expect.poll(letters, { timeout: 10_000 }).toEqual([word]);
 });
 
 // ---- accounts: sign-in without Google (local test personas), sync, and several accounts per device ----

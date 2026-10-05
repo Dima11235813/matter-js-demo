@@ -10,7 +10,7 @@ import { stores } from "../stores";
 import { AppModes } from "./models/appMode";
 import { semanticEngine } from "../services/semanticEngine";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
-import { focusTargets, WordProbe, WordWorld } from "./wordWorld";
+import { focusTargets, LetterSnapshot, WordProbe, WordWorld } from "./wordWorld";
 import { isWordView } from "../stores/MenuStore";
 import { SemanticPhysics } from "./SemanticPhysics";
 import { SemanticOverlay } from "./SemanticOverlay";
@@ -95,6 +95,14 @@ export class CustomWorld implements WordWorld {
                 .catch(() => { /* status surfaced by bootSemanticPlayground */ })
         }
 
+        if (view === "sandbox" && deps.lettersBoard) {
+            // Back in letters mode: the board as it was left. Restored boxes rest in contact, so hold
+            // merges for a moment; otherwise they would merge into something the player never made.
+            deps.lettersBoard.forEach(snapshot => this.shapesFac.restoreLetterBox(snapshot))
+            deps.lettersBoard = undefined
+            this.collisionHandler.quietUntil = performance.now() + 1000
+        }
+
         // run the engine; the runner is stopped in WorldContainer.destroy()
         this.runner = Matter.Runner.run(deps.engine)
     }
@@ -138,6 +146,15 @@ export class CustomWorld implements WordWorld {
         return this.shapesFac.boxes
             .filter(b => b.embedding !== undefined && b.body)
             .map(b => ({ text: b.text, x: b.body!.position.x, y: b.body!.position.y, position: [b.body!.position.x, b.body!.position.y], color: b.color }))
+    }
+    /** Letters mode: every box with its body state, captured when the view changes (Feature 2.14). */
+    letterSnapshot = (): LetterSnapshot[] => {
+        return this.shapesFac.boxes
+            .filter(b => b.body)
+            .map(b => ({
+                text: b.text, x: b.body!.position.x, y: b.body!.position.y, angle: b.body!.angle,
+                w: b.boxOptions.w, h: b.boxOptions.h, color: b.color, type: b.boxOptions.type as number,
+            }))
     }
     /** Texts of the embedding word boxes currently in the world. */
     wordTexts = (): string[] => {

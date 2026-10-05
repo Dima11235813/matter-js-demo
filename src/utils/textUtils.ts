@@ -98,7 +98,9 @@ export function loadDictionaryTools(): Promise<DictionaryTools> {
     return toolsPromise
 }
 
+/** The original letters dictionary (any substring merges); the fallback LetterRules (game/letterRules.ts). */
 export class DictionaryTools {
+    readonly source = "dictionary" as const
     dict: Record<string, number>
     commonLetterPairs: Record<string, number> = {}
     letterPairs: string[] = []

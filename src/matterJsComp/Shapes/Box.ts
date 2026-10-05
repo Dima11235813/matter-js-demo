@@ -72,6 +72,8 @@ export class Box {
         p.rect(0, 0, w + 14 + 10 * pulse, h + 14 + 10 * pulse, 10)
         p.pop()
     }
+    /** Letters mode: a merged box that spells a vocabulary word, so it will carry into Discovery (Feature 2.14). */
+    carriesFromLetters = (): boolean => stores.menuStore.view === "sandbox" && this.embedding !== undefined && this.text.length > 1
     show = () => {
         if (!this.noMatter && !this.body && !this.previewBox) return
         const helpGc = true
@@ -104,6 +106,9 @@ export class Box {
             const palette = palettes[stores.menuStore.theme]
             if (isSelected) {
                 p.stroke(palette.selection)
+                p.strokeWeight(Box.border + 3)
+            } else if (this.carriesFromLetters()) {
+                p.stroke(palette.thread)
                 p.strokeWeight(Box.border + 3)
             } else {
                 p.stroke(palette.boxStroke)

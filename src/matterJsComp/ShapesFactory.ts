@@ -4,6 +4,7 @@ import p5 from "p5";
 import { World } from "matter-js";
 import Matter from "matter-js";
 import deps from "./Deps";
+import type { LetterSnapshot } from "./wordWorld";
 import { getRandomLetterOrSpace, alphabet } from "../utils/textUtils";
 import { semanticEngine } from "../services/semanticEngine";
 import { stores } from "../stores";
@@ -168,6 +169,19 @@ export class ShapesFactory {
         const { type } = newBox.boxOptions
         this.addNewBoxDataToLookUps(matterId, text, type)
         this.totalCount += 1
+    }
+    /** Recreates a letters-mode box where it was left (Feature 2.14). */
+    restoreLetterBox = (snapshot: LetterSnapshot): Box => {
+        const { text, x, y, w, h, color, angle, type } = snapshot
+        const newBox = new Box(decordateWithTextProps({ x, y, w, h, border: ShapesFactory.defaultBorder, options: {} }), text)
+        newBox.setColor(color)
+        newBox.embedding = semanticEngine.lookup(text)
+        newBox.boxOptions.type = type
+        if (newBox.body) Matter.Body.setAngle(newBox.body, angle)
+        this.boxes.push(newBox)
+        this.addNewBoxDataToLookUps(newBox.matterId, text, type)
+        this.totalCount += 1
+        return newBox
     }
     createWordBox = (text: string, x: number, y: number): Box => {
         let newWidth = text.length * 20 + 20
