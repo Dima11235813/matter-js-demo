@@ -17,6 +17,14 @@
   font-family: "Outfit", "Inter", sans-serif;
   color: var(--text);
   pointer-events: none; /* Let clicks pass through to Matter.js canvas */
+
+  // Phones: centre within the area right of the 60 px side menu, so the dashboard never covers
+  // the mode buttons (it hid the Guess button on a 375 px screen).
+  @media (max-width: 768px) {
+    box-sizing: border-box;
+    left: calc(50% + 30px);
+    width: calc(100% - 76px);
+  }
 }
 
 .DashboardCollapsed {
@@ -30,6 +38,9 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  // Phones: the controls wrap under the title instead of pushing the score and the minimize
+  // button off-screen (they overflowed a 375 px viewport by 57 px).
+  flex-wrap: wrap;
 }
 
 .DragHandle {
@@ -223,6 +234,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .HintOn,

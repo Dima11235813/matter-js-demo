@@ -9,10 +9,15 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: 'list',
+  // A cold first load (vocabulary, model, dev-server compile) can take 30 s on a busy machine.
+  timeout: 60_000,
+  // CI: failures also become GitHub annotations, readable through the public API without `gh auth`.
+  reporter: process.env.CI ? [['list'], ['github']] : 'list',
   use: {
     baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
+    navigationTimeout: 45_000,
+    // Locally keep a trace of every failure (rare flakes are otherwise unexplainable).
+    trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
   },
   projects: [
     {

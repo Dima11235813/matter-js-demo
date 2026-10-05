@@ -5,16 +5,13 @@
   width: 100vw;
   display: flex;
 }
+/* The side menu stays on phones too: without the margin the canvas covered it, and the modes
+   (letters, Discovery, Guess) could not be switched below 768 px (Epic 4 · Task 4.5.3). */
 #worldContainter {
   margin-left: 60px;
   flex: 1;
   height: 100vh;
   position: relative;
-}
-@media (max-width: 768px) {
-  #worldContainter {
-    margin-left: 0;
-  }
 }
 
 .App-logo {

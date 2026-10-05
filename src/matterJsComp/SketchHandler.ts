@@ -19,8 +19,8 @@ export class SketchHandler {
             this.customWorld!.draw()
         }
         p!.windowResized = () => {
-            const hasSideMenu = window.innerWidth > 768
-            const width = window.innerWidth - (hasSideMenu ? 60 : 0)
+            // The side menu is always 60 px wide, phones included (see App.css).
+            const width = window.innerWidth - 60
             const height = window.innerHeight
             deps.browserInfo.width = width
             deps.browserInfo.height = height
