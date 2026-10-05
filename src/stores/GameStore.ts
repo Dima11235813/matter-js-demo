@@ -4,6 +4,7 @@ import { RootStore } from './RootStore';
 import { defaultTimedRules, remainingMs, TimedGameRules, TimedGameState } from '../game/timedGame';
 import { Layout3d, loadLayout3d } from '../physics/layoutPresets';
 import { loadColorHints } from '../services/colorHints';
+import type { Puzzle } from '../game/connectPuzzles';
 import { RelationDeal } from '../game/relationPairs';
 
 /**
@@ -21,6 +22,9 @@ export class GameStore extends CommonStore {
     rating = 1000
     /** How much the last graded guess moved the rating. */
     lastRatingChange: number | null = null
+    /** Connect-All (Feature 2.10): the puzzle on the board, its moves, and whether it is solved. */
+    puzzle: (Puzzle & { moves: string[]; solved?: boolean }) | null = null
+    puzzleStats: { connected: number; total: number; ratio: number; loose: string[]; solved: boolean } | null = null
     game: TimedGameState | null = null
     now = Date.now()
     bestScore = 0
@@ -42,6 +46,12 @@ export class GameStore extends CommonStore {
             rating: observable,
             lastRatingChange: observable,
             setRating: action,
+            puzzle: observable.ref,
+            puzzleStats: observable.ref,
+            setPuzzle: action,
+            addPuzzleMove: action,
+            setPuzzleSolved: action,
+            setPuzzleStats: action,
             spaceActive: computed,
             setDimension: action,
             game: observable.ref,
@@ -63,7 +73,7 @@ export class GameStore extends CommonStore {
     /** 3D renders only in word views with hint mode on (Epic 5 decision). */
     get spaceActive(): boolean {
         const { view } = this.store.menuStore
-        return this.dimension === "3d" && this.hintMode && (view === "fountain" || view === "game")
+        return this.dimension === "3d" && this.hintMode && (view === "fountain" || view === "game" || view === "puzzle")
     }
 
     setDimension = (dimension: "2d" | "3d") => {
@@ -76,6 +86,19 @@ export class GameStore extends CommonStore {
 
     setColorHints = (on: boolean) => {
         this.colorHints = on
+    }
+
+    setPuzzle = (puzzle: (Puzzle & { moves: string[] }) | null) => {
+        this.puzzle = puzzle
+    }
+    addPuzzleMove = (word: string) => {
+        if (this.puzzle) this.puzzle = { ...this.puzzle, moves: [...this.puzzle.moves, word] }
+    }
+    setPuzzleSolved = () => {
+        if (this.puzzle) this.puzzle = { ...this.puzzle, solved: true }
+    }
+    setPuzzleStats = (stats: GameStore["puzzleStats"]) => {
+        this.puzzleStats = stats
     }
 
     setRating = (rating: number, change: number | null = null) => {

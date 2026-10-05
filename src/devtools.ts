@@ -56,6 +56,11 @@ export function installDevtools(): void {
             set: async (value: number) => { await semanticEngine.setRating(value); stores.gameStore.setRating(value); },
             get: () => stores.gameStore.rating,
         },
+        /** Dev and e2e only: the Connect-All puzzle (words, moves, par, the solver's solution) and its counts. */
+        puzzle: {
+            state: () => stores.gameStore.puzzle,
+            stats: () => stores.gameStore.puzzleStats,
+        },
         /** Words currently highlighted by focus (new words, HUD links, the analogies panel). */
         focusedWords: (): string[] => deps.activeWorld?.focusedWords() ?? [],
         /** Fidelity in the world's own space: 2D pixels or 3D world units. */

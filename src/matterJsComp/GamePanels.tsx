@@ -4,6 +4,9 @@ import { GameStore } from "../stores/GameStore";
 import { RootStore } from "../stores/RootStore";
 import { nextRewardAt } from "../game/timedGame";
 import { startTimedRound } from "../services/timedGameController";
+import { nextPuzzle } from "../services/connectPuzzle";
+import { focusWords } from "../services/playground";
+import { stores as rootStores } from "../stores";
 import { categoryLabel } from "../game/relationPairs";
 import { toggleDimension, toggleHintMode, toggleLayout3d } from "../services/playground";
 import styles from "./AnalogyDashboard.module.scss";
@@ -119,6 +122,42 @@ export const GameOverCard = observer(({ stores }: { stores: RootStore }) => {
         <span>best <strong>{bestScore}</strong></span>
       </div>
       <button type="button" className={styles.WordButton} onClick={() => startTimedRound(stores)}>Play again</button>
+    </div>
+  );
+});
+
+/** Connect-All HUD (Feature 2.10): progress, moves vs par, the loose words, and the win card. */
+export const PuzzleHud = observer(({ gameStore }: { gameStore: GameStore }) => {
+  const { puzzle, puzzleStats } = gameStore;
+  if (!puzzle || !puzzleStats) return <div className={styles.Status}>Dealing a puzzle...</div>;
+  const percent = Math.round(puzzleStats.ratio * 100);
+  const moves = puzzle.moves.length;
+  return (
+    <div className={styles.GameHud} data-testid="puzzle-hud">
+      <div className={styles.TimerTrack}>
+        <div className={styles.TimerFill} style={{ width: `${percent}%` }} />
+      </div>
+      <div className={styles.HudRow}>
+        <span title="Seeded: the same number is the same puzzle">Puzzle #{puzzle.seed} · {puzzle.band}</span>
+        <span data-testid="puzzle-progress"><strong>{puzzleStats.connected} of {puzzleStats.total}</strong> connected ({percent}%)</span>
+        <span data-testid="puzzle-moves" title="Each word you add is a move; par is what our solver needs">moves {moves} · par {puzzle.par}</span>
+      </div>
+      {puzzle.solved ? (
+        <div className={styles.Verdict} data-testid="puzzle-solved">
+          <span className={styles.VerdictGood}>Solved in {moves} {moves === 1 ? "move" : "moves"} ({moves <= puzzle.par ? (moves < puzzle.par ? "under par!" : "par") : `par ${puzzle.par}`}) · </span>
+          {/* The dashboard lets clicks through to the canvas; its controls opt back in. */}
+          <button type="button" className={styles.WordButton} style={{ pointerEvents: "auto" }} onClick={() => nextPuzzle(rootStores)}>Next puzzle</button>
+        </div>
+      ) : (
+        <div className={styles.Verdict}>
+          <span>Needs two connections: </span>
+          {puzzleStats.loose.map(word => (
+            <button key={word} type="button" className={styles.WordLink} onClick={() => focusWords([word])} title={`Focus on "${word}"`}>{word}</button>
+          ))}
+          <span> · type a word that bridges them · </span>
+          <button type="button" className={styles.WordLink} onClick={() => nextPuzzle(rootStores)} title="Skip to the next puzzle">skip</button>
+        </div>
+      )}
     </div>
   );
 });

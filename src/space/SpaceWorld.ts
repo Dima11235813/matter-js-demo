@@ -138,7 +138,11 @@ export class SpaceWorld implements WordWorld {
         const selected = new Set(stores.menuStore.selectedWordIds);
         const hinted = stores.gameStore.colorHints ? colorHintPainter.colorsFor(this.sim.bodies.map(b => b.word)) : undefined;
         const wordOf = new Map(this.sim.bodies.map(b => [b.id, b.word]));
-        this.view.syncLabels(this.sim.bodies, id => hinted?.get(wordOf.get(id)!) ?? this.colors.get(id)!, selected, this.director.glowing(this.sim.bodies));
+        const glowing = this.director.glowing(this.sim.bodies);
+        // Connect-All: loose words (fewer than two connections) glow until they are bridged.
+        const loose = stores.menuStore.view === "puzzle" ? new Set(stores.gameStore.puzzleStats?.loose ?? []) : undefined;
+        if (loose) this.sim.bodies.forEach(b => { if (loose.has(b.word)) glowing.add(b.id); });
+        this.view.syncLabels(this.sim.bodies, id => hinted?.get(wordOf.get(id)!) ?? this.colors.get(id)!, selected, glowing);
         // Shape layout: draw the nearest-neighbour skeleton so lines, rings, and stars are readable.
         const threads = this.layout === "shape" ? this.sim.skeleton(2) : this.sim.links;
         this.view.syncThreads(this.sim.bodies, threads, this.hovered);

@@ -26,7 +26,8 @@ export class ShapesFactory {
         this.hardBodies = []
         this.createHardBodies()
         
-        const isFountain = stores.menuStore.view === "fountain"
+        // Letter previews belong to letters mode; word views (Discovery, Guess, Connect) have none.
+        const isFountain = stores.menuStore.view !== "sandbox"
         this.nextUpBox = isFountain ? (null as unknown as Box) : this.createTheNextBoxPreview()
         this.previewBoxes = isFountain ? [] : this.createPreviewBoxes()
     }

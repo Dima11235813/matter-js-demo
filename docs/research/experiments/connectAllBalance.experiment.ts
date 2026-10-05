@@ -5,6 +5,7 @@ import { decodeVocabBinary, VocabManifest } from '../../../src/embeddings/vocabA
 import { VectorIndex } from '../../../src/embeddings/VectorIndex';
 import { sharesStem } from '../../../src/embeddings/analogy';
 import { BASE_RULES, ConnectNode, ConnectRules, connectionStats, dot, isLegalMove, linkThreshold, moveValue, solveGreedy } from '../../../src/game/connectAll';
+import { generatePuzzle as generateTemplatePuzzle, lcg, TEMPLATES } from '../../../src/game/connectPuzzles';
 
 /**
  * Connect-All balance harness (docs/research/connect-all-balance.md, Epic 2 · Task 2.10.3).
@@ -24,10 +25,6 @@ const PUZZLES = Number(process.env.CONNECT_PUZZLES ?? 100);
 const MAX_MOVES = 15;
 const FAIL_MOVES = 20;
 
-function lcg(seed: number) {
-  let s = seed >>> 0;
-  return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 0xffffffff; };
-}
 
 const candidates: ConnectNode[] = [];
 for (let rank = 0; rank < Math.min(8000, index.baseSize); rank++) {
@@ -35,41 +32,7 @@ for (let rank = 0; rank < Math.min(8000, index.baseSize); rank++) {
   if (/^[a-z]{3,}$/.test(word) && !profane.has(word)) candidates.push({ word, vector: index.getVector(word)!, rank });
 }
 
-/**
- * Puzzle templates: `pairs` related pairs (a word and a close neighbour, so both start dangling) plus
- * `loose` unrelated words. Purely random boards were all "hard" (par ~12: unrelated words each need
- * their own bridges), so difficulty comes from the template mix instead.
- */
-export const TEMPLATES = [
-  { pairs: 3, loose: 0 }, { pairs: 3, loose: 1 }, { pairs: 2, loose: 2 }, { pairs: 3, loose: 2 }, { pairs: 2, loose: 4 },
-] as const;
-
-function generatePuzzle(seed: number): ConnectNode[] {
-  const next = lcg(seed);
-  const { pairs, loose } = TEMPLATES[seed % TEMPLATES.length];
-  const out: ConnectNode[] = [];
-  const fits = (c: ConnectNode) => c.rank >= 200 && c.rank <= 4000 && !out.some(o => o.word === c.word || sharesStem(o.word, c.word));
-  const pick = () => { for (;;) { const c = candidates[Math.floor(next() * candidates.length)]; if (fits(c)) return c; } };
-  // Loose words and pair seeds must not already link to anything on the board.
-  const unlinked = (c: ConnectNode) => out.every(o => dot(o.vector, c.vector) < P99);
-  while (out.length < pairs * 2) {
-    const seedWord = pick();
-    if (!unlinked(seedWord)) continue;
-    const near = candidates.filter(c => c !== seedWord && fits(c) && !sharesStem(c.word, seedWord.word))
-      .map(c => [c, dot(c.vector, seedWord.vector)] as const)
-      .filter(([, s]) => s >= P99 + 0.02 && s <= 0.65)
-      .sort((a, b) => b[1] - a[1]).slice(0, 20);
-    if (near.length === 0) continue;
-    const [partner] = near[Math.floor(next() * near.length)];
-    if (!out.every(o => dot(o.vector, partner.vector) < P99)) continue;
-    out.push({ ...seedWord }, { ...partner });
-  }
-  while (out.length < pairs * 2 + loose) {
-    const c = pick();
-    if (unlinked(c)) out.push({ ...c });
-  }
-  return out;
-}
+const generatePuzzle = (seed: number) => generateTemplatePuzzle(seed, candidates, P99);
 
 /** Candidate x board similarities: one column per board word, computed the first time it is needed. */
 class SimCache {
@@ -192,5 +155,6 @@ it('Connect-All balance: rule sets x bots x generated puzzles', () => {
     summary[name] = { solvable: `${solvable.length}/${PUZZLES}`, bands: `${bands.easy}/${bands.medium}/${bands.hard}`, ...Object.fromEntries(Object.entries(byBot).map(([b, r]) => [b, `${Math.round(r.solveRate * 100)}% +${r.meanOverPar}`])) };
   }
   console.table(summary);
-  fs.writeFileSync(path.join(ROOT, 'docs/research/experiments/results/connect-all-balance.json'), JSON.stringify({ p99: P99, templates: TEMPLATES, maxMoves: MAX_MOVES, failMoves: FAIL_MOVES, candidates: candidates.length, results }, null, 2));
+  // Pilots (CONNECT_PUZZLES < 100) only print; the committed results come from a full run.
+  if (PUZZLES >= 100) fs.writeFileSync(path.join(ROOT, 'docs/research/experiments/results/connect-all-balance.json'), JSON.stringify({ p99: P99, templates: TEMPLATES, maxMoves: MAX_MOVES, failMoves: FAIL_MOVES, candidates: candidates.length, results }, null, 2));
 }, 3_600_000);

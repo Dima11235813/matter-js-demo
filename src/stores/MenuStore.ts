@@ -8,11 +8,11 @@ import { loadThemePreference, ThemeName } from '../theme/palette';
 import { prependBoardAnalogy } from '../game/boardAnalogies';
 
 export type EngineStatus = "loading" | "ready" | "error"
-export type AppView = "sandbox" | "fountain" | "game"
+export type AppView = "sandbox" | "fountain" | "game" | "puzzle"
 
 /** Views that hold embedding word boxes: the free-play sandbox ("fountain") and the timed game. */
 export function isWordView(view: AppView): boolean {
-    return view === "fountain" || view === "game"
+    return view === "fountain" || view === "game" || view === "puzzle"
 }
 
 import type { RelationHint } from "../game/relationHint"

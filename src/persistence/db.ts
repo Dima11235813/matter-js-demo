@@ -75,7 +75,7 @@ export interface GameRecord extends SyncStamp {
  * fail, how imports and new words are used. Local only until telemetry ingest ships with consent.
  * Payloads never contain free text the player typed or pasted beyond the words that were played.
  */
-export type PlayEventType = "analogy" | "expression" | "word" | "import";
+export type PlayEventType = "analogy" | "expression" | "word" | "import" | "puzzle";
 export const PLAY_EVENT_SCHEMA = 1;
 
 export interface PlayContext {

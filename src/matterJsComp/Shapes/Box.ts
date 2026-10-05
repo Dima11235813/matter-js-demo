@@ -109,6 +109,10 @@ export class Box {
             if (isSelected) {
                 p.stroke(palette.selection)
                 p.strokeWeight(Box.border + 3)
+            } else if (stores.menuStore.view === "puzzle" && stores.gameStore.puzzleStats?.loose.includes(this.text)) {
+                // Connect-All: words with fewer than two connections still need a bridge.
+                p.stroke(palette.selection)
+                p.strokeWeight(Box.border + 2)
             } else if (this.carriesFromLetters()) {
                 p.stroke(palette.thread)
                 p.strokeWeight(Box.border + 3)

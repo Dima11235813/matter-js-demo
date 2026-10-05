@@ -29,6 +29,7 @@ import ThreeDRotationIcon from "@material-ui/icons/ThreeDRotation";
 import ListAltIcon from "@material-ui/icons/ListAlt";
 import PolicyIcon from "@material-ui/icons/Policy";
 import PaletteIcon from "@material-ui/icons/Palette";
+import DeviceHubIcon from "@material-ui/icons/DeviceHub";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores } from "../stores";
@@ -112,6 +113,7 @@ const MainMenu = (props: MainMenuProps) => {
             <Divider />
             <MenuButton id="fountain-toggle" tooltip="Discovery: pick three words and the model answers with a fourth that lands on the board" active={view === "fountain"} onClick={() => setView("fountain")} icon={<BubbleChartIcon />} />
             <MenuButton id="sandbox-toggle" tooltip="Letters: drop letters that combine into words" active={view === "sandbox"} onClick={() => setView("sandbox")} icon={<ExtensionIcon />} />
+            <MenuButton id="puzzle-toggle" tooltip="Connect: add words until every word has two connections; beat par" active={view === "puzzle"} onClick={() => setView("puzzle")} icon={<DeviceHubIcon />} />
             <MenuButton id="game-toggle" tooltip="Guess: 2 minutes, dealt relation pairs; pick four words that form an analogy for 100 points" active={view === "game"} onClick={() => setView("game")} icon={<TimerIcon />} />
             <Divider />
             {isWordView(view) && (

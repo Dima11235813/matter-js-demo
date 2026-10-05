@@ -591,3 +591,34 @@ test('personas have their own skill rating, and each is dealt relations of its l
   await signInAs(page, novice);
   expect(await page.evaluate(() => (window.__lexical as unknown as RatingHandle).rating.get())).toBe(noviceRating);
 });
+
+test('Connect: a seeded puzzle is solved by typing bridge words; refused moves explain why (Feature 2.10)', async ({ page }) => {
+  await openSandbox(page, '2d');
+  await page.locator('#puzzle-toggle').click();
+  await expect(page.getByTestId('mode-tag')).toHaveText('Connect');
+  await expect(page.getByTestId('puzzle-hud')).toBeVisible({ timeout: 20_000 });
+  type PuzzleHandle = { puzzle: { state(): { seed: number; words: string[]; par: number; solution: string[]; moves: string[] } | null } };
+  const puzzle = () => page.evaluate(() => (window.__lexical as unknown as PuzzleHandle).puzzle.state()!);
+  const start = await puzzle();
+  await expect.poll(async () => (await boardWords(page)).sort(), { timeout: 20_000 }).toEqual([...start.words].sort());
+  await expect(page.getByTestId('puzzle-progress')).toContainText(`of ${start.words.length}`);
+
+  // A word already on the board is refused and costs no move.
+  await wordBox(page).fill(start.words[0]);
+  await wordBox(page).press('Enter');
+  await expect(page.getByTestId('word-message')).toContainText('on the board already');
+  expect((await puzzle()).moves).toEqual([]);
+
+  // The solver's solution solves it at par, one typed word per move.
+  for (const [i, word] of start.solution.entries()) {
+    await wordBox(page).fill(word);
+    await wordBox(page).press('Enter');
+    await expect(page.getByTestId('puzzle-moves')).toContainText(`moves ${i + 1}`);
+  }
+  await expect(page.getByTestId('puzzle-solved')).toContainText(`Solved in ${start.par}`);
+  await expect.poll(() => boardWords(page)).toEqual(expect.arrayContaining(start.solution));
+
+  await page.getByRole('button', { name: 'Next puzzle' }).click();
+  await expect.poll(async () => (await puzzle()).seed).toBeGreaterThan(start.seed);
+  await expect(page.getByTestId('puzzle-solved')).toHaveCount(0);
+});

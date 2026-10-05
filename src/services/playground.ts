@@ -17,6 +17,7 @@ import { categoryLabel, designedAnswer } from "../game/relationPairs";
 import { TIMED_RULES_VERSION } from "../game/timedGame";
 import type { PlayContext } from "../persistence/db";
 import { syncSoon } from "./account";
+import { playPuzzleMove, resumePuzzle } from "./connectPuzzle";
 
 /**
  * Use cases that connect the semantic engine, the MobX stores, and the physics world.
@@ -80,6 +81,18 @@ export async function submitPlayerWord(store: MenuStore, input: string): Promise
     if (outcome.status === "added" || outcome.status === "known") {
         void semanticEngine.logPlay("word", playContext(rootStores), { word: outcome.word, status: outcome.status, source: "typed" });
         syncSoon();
+    }
+    if (store.view === "puzzle" && (outcome.status === "added" || outcome.status === "known")) {
+        // Connect-All: every typed word is a move, unless the rules refuse it.
+        const refused = playPuzzleMove(rootStores, outcome.word);
+        if (refused) {
+            store.setWordInputMessage(refused);
+            return;
+        }
+        store.setWordInputMessage(`Move ${rootStores.gameStore.puzzle?.moves.length ?? 0}: "${outcome.word}"`);
+        deps.pendingWordSpawns.push({ word: outcome.word, focus: true });
+        if (outcome.status === "added") await refreshStats(store);
+        return;
     }
     switch (outcome.status) {
         case "added":
@@ -201,6 +214,8 @@ export function takeBoardTransfer(view: string): BoardTransfer | undefined {
  */
 export function startWordBoard(stores: RootStore, carried: readonly SpawnRequest[], initialWords: number): void {
     const { view } = stores.menuStore;
+    // Connect-All deals its own puzzle board (carried words would change the puzzle).
+    if (view === "puzzle") return resumePuzzle(stores);
     if (view === "game") {
         if (!isRoundRunning(stores)) startTimedRound(stores, carried);
         return;
@@ -239,6 +254,10 @@ export function toggleLayout3d(stores: RootStore): void {
 export async function playExpression(stores: RootStore, terms: readonly ExpressionTerm[]): Promise<void> {
     const { menuStore } = stores;
     if (!semanticEngine.isReady) return;
+    if (menuStore.view === "puzzle") {
+        menuStore.setWordInputMessage("Connect: type one word at a time; each word is a move");
+        return;
+    }
     const words = terms.map(t => t.word);
     if (menuStore.view === "game") {
         const onBoard = new Set(deps.activeWorld?.wordTexts() ?? []);
@@ -292,6 +311,10 @@ export async function playExpression(stores: RootStore, terms: readonly Expressi
 export async function importKeywords(stores: RootStore, keywords: readonly Keyword[]): Promise<void> {
     const { menuStore } = stores;
     if (!semanticEngine.isReady || keywords.length === 0) return;
+    if (menuStore.view === "puzzle") {
+        menuStore.setWordInputMessage("Connect: type one word at a time; each word is a move");
+        return;
+    }
     const words: string[] = [];
     let added = 0;
     for (const keyword of keywords) {

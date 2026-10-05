@@ -6,7 +6,7 @@ import { stores as rootStores } from "../stores";
 import { focusWords, picksFor } from "../services/playground";
 import { analogyWords } from "../game/boardAnalogies";
 import { relationHintText } from "../game/relationHint";
-import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle } from "./GamePanels";
+import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle, PuzzleHud } from "./GamePanels";
 import { useDashboardPlacement } from "./useDashboardPlacement";
 import { WordEntryForm } from "./WordEntryForm";
 import { ConsentPrompt } from "./PrivacyPanels";
@@ -117,7 +117,7 @@ const AnalogyDashboardComponent = (props: AnalogyDashboardProps) => {
         <div className={styles.DragHandle} {...placement.handleProps} title="Drag to move · double-click to reset">
           <span className={styles.Grip} aria-hidden="true">⠿</span>
           <span className={styles.Logo}>Lexical Fountain</span>
-          <span className={styles.ModeTag} data-testid="mode-tag">{isGame ? "Guess" : "Discovery"}</span>
+          <span className={styles.ModeTag} data-testid="mode-tag">{isGame ? "Guess" : store.view === "puzzle" ? "Connect" : "Discovery"}</span>
         </div>
         <div className={styles.TopControls}>
           {collapsed && isGame && <CompactClock gameStore={gameStore} />}
@@ -148,11 +148,13 @@ const AnalogyDashboardComponent = (props: AnalogyDashboardProps) => {
 const DashboardBody = observer(({ store, gameStore, isGame }: { store: MenuStore; gameStore: GameStore; isGame: boolean }) => {
   return (
     <>
-      {isGame ? <GameHud gameStore={gameStore} /> : <StatusLine store={store} />}
+      {isGame ? <GameHud gameStore={gameStore} /> : store.view === "puzzle" ? <PuzzleHud gameStore={gameStore} /> : <StatusLine store={store} />}
       <GameOverCard stores={rootStores} />
-      <div className={styles.AnalogyRow}>
-        <Formula words={store.selectedWordTexts} picks={picksFor(store.view)} />
-      </div>
+      {store.view !== "puzzle" && (
+        <div className={styles.AnalogyRow}>
+          <Formula words={store.selectedWordTexts} picks={picksFor(store.view)} />
+        </div>
+      )}
       <LastPlayCard store={store} />
       <ConsentPrompt />
       {!isGame && <WordEntryForm store={store} />}

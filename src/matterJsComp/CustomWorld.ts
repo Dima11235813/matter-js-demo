@@ -259,8 +259,9 @@ export class CustomWorld implements WordWorld {
     }
     addShape = (mx: number, my: number) => {
         const { view } = stores.menuStore
-        // Timed rounds have a scarce, dealt word supply: clicking empty space adds nothing.
-        if (view === "game") return
+        // Timed rounds have a scarce, dealt word supply, and Connect counts every word as a move:
+        // clicking empty space adds nothing.
+        if (view === "game" || view === "puzzle") return
         if (view === "fountain") {
             if (!semanticEngine.isReady) return
             const [randomWord] = semanticEngine.randomWords(1)

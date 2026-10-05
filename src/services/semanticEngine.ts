@@ -19,6 +19,7 @@ import relationPairsText from "../../data/vocab/relation-pairs.txt?raw";
 import { dealRelationPairs, DealRelationOptions, parseRelationBank, RelationBank, RelationDeal } from "../game/relationPairs";
 import { RelationStats } from "../game/relationHint";
 import { difficultyOf, NEW_RATING, Rating, RATING_RULES, rateGuess } from "../game/rating";
+import { BASE_RULES, ConnectNode, ConnectRules } from "../game/connectAll";
 import { playLogExport, PlayLogExport, summarizePlayLog, PlayLogSummary } from "../game/playLog";
 import { logger } from "../utils/logger";
 
@@ -68,6 +69,7 @@ interface Loaded {
  */
 export class SemanticEngine {
     private loaded: Loaded | undefined;
+    private candidatesCache: ConnectNode[] | undefined;
     private startPromise: Promise<void> | undefined;
     /** Groups this page load's plays in the play log without identifying the player. */
     readonly sessionId = crypto.randomUUID();
@@ -245,6 +247,31 @@ export class SemanticEngine {
     /** Dev and e2e: seed a persona's rating. */
     async setRating(value: number): Promise<void> {
         await this.require().repo.updateMeta({ rating: { value, plays: RATING_RULES.provisionalPlays } });
+    }
+
+    /** Connect-All moves and puzzle words: the 8,000 most frequent allowed plain words (cached). */
+    connectCandidates(): ConnectNode[] {
+        const { index, policy } = this.require();
+        if (!this.candidatesCache) {
+            const out: ConnectNode[] = [];
+            for (let rank = 0; rank < Math.min(8000, index.baseSize); rank++) {
+                const word = index.baseWordAt(rank);
+                if (/^[a-z]{3,}$/.test(word) && policy.isAllowed(word)) out.push({ word, vector: index.getVector(word)!, rank });
+            }
+            this.candidatesCache = out;
+        }
+        return this.candidatesCache;
+    }
+
+    /** Any known word as a Connect-All node (player words rank after the vocabulary). */
+    connectNode(word: string): ConnectNode | undefined {
+        const vector = this.lookup(word);
+        return vector ? { word: normalizeWord(word), vector, rank: this.rankOf(word) } : undefined;
+    }
+
+    /** Connect-All rules (research: base rules at this vocabulary's p99 link). */
+    connectRules(): ConnectRules {
+        return { ...BASE_RULES, link: this.calibration.p99 };
     }
 
     /** Relation categories a round can deal (Feature 2.12 picks one by rating). */
