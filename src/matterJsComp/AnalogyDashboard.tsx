@@ -66,7 +66,9 @@ const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
     <div className={styles.LogCard} data-testid="last-play">
       <div className={styles.LogText}>
         <WordLink word={a} /> : <WordLink word={b} /> :: <WordLink word={c} /> : <WordLink word={answer} strong />
-        <span className={points < 0 ? styles.PointsNegative : styles.Points}> {points >= 0 ? "+" : ""}{points}{isNewQuestion && verdict === undefined ? " new!" : ""}</span>
+        {guess || verdict !== undefined
+          ? <span className={points < 0 ? styles.PointsNegative : styles.Points}> {points >= 0 ? "+" : ""}{points}</span>
+          : isNewQuestion && <span className={styles.Points} title="Nobody on this device asked this before"> new!</span>}
         <button
           type="button"
           className={styles.FocusAll}

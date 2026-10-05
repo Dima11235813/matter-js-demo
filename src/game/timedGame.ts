@@ -45,14 +45,6 @@ export interface PlayOutcome {
     wordsToDeal: number;
 }
 
-/**
- * Lifetime (sandbox) points for one analogy: cosine of the answer to the target, as a percentage,
- * minimum 10. Timed rounds score designed plays instead (game/relationPairs.ts).
- */
-export function analogyPoints(similarity: number): number {
-    return Math.max(10, Math.round(similarity * 100));
-}
-
 export function startGame(now: number, rules: TimedGameRules = defaultTimedRules): TimedGameState {
     return {
         phase: "running",

@@ -303,6 +303,9 @@ test.describe('privacy: consent, age question, export, erase', () => {
     await wordBox(page).fill('king - man + woman');
     await wordBox(page).press('Enter');
     await expect(page.getByTestId('last-play')).toContainText('queen');
+    // Discovery earns no points; a correct guess does (Feature 2.13).
+    expect(await scoreOf(page)).toBe(0);
+    await earnGuessPoints(page);
 
     await page.locator('#privacy-toggle').click();
     const panel = page.getByTestId('privacy-panel');
@@ -311,7 +314,7 @@ test.describe('privacy: consent, age question, export, erase', () => {
     const exported = JSON.parse(text);
     expect(exported.kind).toBe('lexical-fountain-my-data');
     expect(exported.analogies.map((a: { id: string }) => a.id)).toContain('man:king::woman');
-    expect(exported.profile.score).toBeGreaterThan(0);
+    expect(exported.profile.score).toBe(100);
     expect(text).not.toContain('deviceSecret');
 
     await panel.getByRole('button', { name: 'Erase this device' }).click();
@@ -415,6 +418,18 @@ test('one board across modes: a word spelled in letters mode carries into Discov
 type AccountHandle = { account: { devSignIn(s: string): Promise<void>; signOut(): Promise<void>; syncNow(): Promise<void>; state(): { user?: { uid: string }; status: string } } };
 const accountOf = (page: Page) => page.evaluate(() => (window.__lexical as unknown as AccountHandle).account.state());
 const scoreOf = (page: Page) => page.evaluate(() => (window.__lexical.stores.menuStore as unknown as { score: number }).score);
+
+/** Points come only from correct guesses (Discovery earns none): play one in a Guess round, then return to Discovery. */
+async function earnGuessPoints(page: Page) {
+  const before = await scoreOf(page);
+  await page.locator('#game-toggle').click();
+  await expect(page.getByTestId('round-relation')).toBeVisible({ timeout: 20_000 });
+  const quad = await page.evaluate(() => (window.__lexical as unknown as { guess: { playCorrect(): Promise<string[] | null> } }).guess.playCorrect());
+  expect(quad).not.toBeNull();
+  await expect.poll(() => scoreOf(page)).toBe(before + 100);
+  await page.locator('#fountain-toggle').click();
+  await expect(page.getByTestId('mode-tag')).toHaveText('Discovery');
+}
 const analogyIds = (page: Page) => page.evaluate(async () => {
   const data = await (window.__lexical.semanticEngine as unknown as { exportAllData(): Promise<{ analogies: { id: string }[] }> }).exportAllData();
   return data.analogies.map(a => a.id).sort();
@@ -450,9 +465,10 @@ test('two devices sign in to the same account (no Google) and converge through t
   // Offline play as a guest on each device; the first account signed in on a device adopts that progress.
   await playAs(laptop, 'king - man + woman');
   await playAs(phone, 'paris - france + italy');
-  await expect.poll(() => scoreOf(laptop)).toBeGreaterThan(0);
-  await expect.poll(() => scoreOf(phone)).toBeGreaterThan(0);
+  await earnGuessPoints(laptop);
+  await earnGuessPoints(phone);
   const expected = (await scoreOf(laptop)) + (await scoreOf(phone));
+  expect(expected).toBe(200);
 
   await test.step('laptop signs in', () => signInAs(laptop, subject));
   await test.step('phone signs in', () => signInAs(phone, subject));
@@ -479,7 +495,7 @@ test('test personas are separate accounts on one device, each with its own progr
   // First persona on this device: adopts the guest's (empty) progress, then plays.
   await signInAs(page, novice);
   await playAs(page, 'king - man + woman');
-  await expect.poll(() => scoreOf(page)).toBeGreaterThan(0);
+  await earnGuessPoints(page);
   const noviceScore = await scoreOf(page);
   await page.evaluate(() => (window.__lexical as unknown as AccountHandle).account.syncNow());
 

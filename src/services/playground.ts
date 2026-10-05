@@ -310,9 +310,9 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
         return;
     }
     const { result, isNewQuestion } = play;
-    // In a timed round the round rules decide the points (repeats score 0); lifetime score still accrues.
+    // Discovery earns no points (Feature 2.13); only a typed play inside a round is scored by its rules.
     const round = menuStore.view === "game" ? recordRoundAnalogy(stores, result) : undefined;
-    const points = round ? round.points : play.points;
+    const points = round ? round.points : 0;
     // A dealt word in the solver's top 3 completes a designed play: the play lands on that word.
     const answer = round?.answer ?? result.answer;
     const stats = semanticEngine.relationStats(a, b, c, answer);
@@ -347,6 +347,6 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
         designed: round ? designedAnswer(deal?.pairs ?? [], a, b, c) !== undefined : undefined,
         points, duplicate: round?.duplicate,
     }));
-    menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${answer} (${points >= 0 ? "+" : ""}${points} pts)`);
+    menuStore.setLastAnalogy(round ? `${a} is to ${b} as ${c} is to ${answer} (${points >= 0 ? "+" : ""}${points} pts)` : `${a} is to ${b} as ${c} is to ${answer}`);
     await refreshStats(menuStore);
 }

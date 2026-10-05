@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { analogyPoints, applyPlay, defaultTimedRules, nextRewardAt, remainingMs, startGame, tick, TimedGameRules } from '../src/game/timedGame';
+import { applyPlay, defaultTimedRules, nextRewardAt, remainingMs, startGame, tick, TimedGameRules } from '../src/game/timedGame';
 import { dealWords } from '../src/game/dealer';
 import { buildIndex } from './helpers/indexFixtures';
 
@@ -16,11 +16,6 @@ describe('timed game rules', () => {
     const s = tick(startGame(0, rules), 60_000);
     expect(s.phase).toBe('over');
     expect(remainingMs(s, 60_000)).toBe(0);
-  });
-
-  it('scores sandbox plays by similarity, minimum 10', () => {
-    expect(analogyPoints(0.62)).toBe(62);
-    expect(analogyPoints(0.02)).toBe(10);
   });
 
   it('deals reward words at each score milestone', () => {

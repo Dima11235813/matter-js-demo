@@ -12,7 +12,6 @@ import type { PrivacySnapshot } from "../stores/PrivacyStore";
 import type { SyncPort } from "../account/syncService";
 import { activeAccount, clearAdoption, dbNameFor, GUEST_DB_NAME, pendingAdoption } from "../account/profiles";
 import { dealWords } from "../game/dealer";
-import { analogyPoints } from "../game/timedGame";
 import { extractKeywords, KeywordResult } from "../game/keywords";
 import { expressionAsAnalogy, ExpressionTerm } from "../game/wordEntry";
 import stopwordsText from "../../data/vocab/stopwords.txt?raw";
@@ -26,12 +25,11 @@ export type AddWordOutcome =
     | { status: "added" | "known"; word: string }
     | { status: "invalid" | "blocked" | "failed"; word: string; reason: string };
 
+/** A Discovery play: the model's answer, recorded in the analogy collection. It earns no points (Feature 2.13). */
 export interface AnalogyPlay {
     result: AnalogyResult;
     record: AnalogyRecord;
-    points: number;
     isNewQuestion: boolean;
-    score: number;
 }
 
 export interface CorpusStats {
@@ -54,7 +52,6 @@ export type ExpressionOutcome =
 const WORD_PATTERN = /^[a-z]{2,24}$/;
 const STOPWORDS: ReadonlySet<string> = new Set(parseWordList(stopwordsText));
 const RELATION_BANK: RelationBank = parseRelationBank(relationPairsText);
-const NEW_QUESTION_BONUS = 25;
 
 interface Loaded {
     manifest: VocabManifest;
@@ -182,10 +179,7 @@ export class SemanticEngine {
         const result = solveAnalogy(index, normalizeWord(a), normalizeWord(b), normalizeWord(c), policy.isAllowed);
         if (!result) return undefined;
         const record = await repo.recordAnalogy(result, manifest.version);
-        const isNewQuestion = record.timesPlayed === 1;
-        const points = analogyPoints(result.similarity) + (isNewQuestion ? NEW_QUESTION_BONUS : 0);
-        const score = await repo.addScore(points);
-        return { result, record, points, isNewQuestion, score };
+        return { result, record, isNewQuestion: record.timesPlayed === 1 };
     }
 
     /**

@@ -3,6 +3,8 @@ import { stores } from "./stores";
 import { semanticEngine } from "./services/semanticEngine";
 import { layoutFidelity, LayoutFidelity } from "./physics/layoutMetrics";
 import { devSignIn, signOut, syncNow } from "./services/account";
+import { playGuess } from "./services/playground";
+import { gradeGuess } from "./game/relationPairs";
 
 export interface WordBoxProbe {
     text: string
@@ -33,6 +35,21 @@ export function installDevtools(): void {
             syncNow: () => syncNow(),
             signOut: () => signOut(),
             state: () => ({ user: stores.accountStore.user, status: stores.accountStore.status, message: stores.accountStore.message }),
+        },
+        /**
+         * Dev and e2e only: plays a correct guess from the running round's deal through the real use case
+         * (tests that need points, like sync and personas, earn them this way). Null outside a round.
+         */
+        guess: {
+            playCorrect: async (): Promise<string[] | null> => {
+                const pairs = stores.gameStore.relationDeal?.pairs ?? [];
+                for (const p of pairs) for (const q of pairs) {
+                    if (p === q || !gradeGuess(pairs, p.x, p.y, q.x, q.y).correct) continue;
+                    await playGuess(stores, p.x, p.y, q.x, q.y);
+                    return [p.x, p.y, q.x, q.y];
+                }
+                return null;
+            },
         },
         /** Words currently highlighted by focus (new words, HUD links, the analogies panel). */
         focusedWords: (): string[] => deps.activeWorld?.focusedWords() ?? [],
