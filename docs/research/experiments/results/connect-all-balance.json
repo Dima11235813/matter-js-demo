@@ -1,0 +1,205 @@
+{
+  "p99": 0.2297,
+  "templates": [
+    {
+      "pairs": 3,
+      "loose": 0
+    },
+    {
+      "pairs": 3,
+      "loose": 1
+    },
+    {
+      "pairs": 2,
+      "loose": 2
+    },
+    {
+      "pairs": 3,
+      "loose": 2
+    },
+    {
+      "pairs": 2,
+      "loose": 4
+    }
+  ],
+  "maxMoves": 15,
+  "failMoves": 20,
+  "candidates": 7948,
+  "results": {
+    "base": {
+      "rules": {
+        "link": 0.2297,
+        "hubRank": 0,
+        "hubLink": 0.23,
+        "bannedTopN": 0,
+        "maxLinksPerMove": null
+      },
+      "solvable": 84,
+      "puzzles": 100,
+      "bands": {
+        "easy": 21,
+        "medium": 49,
+        "hard": 14
+      },
+      "meanPar": 4.85,
+      "byBot": {
+        "solver": {
+          "solveRate": 1,
+          "meanOverPar": 0
+        },
+        "hub": {
+          "solveRate": 0.01,
+          "meanOverPar": 15.05
+        },
+        "nearest": {
+          "solveRate": 1,
+          "meanOverPar": 3.88
+        },
+        "random": {
+          "solveRate": 0,
+          "meanOverPar": 15.15
+        }
+      }
+    },
+    "hubStrict": {
+      "rules": {
+        "link": 0.2297,
+        "hubRank": 500,
+        "hubLink": 0.3097,
+        "bannedTopN": 0,
+        "maxLinksPerMove": null
+      },
+      "solvable": 74,
+      "puzzles": 100,
+      "bands": {
+        "easy": 21,
+        "medium": 37,
+        "hard": 16
+      },
+      "meanPar": 4.96,
+      "byBot": {
+        "solver": {
+          "solveRate": 1,
+          "meanOverPar": 0
+        },
+        "hub": {
+          "solveRate": 0,
+          "meanOverPar": 15.04
+        },
+        "nearest": {
+          "solveRate": 0.96,
+          "meanOverPar": 4.47
+        },
+        "random": {
+          "solveRate": 0,
+          "meanOverPar": 15.04
+        }
+      }
+    },
+    "bannedTop300": {
+      "rules": {
+        "link": 0.2297,
+        "hubRank": 0,
+        "hubLink": 0.23,
+        "bannedTopN": 300,
+        "maxLinksPerMove": null
+      },
+      "solvable": 84,
+      "puzzles": 100,
+      "bands": {
+        "easy": 21,
+        "medium": 48,
+        "hard": 15
+      },
+      "meanPar": 4.86,
+      "byBot": {
+        "solver": {
+          "solveRate": 1,
+          "meanOverPar": 0
+        },
+        "hub": {
+          "solveRate": 0,
+          "meanOverPar": 15.14
+        },
+        "nearest": {
+          "solveRate": 1,
+          "meanOverPar": 4.01
+        },
+        "random": {
+          "solveRate": 0,
+          "meanOverPar": 15.14
+        }
+      }
+    },
+    "cap2": {
+      "rules": {
+        "link": 0.2297,
+        "hubRank": 0,
+        "hubLink": 0.23,
+        "bannedTopN": 0,
+        "maxLinksPerMove": 2
+      },
+      "solvable": 67,
+      "puzzles": 100,
+      "bands": {
+        "easy": 20,
+        "medium": 19,
+        "hard": 28
+      },
+      "meanPar": 6.43,
+      "byBot": {
+        "solver": {
+          "solveRate": 1,
+          "meanOverPar": 0
+        },
+        "hub": {
+          "solveRate": 0,
+          "meanOverPar": 13.57
+        },
+        "nearest": {
+          "solveRate": 0.82,
+          "meanOverPar": 3.82
+        },
+        "random": {
+          "solveRate": 0,
+          "meanOverPar": 13.57
+        }
+      }
+    },
+    "hubStrictCap3": {
+      "rules": {
+        "link": 0.2297,
+        "hubRank": 500,
+        "hubLink": 0.3097,
+        "bannedTopN": 0,
+        "maxLinksPerMove": 3
+      },
+      "solvable": 74,
+      "puzzles": 100,
+      "bands": {
+        "easy": 16,
+        "medium": 33,
+        "hard": 25
+      },
+      "meanPar": 5.89,
+      "byBot": {
+        "solver": {
+          "solveRate": 1,
+          "meanOverPar": 0
+        },
+        "hub": {
+          "solveRate": 0,
+          "meanOverPar": 14.11
+        },
+        "nearest": {
+          "solveRate": 0.97,
+          "meanOverPar": 3.47
+        },
+        "random": {
+          "solveRate": 0,
+          "meanOverPar": 14.11
+        }
+      }
+    }
+  }
+}
