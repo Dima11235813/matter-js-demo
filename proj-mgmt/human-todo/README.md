@@ -16,5 +16,6 @@ Things only the owner can do: creating accounts, pasting values into `.env.local
 | 8 | [Workspace inventory: add this project and its secrets](08-workspace-inventory.md) | standards SEC-04 compliance | 10 min | ☐ |
 | 9 | [Open product decisions](09-decisions.md) | Stage B/C planning | — | ☐ |
 | 10 | [Housekeeping: old `master` branch, git stash, skill copy](10-housekeeping.md) | tidy repo | 5 min | ☐ |
+| 11 | [Approve workspace rule additions (AGENTS.md)](11-approve-workspace-rules.md) | the same habits in every project and agent | 5 min | ☐ |
 
 After finishing an item, tell the agent (or tick it here); the agent then continues the work it unblocks (e.g. after 5: watch the first deploy; after 2: an end-to-end Google sign-in check).

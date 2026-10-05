@@ -87,6 +87,19 @@ graph TD
     D -->|Production Release| E
 ```
 
+### Status snapshot (2026-10-04)
+* **Branches**: `develop` at `8f1e9cb` (letters fix, Discovery vs Guess, one board across modes); `main` still at `0ff0af2` (waits for owner play-test, then deploy setup in [human-todo](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/human-todo/README.md) 1–5).
+* **Shipped since 09-27**: the original letter game works again (lazy-dictionary regression, Epic 4 · 4.5.8) and merges letters dropped from high (4.5.9); **Discovery** (3 picks, the answer lands) vs **Guess** (4 picks graded against dealt relation pairs, +100 / 0, nothing spawns) (Epic 2 · 2.13); **one board across modes**: letters → Discovery → Guess keep their words (2.14).
+* **Tests**: 283 unit, 25 e2e. CI e2e flaked once on a docs-only commit (`8f1e9cb`; the same code passed on `376ca31`); logs need `gh auth login` (human-todo 10).
+* **Inventory of open work**: Epic 1: 9 open; Epic 2: 39 open (voice 2.7, website import 2.8, Connect-All 2.10, rating 2.12, Discovery points 2.13.5, letters-board return 2.14.4); Epic 3: 26 (server deploy 3.8.4, telemetry ingest 3.6); Epic 4: 6 (Vite upgrade 4.5.5, p5 → Canvas2D 4.5.7, letters word list 4.5.10, legacy e2e 4.5.3); Epic 5: 44 (zoom, detangle, molecule gravity 5.15, color hint 5.17, …); Epic 6: 6; Epic 7: 17. Owner: human-todo 1–11.
+* **Next, recommended order**:
+  1. **Finish the mode split** (small): Discovery earns no points (2.13.5); play-test Guess crowding when 20 Discovery words carry in (2.14.2 note).
+  2. **Letters → words quality** (Epic 4 · 4.5.10, Epic 2 · 2.14.4): a cleaner letters word list so sprinkling forms real words that carry into Discovery; show which merged boxes are real words; return to letters keeps the letter board.
+  3. **Test reliability** (Epic 4 · 4.5.3, Epic 7): retire the screenshot-only `gameplay.spec.ts`, make cold `page.goto` waits explicit, and read CI logs (needs `gh auth`).
+  4. **Go public** (owner human-todo 1–5 first): server deploy (Epic 3 · 3.8.4), then consented telemetry ingest (3.6). Guess plays are now clean research data (graded, no vector guesswork).
+  5. **Depth for players**: personas & rating built on Guess grading (2.12), Connect-All puzzles (2.10), color hint mode (5.17), molecule gravity (5.15).
+  6. **Platform health**: Vite 4 → current (4.5.5, security baseline), p5 → Canvas2D (4.5.7, −1 MB).
+
 ### Status snapshot (2026-09-27)
 * **Branches**: `feature/*` → `develop` → `main`; `main` and `develop` are at `019c3aa` (everything through multi-account personas). Merging to `main` deploys once the owner finishes [human-todo](file:///D:/GDrive/Dev/matter-js-demo/proj-mgmt/human-todo/README.md) items 1–5.
 * **Stage A (local hardening)**: ✅ per-device counters, consent + age, export/erase, CI on PRs (Epics 6, 7).
