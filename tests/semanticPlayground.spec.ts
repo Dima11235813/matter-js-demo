@@ -557,3 +557,37 @@ test('test personas are separate accounts on one device, each with its own progr
   expect((await accountOf(page)).user).toBeUndefined();
   expect(await scoreOf(page)).toBe(0);
 });
+
+test('personas have their own skill rating, and each is dealt relations of its level (Feature 2.12)', async ({ page }) => {
+  test.setTimeout(120_000); // three account switches, each a reload
+  const stamp = Date.now();
+  const [novice, expert] = [`rated-novice-${stamp}`, `rated-expert-${stamp}`];
+  type RatingHandle = { rating: { set(v: number): Promise<void>; get(): number }; guess: { playCorrect(): Promise<string[] | null> } };
+  const roundRelation = async () => {
+    await page.locator('#game-toggle').click();
+    await expect(page.getByTestId('round-relation')).toBeVisible({ timeout: 20_000 });
+    return page.evaluate(() => (window.__lexical.stores.gameStore as unknown as { relationDeal: { category: string } }).relationDeal.category);
+  };
+  const easy = ['family', 'gram2-opposite', 'gram3-comparative', 'gram5-present-participle'];
+  const hard = ['city-in-state', 'capital-world', 'gram6-nationality-adjective'];
+  await openSandbox(page, '2d');
+
+  await signInAs(page, novice);
+  await page.evaluate(() => (window.__lexical as unknown as RatingHandle).rating.set(800));
+  expect(easy).toContain(await roundRelation());
+  // A correct guess raises the rating, and the HUD shows by how much.
+  await page.evaluate(() => (window.__lexical as unknown as RatingHandle).guess.playCorrect());
+  await expect.poll(() => page.evaluate(() => (window.__lexical as unknown as RatingHandle).rating.get())).toBeGreaterThan(800);
+  await expect(page.getByTestId('player-rating')).toContainText('+');
+  const noviceRating = await page.evaluate(() => (window.__lexical as unknown as RatingHandle).rating.get());
+  await page.locator('#fountain-toggle').click();
+
+  await signInAs(page, expert);
+  expect(await page.evaluate(() => (window.__lexical as unknown as RatingHandle).rating.get())).toBe(1000);
+  await page.evaluate(() => (window.__lexical as unknown as RatingHandle).rating.set(1600));
+  expect(hard).toContain(await roundRelation());
+  await page.locator('#fountain-toggle').click();
+
+  await signInAs(page, novice);
+  expect(await page.evaluate(() => (window.__lexical as unknown as RatingHandle).rating.get())).toBe(noviceRating);
+});

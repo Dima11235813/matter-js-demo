@@ -126,6 +126,8 @@ export interface MetaRecord {
     consentPromptDismissedAt?: number;
     /** The server's opaque pull cursor for this device's account (Epic 3 · Feature 3.8). */
     syncCursor?: string;
+    /** Guess-mode skill rating (Epic 2 · Feature 2.12); per account database, so per persona. Not synced yet. */
+    rating?: { value: number; plays: number };
 }
 
 export interface LexicalSchema extends DBSchema {

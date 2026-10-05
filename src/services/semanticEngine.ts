@@ -18,6 +18,7 @@ import stopwordsText from "../../data/vocab/stopwords.txt?raw";
 import relationPairsText from "../../data/vocab/relation-pairs.txt?raw";
 import { dealRelationPairs, DealRelationOptions, parseRelationBank, RelationBank, RelationDeal } from "../game/relationPairs";
 import { RelationStats } from "../game/relationHint";
+import { difficultyOf, NEW_RATING, Rating, RATING_RULES, rateGuess } from "../game/rating";
 import { playLogExport, PlayLogExport, summarizePlayLog, PlayLogSummary } from "../game/playLog";
 import { logger } from "../utils/logger";
 
@@ -226,6 +227,29 @@ export class SemanticEngine {
         }
         const neighbors = solveExpression(index, terms, policy.isAllowed);
         return neighbors && neighbors.length > 0 ? { kind: "sum", neighbors } : { kind: "none" };
+    }
+
+    /** The player's Guess rating (Feature 2.12); a new player starts at 1000. */
+    get rating(): Rating {
+        return this.loaded?.repo.rating ?? NEW_RATING;
+    }
+
+    /** Updates the rating after a graded guess in a relation category; returns the new rating. */
+    async rateGuess(category: string, correct: boolean): Promise<Rating> {
+        const { repo } = this.require();
+        const next = rateGuess(this.rating, difficultyOf(category), correct);
+        await repo.updateMeta({ rating: next });
+        return next;
+    }
+
+    /** Dev and e2e: seed a persona's rating. */
+    async setRating(value: number): Promise<void> {
+        await this.require().repo.updateMeta({ rating: { value, plays: RATING_RULES.provisionalPlays } });
+    }
+
+    /** Relation categories a round can deal (Feature 2.12 picks one by rating). */
+    relationCategories(): string[] {
+        return [...RELATION_BANK.keys()];
     }
 
     /** Relation pairs for a timed round (designed questions); only words the index knows and allows. */

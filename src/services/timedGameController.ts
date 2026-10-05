@@ -2,6 +2,7 @@ import deps from "../matterJsComp/Deps";
 import { AnalogyResult } from "../embeddings/analogy";
 import { applyPlay, PlayOutcome, startGame, tick, TIMED_RULES_VERSION, TimedGameState } from "../game/timedGame";
 import { DesignedScore, GuessGrade, gradeGuess, scoreDesignedPlay } from "../game/relationPairs";
+import { pickCategory } from "../game/rating";
 import { analogyKey } from "../persistence/LexicalRepository";
 import { RootStore } from "../stores/RootStore";
 import { logger } from "../utils/logger";
@@ -33,7 +34,9 @@ export function startTimedRound(stores: RootStore, carried: readonly SpawnReques
     gameStore.setNow(now);
     gameStore.setGame(startGame(now, gameStore.rules));
     // Designed questions: 3 pairs share the round's relation, 2 more come from another relation.
-    const deal = semanticEngine.dealRelationPairs({ mainPairs: 3, otherPairs: 2, inPlay: carried.map(r => r.word) });
+    // The round's relation comes from the categories nearest the player's rating (Feature 2.12).
+    const category = pickCategory(gameStore.rating, semanticEngine.relationCategories());
+    const deal = semanticEngine.dealRelationPairs({ mainPairs: 3, otherPairs: 2, inPlay: carried.map(r => r.word), category });
     gameStore.setRelationDeal(deal);
     queueWords(deal.words);
     timer = setInterval(() => tickRound(stores), TICK_MS);

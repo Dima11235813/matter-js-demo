@@ -120,6 +120,10 @@ export class LexicalRepository {
         return this.meta.syncCursor;
     }
 
+    get rating(): { value: number; plays: number } | undefined {
+        return this.meta.rating;
+    }
+
     async updateMeta(changes: Partial<Omit<MetaRecord, "id" | "deviceSecret">>): Promise<void> {
         this.meta = { ...this.meta, ...changes };
         await this.db.put("meta", this.meta);

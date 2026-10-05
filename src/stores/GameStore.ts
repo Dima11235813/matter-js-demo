@@ -17,6 +17,10 @@ export class GameStore extends CommonStore {
     layout3d: Layout3d = loadLayout3d()
     /** Color hint mode (Feature 5.17): similar meanings get similar colors. Per device; independent of hint mode. */
     colorHints: boolean = loadColorHints()
+    /** Guess-mode skill rating (Feature 2.12): sets the relation each round deals. */
+    rating = 1000
+    /** How much the last graded guess moved the rating. */
+    lastRatingChange: number | null = null
     game: TimedGameState | null = null
     now = Date.now()
     bestScore = 0
@@ -35,6 +39,9 @@ export class GameStore extends CommonStore {
             setLayout3d: action,
             colorHints: observable,
             setColorHints: action,
+            rating: observable,
+            lastRatingChange: observable,
+            setRating: action,
             spaceActive: computed,
             setDimension: action,
             game: observable.ref,
@@ -69,6 +76,11 @@ export class GameStore extends CommonStore {
 
     setColorHints = (on: boolean) => {
         this.colorHints = on
+    }
+
+    setRating = (rating: number, change: number | null = null) => {
+        this.rating = rating
+        this.lastRatingChange = change
     }
 
     get remainingMs(): number {

@@ -48,6 +48,7 @@ export async function bootSemanticPlayground(stores: RootStore): Promise<void> {
         gameStore.setHintMode(semanticEngine.hintMode);
         gameStore.setDimension(semanticEngine.dimension);
         gameStore.setBestScore(await semanticEngine.bestGameScore());
+        gameStore.setRating(semanticEngine.rating.value);
         await refreshStats(menuStore);
         stores.privacyStore.load(semanticEngine.privacyState());
         menuStore.setEngineStatus("ready");
@@ -129,6 +130,13 @@ export async function playGuess(stores: RootStore, a: string, b: string, c: stri
     const { menuStore } = stores;
     const round = recordRoundGuess(stores, a, b, c, d);
     if (!round) return;
+    // Rating (Feature 2.12): a correct guess counts in its relation; a wrong one in the round's relation.
+    const relation = round.category ?? stores.gameStore.relationDeal?.category;
+    if (!round.duplicate && relation) {
+        const before = stores.gameStore.rating;
+        const next = await semanticEngine.rateGuess(relation, round.correct);
+        stores.gameStore.setRating(next.value, next.value - before);
+    }
     const result = await semanticEngine.playGuess(a, b, c, round.points);
     const stats = semanticEngine.relationStats(a, b, c, d);
     const { p90, p95, p99 } = semanticEngine.calibration;
@@ -154,7 +162,7 @@ export async function playGuess(stores: RootStore, a: string, b: string, c: stri
     void semanticEngine.logPlay("analogy", playContext(stores), analogyPayload({
         a, b, c, answer: d, modelAnswer: lastPlay.modelAnswer,
         ranked, input: "click", stats, hint, verdict: lastPlay.verdict,
-        designed: round.correct, points: round.points, duplicate: round.duplicate, guess: true,
+        designed: round.correct, points: round.points, duplicate: round.duplicate, guess: true, rating: stores.gameStore.rating,
     }));
     menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${d}: ${round.correct ? `a real analogy (+${round.points} pts)` : "not an analogy from this round"}`);
     await refreshStats(menuStore);

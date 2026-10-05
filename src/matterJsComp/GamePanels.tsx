@@ -96,6 +96,12 @@ export const GameHud = observer(({ gameStore }: { gameStore: GameStore }) => {
         <span>{countLabel(game.analogies, "analogy", "analogies")} · {countLabel(game.dealt, "word", "words")} dealt</span>
         <span>{nextAt !== undefined ? `+${rules.wordsPerReward} words at ${nextAt} pts` : "no more words this round"}</span>
         <span>best {bestScore}</span>
+        <span data-testid="player-rating" title="Your Guess rating: it rises with correct guesses (more for harder relations) and picks how hard each round's relation is">
+          rating {gameStore.rating}
+          {gameStore.lastRatingChange !== null && gameStore.lastRatingChange !== 0 && (
+            <span className={gameStore.lastRatingChange > 0 ? styles.Points : styles.PointsNegative}> {gameStore.lastRatingChange > 0 ? "+" : ""}{gameStore.lastRatingChange}</span>
+          )}
+        </span>
       </div>
     </div>
   );

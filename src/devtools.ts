@@ -51,6 +51,11 @@ export function installDevtools(): void {
                 return null;
             },
         },
+        /** Dev and e2e only: seed the current account's (persona's) Guess rating (Feature 2.12). */
+        rating: {
+            set: async (value: number) => { await semanticEngine.setRating(value); stores.gameStore.setRating(value); },
+            get: () => stores.gameStore.rating,
+        },
         /** Words currently highlighted by focus (new words, HUD links, the analogies panel). */
         focusedWords: (): string[] => deps.activeWorld?.focusedWords() ?? [],
         /** Fidelity in the world's own space: 2D pixels or 3D world units. */
