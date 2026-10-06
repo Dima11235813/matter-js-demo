@@ -30,6 +30,13 @@ export class TypographyDisplay {
             p.pop()
         }
     }
+    private flashMessage = ""
+    private flashUntil = 0
+    /** A short note under the carry list (e.g. "the board is full"). */
+    flash = (message: string, ms: number = 2500) => {
+        this.flashMessage = message
+        this.flashUntil = performance.now() + ms
+    }
     /** Letters mode: the words that will carry into Discovery and Guess (outlined on the board). */
     carryList = (): string[] => {
         const words = this.shapesFac.boxes.filter(box => box.body && box.carriesFromLetters()).map(box => box.text.toLowerCase())
@@ -46,6 +53,7 @@ export class TypographyDisplay {
         p.textSize(14)
         p.textAlign(p.LEFT, p.TOP)
         p.text(words.length > 0 ? `Carries into Discovery: ${words.join(", ")}` : "Spell words: outlined words carry into Discovery", 20, 84)
+        if (performance.now() < this.flashUntil) p.text(this.flashMessage, 20, 104)
         p.pop()
     }
 }

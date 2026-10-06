@@ -721,3 +721,24 @@ test('3D: + mode taps add words and keep the view still; hand mode drags rotate 
   await drag();
   expect(Math.abs((await azimuth()) - beforeHand)).toBeGreaterThan(0.2);
 });
+
+test('letters mode: drops are paced and spread out, and every letter is the same tile (owner, 2026-10-06)', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
+  await page.bringToFront();
+  await page.locator('#sandbox-toggle').click();
+  await page.waitForFunction(`(${lettersWorld})()?.collisionHandler.tools !== undefined`, null, { timeout: 15_000 });
+  await page.evaluate(`(() => { const f = (${lettersWorld})().shapesFac; window.__drops = 0; const orig = f.createBox; f.createBox = o => { window.__drops++; return orig(o); }; })()`);
+  const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
+  // An 80-event drag across the board used to drop a letter on almost every event.
+  await page.mouse.move(canvas.x + 200, canvas.y + 300);
+  await page.mouse.down();
+  for (let i = 0; i < 80; i++) { await page.mouse.move(canvas.x + 200 + i * 10, canvas.y + 300); await page.waitForTimeout(25); }
+  await page.mouse.up();
+  const drops = await page.evaluate(() => (window as unknown as { __drops: number }).__drops);
+  expect(drops).toBeGreaterThan(5);
+  expect(drops).toBeLessThanOrEqual(20);
+  // One tile size for every single letter.
+  const sizes = await page.evaluate(`[...new Set((${lettersWorld})().shapesFac.boxes.filter(b => b.body && b.text.length === 1).map(b => Math.round(b.boxOptions.w)))]`);
+  expect(sizes).toEqual([36]);
+});

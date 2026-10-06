@@ -11,6 +11,7 @@ import { AppModes } from "./models/appMode";
 import { semanticEngine } from "../services/semanticEngine";
 import { colorHintPainter } from "../services/colorHints";
 import { boardZoom } from "../physics/boardZoom";
+import { canDrop, DropState, LETTER_DROPS } from "../game/letterDrops";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { focusTargets, LetterSnapshot, WordProbe, WordWorld } from "./wordWorld";
 import { isWordView } from "../stores/MenuStore";
@@ -311,7 +312,9 @@ export class CustomWorld implements WordWorld {
         }
         return false
     }
-    addShape = (mx: number, my: number) => {
+    /** Letters mode pacing: the last drop (see game/letterDrops.ts). */
+    private lastDrop: DropState | undefined
+    addShape = (mx: number, my: number, dragging: boolean = false) => {
         const { view } = stores.menuStore
         // Timed rounds have a scarce, dealt word supply, and Connect counts every word as a move:
         // clicking empty space adds nothing.
@@ -323,11 +326,22 @@ export class CustomWorld implements WordWorld {
         } else {
             const previewTopBarHeight = 75
             if (my < previewTopBarHeight) return
-            const { rectWidth, rectHeight } = shapeOptions.getNewShapeOptions()
-            let newBoxOptions: ShapeBase = {
-                x: mx, y: my, w: rectWidth, h: rectHeight, options: {}, border: 1
+            // One letter at a time (owner, 2026-10-06): paced, spread out when dragging, capped per board.
+            const onBoard = this.shapesFac.boxes.filter(b => b.body).length
+            const now = performance.now()
+            const verdict = canDrop(this.lastDrop, now, mx, my, onBoard, dragging)
+            if (!verdict.ok) {
+                if (verdict.reason === "full") this.typographyDisplay.flash(`The board holds ${LETTER_DROPS.maxOnBoard} pieces: merge letters into words first`)
+                return
             }
-            this.shapesFac.createBox(decordateWithTextProps(newBoxOptions))
+            this.lastDrop = { lastAt: now, lastX: mx, lastY: my }
+            const tile = LETTER_DROPS.tile
+            let newBoxOptions: ShapeBase = {
+                x: mx, y: my, w: tile, h: tile, options: {}, border: 1
+            }
+            const options = decordateWithTextProps(newBoxOptions)
+            options.textSize = tile * 0.6
+            this.shapesFac.createBox(options)
         }
     }
     draw = () => {

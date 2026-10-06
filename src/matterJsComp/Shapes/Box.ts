@@ -137,7 +137,8 @@ export class Box {
             else {
                 p.translate(position.x, position.y)
                 p.rotate(angle)
-                p.rect(0, 0, w - Box.border, h - Box.border)
+                // Rounded tiles (letters mode and word boxes alike).
+                p.rect(0, 0, w - Box.border, h - Box.border, Math.min(8, h / 5))
                 this.drawFocusRing(p, w, h, palette.thread)
             }
 
@@ -149,6 +150,8 @@ export class Box {
                 const { textSize = 20 } = textOptions
                 p.textAlign(p.CENTER, p.CENTER)
                 p.textSize(textSize)
+                // Letters mode: bold letters on the tiles.
+                p.textStyle(stores.menuStore.view === "sandbox" ? p.BOLD : p.NORMAL)
                 p.textFont(WORD_FONT_FAMILY)
                 p.text(this.text, 0, 2)
             }

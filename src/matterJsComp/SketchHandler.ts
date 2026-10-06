@@ -66,13 +66,13 @@ export class SketchHandler {
     }
     press = (x: number, y: number, slop: number = 0) => {
         this.customWorld?.catogorizeClickType(x, y, slop)
-        if (stores.menuStore.mode === AppModes.CREATE) this.conditionallyHandleClickOrDrag(x, y)
+        if (stores.menuStore.mode === AppModes.CREATE) this.conditionallyHandleClickOrDrag(x, y, false)
     }
     drag = (x: number, y: number) => {
         if (stores.menuStore.mode === AppModes.MOVE && deps.boxLastClicked) {
             this.customWorld?.moveBoxIfOneSelected(x, y)
         }
-        this.conditionallyHandleClickOrDrag(x, y)
+        this.conditionallyHandleClickOrDrag(x, y, true)
     }
     release = () => {
         if (stores.menuStore.mode === AppModes.MOVE && deps.boxLastClicked) {
@@ -93,12 +93,12 @@ export class SketchHandler {
         if (!event || !this.canvas) return true
         return event.target === this.canvas.elt
     }
-    conditionallyHandleClickOrDrag = (x: number, y: number) => {
+    conditionallyHandleClickOrDrag = (x: number, y: number, dragging: boolean = false) => {
         const { mode } = stores.menuStore
         if (
             mode === AppModes.CREATE && this.customWorld?.clickType === EventClickType.CREATE_LETTER_BOX
         ) {
-            this.customWorld?.addShape(x, y)
+            this.customWorld?.addShape(x, y, dragging)
         }
     }
 }

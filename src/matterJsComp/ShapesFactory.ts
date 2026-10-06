@@ -1,4 +1,5 @@
 import { Box, WORD_FONT_FAMILY } from "./Shapes/Box";
+import { LETTER_DROPS, letterTileColor } from "../game/letterDrops";
 import { BoxOptions, HardBodyOptions, ShapeTypes, decordateWithTextProps, ShapeBase } from "./models/boxOptions";
 import p5 from "p5";
 import { World } from "matter-js";
@@ -60,6 +61,8 @@ export class ShapesFactory {
             const newPreviewBoxOptions = this.getPreviewBoxProps(xPos, yPos, previewBoxSize)
             const newPreviewBox = new Box(newPreviewBoxOptions)
             newPreviewBox.text = letter
+            // The picker shows each letter in its tile color, so it looks the same on the board.
+            newPreviewBox.setColor(letterTileColor(letter))
             newPreviewBox.boxOptions.type = ShapeTypes.LETTER_PREVIEW_BOX
             previewBoxes.push(newPreviewBox)
         })
@@ -122,18 +125,12 @@ export class ShapesFactory {
         if (!boxA_Ref || !boxB_Ref) {
             return
         }
-        const {
-            x: boxA_x,
-            y: boxA_y,
-        } = boxA_Ref.boxOptions
-        const {
-            x: boxB_x,
-            y: boxB_y,
-        } = boxB_Ref.boxOptions
-        
-        let newLen = newText.length
-        let newWidth = newLen * 30 + 18
-        let newHeight = 48
+        // The merged piece appears where the two pieces touched (it used to appear between the points
+        // where they were first dropped, so merges seemed to jump), sized to its text like a word box.
+        const { x: boxA_x, y: boxA_y } = bodyA.position
+        const { x: boxB_x, y: boxB_y } = bodyB.position
+        let newWidth = Math.ceil(this.measureWord(newText)) + 2 * 10
+        let newHeight = LETTER_DROPS.tile
 
         let newBoxOptions = {
             x: (boxA_x + boxB_x) / 2,
@@ -144,6 +141,8 @@ export class ShapesFactory {
             options: {}
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), newText)
+        newBox.setColor(boxA_Ref.color);
+        (newBox.boxOptions as BoxOptions).textSize = ShapesFactory.wordFontSize
         // Letter merges only gain an embedding when they spell a known word; no model call per merge.
         newBox.embedding = semanticEngine.lookup(newText)
 
@@ -162,6 +161,8 @@ export class ShapesFactory {
         let newBox = new Box(boxOptions)
         if (this.nextUpBox) {
             newBox.text = this.nextUpBox.text
+            // Letter tiles: vowels warm, consonants cool (game/letterDrops.ts).
+            newBox.setColor(letterTileColor(newBox.text))
             this.getNewTextForNextBoxPreview()
             this.updateBorderBasedOnLetter()
         }
