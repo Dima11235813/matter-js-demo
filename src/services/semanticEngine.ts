@@ -238,9 +238,9 @@ export class SemanticEngine {
     }
 
     /** Updates the rating after a graded guess in a relation category; returns the new rating. */
-    async rateGuess(category: string, correct: boolean, obviousPairs: number = 0): Promise<Rating> {
+    async rateGuess(category: string, outcome: boolean | number, obviousPairs: number = 0): Promise<Rating> {
         const { repo } = this.require();
-        const next = rateGuess(this.rating, difficultyOf(category, obviousPairs), correct);
+        const next = rateGuess(this.rating, difficultyOf(category, obviousPairs), outcome);
         await repo.updateMeta({ rating: next });
         return next;
     }

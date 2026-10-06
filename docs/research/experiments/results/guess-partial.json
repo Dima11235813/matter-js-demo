@@ -47,6 +47,12 @@
     "comfortable : low :: unclear : lowest  (gram2-opposite)",
     "comfortable : low :: tall : lowest  (gram2-opposite)"
   ],
+  "nearMissShare": 0.0063,
+  "shipped": {
+    "random": 0.79,
+    "halfInformed": 3.57,
+    "skilled": 100
+  },
   "carriedOnlyPerBoard": {
     "median": 12,
     "p10": 0,

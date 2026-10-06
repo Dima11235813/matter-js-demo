@@ -239,17 +239,17 @@ test('Guess mode: four picks are graded against the dealt pairs; nothing spawns 
     return false;
   }, { timeout: 15_000 }).toBe(true);
   const [p, q] = quad!;
-  // A wrong quad (the second pair reversed) earns nothing, and its words stay.
+  // A near miss (the second pair reversed) earns 25, and its words stay.
   for (const word of [p.x, p.y, q.y, q.x]) await pick(word);
-  await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: p.x, b: p.y, c: q.y, answer: q.x, points: 0, verdict: 'none', guess: true });
-  await expect(page.getByTestId('play-verdict')).toContainText('not an analogy');
-  expect((await state()).score).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: p.x, b: p.y, c: q.y, answer: q.x, points: 25, verdict: 'none', guess: true, nearMiss: true });
+  await expect(page.getByTestId('play-verdict')).toContainText('almost');
+  expect((await state()).score).toBe(25);
 
   // The correct quad scores, then its four words leave the board to make room.
   for (const word of [p.x, p.y, q.x, q.y]) await pick(word);
   await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: p.x, b: p.y, c: q.x, answer: q.y, points: 100, verdict: 'full', guess: true });
   await expect(page.getByTestId('play-verdict')).toContainText('a real analogy');
-  expect((await state()).score).toBe(100);
+  expect((await state()).score).toBe(125);
   await expect.poll(async () => (await boardWords(page)).filter(w => [p.x, p.y, q.x, q.y].includes(w)), { timeout: 5_000 }).toEqual([]);
 
   // Nothing spawned: every word on the board was there before the guesses or dealt as a reward pair.
@@ -683,8 +683,11 @@ test('3D: + mode taps add words and keep the view still; hand mode drags rotate 
   await expect.poll(async () => (await boardWords(page)).length, { timeout: 20_000 }).toBeGreaterThanOrEqual(8);
   await page.waitForTimeout(1_500);
   const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
-  type Space = { camera: { position: { x: number; y: number; z: number } } };
-  const cameraAt = () => page.evaluate(() => { const p = (window.__lexical.deps.activeWorld as unknown as Space).camera.position; return [p.x, p.y, p.z].map(v => Math.round(v)); });
+  // The view auto-frames (moves the camera in and out) as words arrive, so rotation is measured as the
+  // camera's azimuth around the orbit target, which framing doesn't change.
+  type Space = { controls: { getAzimuthalAngle(): number; enableRotate: boolean } };
+  const azimuth = () => page.evaluate(() => (window.__lexical.deps.activeWorld as unknown as Space).controls.getAzimuthalAngle());
+  const canRotate = () => page.evaluate(() => (window.__lexical.deps.activeWorld as unknown as Space).controls.enableRotate);
 
   // + mode (the default): a tap on empty space adds a word; taps on words only select them.
   const before = (await boardWords(page)).length;
@@ -703,13 +706,18 @@ test('3D: + mode taps add words and keep the view still; hand mode drags rotate 
     await page.mouse.up();
     await page.waitForTimeout(800);
   };
-  const still = await cameraAt();
+  // The camera director keeps re-framing (and re-orienting) the board until the player navigates; pause it
+  // so the test measures only what the drag does.
+  await page.evaluate(() => { (window.__lexical.deps.activeWorld as unknown as { director: { autoFrame: boolean } }).director.autoFrame = false; });
+  await page.waitForTimeout(1_500);
+  expect(await canRotate()).toBe(false);
+  const still = await azimuth();
   await drag();
-  const afterCreateDrag = await cameraAt();
-  // Hand mode: the same drag rotates the camera.
+  expect(Math.abs((await azimuth()) - still)).toBeLessThan(0.02);
+  // Hand mode: the same drag rotates the camera around the board.
   await page.getByRole('menuitem', { name: 'Move: drag words around' }).click();
+  await expect.poll(canRotate).toBe(true);
+  const beforeHand = await azimuth();
   await drag();
-  const afterMoveDrag = await cameraAt();
-  const moved = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
-  expect(moved(afterMoveDrag, afterCreateDrag)).toBeGreaterThan(5 * Math.max(1, moved(afterCreateDrag, still)));
+  expect(Math.abs((await azimuth()) - beforeHand)).toBeGreaterThan(0.2);
 });

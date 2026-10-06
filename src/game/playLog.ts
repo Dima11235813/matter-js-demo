@@ -32,6 +32,8 @@ export interface AnalogyPlayInput {
     guess?: boolean;
     /** Guess mode: the player's rating after this guess (Feature 2.12). */
     rating?: number;
+    /** Guess mode: the right pairs, one backwards (+25). */
+    nearMiss?: boolean;
 }
 
 const round3 = (value: number) => Math.round(value * 1000) / 1000;

@@ -63,9 +63,11 @@ export function relationDifficulty(category: string, obviousShare: number): numb
 export const SUBTLE_PAIRS_FROM = 1050;
 
 /** The rating after one graded guess: up when right, down when wrong, by how surprising that was. Bounded. */
-export function rateGuess(rating: Rating, difficulty: number, correct: boolean): Rating {
+/** `outcome`: true / 1 = solved, false / 0 = missed, 0.5 = a near miss (right pairs, one backwards). */
+export function rateGuess(rating: Rating, difficulty: number, outcome: boolean | number): Rating {
     const k = rating.plays < RATING_RULES.provisionalPlays ? RATING_RULES.kProvisional : RATING_RULES.k;
-    const next = rating.value + k * ((correct ? 1 : 0) - expectedScore(rating.value, difficulty));
+    const score = typeof outcome === "number" ? outcome : outcome ? 1 : 0;
+    const next = rating.value + k * (score - expectedScore(rating.value, difficulty));
     return { value: Math.round(Math.min(RATING_RULES.max, Math.max(RATING_RULES.min, next))), plays: rating.plays + 1 };
 }
 

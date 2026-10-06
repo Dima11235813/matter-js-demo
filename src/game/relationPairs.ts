@@ -188,7 +188,12 @@ export interface GuessGrade {
     points: number;
     /** A correct guess: how many of its two pairs are obvious word forms (heavy → heavier). */
     obviousPairs?: number;
+    /** Not correct, but both pairs are dealt pairs of one relation with one reversed (owner, 2026-10-05). */
+    nearMiss?: boolean;
 }
+
+/** A near miss (right pairs, one backwards) earns this: forgiving, but far below a real analogy. */
+export const NEAR_MISS_POINTS = 25;
 
 /** Guess mode: a correct four-word analogy earns this; anything else earns nothing (no penalty). */
 export const GUESS_POINTS = 100;
@@ -204,9 +209,27 @@ export function gradeGuess(pairs: readonly RelationPair[], a: string, b: string,
     const [wa, wb, wc, wd] = [a, b, c, d].map(w => w.toLowerCase());
     const direct = dealtQuad(pairs, wa, wb, wc, wd);
     const category = direct ?? dealtQuad(pairs, wa, wc, wb, wd);
-    if (!category) return { correct: false, points: 0 };
+    if (!category) {
+        // Near miss: the right two pairs of one relation, but one of them backwards (man : woman :: queen : king).
+        const near = mixedQuad(pairs, wa, wb, wc, wd) ?? mixedQuad(pairs, wa, wc, wb, wd);
+        return near ? { correct: false, nearMiss: true, category: near, points: NEAR_MISS_POINTS } : { correct: false, points: 0 };
+    }
     const matched: [string, string][] = direct ? [[wa, wb], [wc, wd]] : [[wa, wc], [wb, wd]];
     return { correct: true, category, points: GUESS_POINTS, obviousPairs: matched.filter(([x, y]) => obviousPair(x, y)).length };
+}
+
+/** The category when a → b and c → d are two different dealt pairs of it, in opposite directions. */
+function mixedQuad(pairs: readonly RelationPair[], wa: string, wb: string, wc: string, wd: string): string | undefined {
+    for (const p of pairs) {
+        const forward = p.x === wa && p.y === wb;
+        const backward = p.y === wa && p.x === wb;
+        if (!forward && !backward) continue;
+        for (const q of pairs) {
+            if (q === p || q.category !== p.category) continue;
+            if ((forward && q.y === wc && q.x === wd) || (backward && q.x === wc && q.y === wd)) return p.category;
+        }
+    }
+    return undefined;
 }
 
 /** The category when a → b and c → d are two different dealt pairs of it, in the same direction. */

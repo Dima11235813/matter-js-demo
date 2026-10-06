@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  categoryLabel, dealRelationPairs, designedAnswer, DESIGNED_POINTS, gradeGuess, GUESS_POINTS, obviousPair, parseRelationBank, RelationPair, scoreDesignedPlay,
+  categoryLabel, dealRelationPairs, designedAnswer, DESIGNED_POINTS, gradeGuess, GUESS_POINTS, NEAR_MISS_POINTS, obviousPair, parseRelationBank, RelationPair, scoreDesignedPlay,
 } from '../src/game/relationPairs';
 import { relationHint } from '../src/game/relationHint';
 import { VocabManifest } from '../src/embeddings/vocabAsset';
@@ -151,13 +151,20 @@ describe('guess mode: four picks graded against the dealt pairs', () => {
     // Dealt: man → woman, king → queen. Played: man : king :: woman : queen (the screenshot's husband : father :: wife : mother).
     expect(gradeGuess(pairs, 'man', 'king', 'woman', 'queen')).toMatchObject({ correct: true, category: 'family' });
     expect(gradeGuess(pairs, 'france', 'japan', 'paris', 'tokyo')).toMatchObject({ correct: true, category: 'capital-world' });
-    // Swapping still needs one consistent direction: man : king :: queen : woman mixes them.
+    // Swapping still needs one consistent direction: man : king :: queen : woman crosses both pairs.
     expect(gradeGuess(pairs, 'man', 'king', 'queen', 'woman').correct).toBe(false);
   });
 
-  it('earns nothing for mixed directions, mixed relations, the same pair twice, or words not dealt', () => {
-    expect(gradeGuess(pairs, 'france', 'paris', 'tokyo', 'japan')).toEqual({ correct: false, points: 0 });
-    expect(gradeGuess(pairs, 'france', 'paris', 'man', 'woman').correct).toBe(false);
+  it('gives a near miss partial credit: the right pairs of one relation, one backwards (owner: "forgiving")', () => {
+    expect(gradeGuess(pairs, 'france', 'paris', 'tokyo', 'japan')).toEqual({ correct: false, nearMiss: true, category: 'capital-world', points: NEAR_MISS_POINTS });
+    expect(gradeGuess(pairs, 'man', 'woman', 'queen', 'king')).toMatchObject({ nearMiss: true, points: NEAR_MISS_POINTS });
+    expect(gradeGuess(pairs, 'woman', 'king', 'man', 'queen')).toMatchObject({ nearMiss: true }); // swapped form, woman → man reversed
+    // Both pairs crossed (man : king :: queen : woman) is not one pair backwards: no credit.
+    expect(gradeGuess(pairs, 'man', 'king', 'queen', 'woman')).toEqual({ correct: false, points: 0 });
+  });
+
+  it('earns nothing for mixed relations, the same pair twice, or words not dealt', () => {
+    expect(gradeGuess(pairs, 'france', 'paris', 'man', 'woman')).toEqual({ correct: false, points: 0 });
     expect(gradeGuess(pairs, 'france', 'paris', 'france', 'paris').correct).toBe(false);
     expect(gradeGuess(pairs, 'france', 'paris', 'japan', 'kyoto').correct).toBe(false);
     expect(gradeGuess(pairs, 'paris', 'france', 'japan', 'tokyo').correct).toBe(false);

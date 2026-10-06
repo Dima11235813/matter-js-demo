@@ -151,7 +151,8 @@ export async function playGuess(stores: RootStore, a: string, b: string, c: stri
     const relation = round.category ?? stores.gameStore.relationDeal?.category;
     if (!round.duplicate && relation) {
         const before = stores.gameStore.rating;
-        const next = await semanticEngine.rateGuess(relation, round.correct, round.obviousPairs ?? 0);
+        // A near miss counts as half a win.
+        const next = await semanticEngine.rateGuess(relation, round.correct ? 1 : round.nearMiss ? 0.5 : 0, round.obviousPairs ?? 0);
         stores.gameStore.setRating(next.value, next.value - before);
     }
     const result = await semanticEngine.playGuess(a, b, c, round.points);
@@ -172,6 +173,7 @@ export async function playGuess(stores: RootStore, a: string, b: string, c: stri
         guess: true,
         relation: round.category ? categoryLabel(round.category) : undefined,
         easy: round.correct && (round.obviousPairs ?? 0) > 0,
+        nearMiss: round.nearMiss,
     };
     // A solved analogy leaves the board after a moment, making room for the reward pairs (owner play-test).
     if (round.correct && !round.duplicate) {
@@ -185,7 +187,7 @@ export async function playGuess(stores: RootStore, a: string, b: string, c: stri
     void semanticEngine.logPlay("analogy", playContext(stores), analogyPayload({
         a, b, c, answer: d, modelAnswer: lastPlay.modelAnswer,
         ranked, input: "click", stats, hint, verdict: lastPlay.verdict,
-        designed: round.correct, points: round.points, duplicate: round.duplicate, guess: true, rating: stores.gameStore.rating,
+        designed: round.correct, points: round.points, duplicate: round.duplicate, guess: true, rating: stores.gameStore.rating, nearMiss: round.nearMiss,
     }));
     menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${d}: ${round.correct ? `a real analogy (+${round.points} pts)` : "not an analogy from this round"}`);
     await refreshStats(menuStore);

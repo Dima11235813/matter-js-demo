@@ -38,7 +38,7 @@ function stats(a: Float32Array, b: Float32Array, c: Float32Array, d: Float32Arra
 }
 
 it('Guess partial credit: designed vs carried vs random picks', () => {
-  let picks = 0, designed = 0, carried = 0, carriedDesigned = 0, pairPicks = 0, pairDesigned = 0, pairCarried = 0, anchored = 0;
+  let picks = 0, designed = 0, carried = 0, carriedDesigned = 0, pairPicks = 0, pairDesigned = 0, pairCarried = 0, anchored = 0, nearMisses = 0, pairNear = 0;
   const anchoredExamples: string[] = [];
   const examples: string[] = [];
   const perBoardCarriedOnly: number[] = [];
@@ -51,7 +51,9 @@ it('Guess partial credit: designed vs carried vs random picks', () => {
     for (let i = 0; i < words.length; i++) for (let j = 0; j < words.length; j++) for (let k = 0; k < words.length; k++) for (let l = 0; l < words.length; l++) {
       if (new Set([i, j, k, l]).size < 4) continue;
       picks++;
-      const isDesigned = gradeGuess(deal.pairs, words[i], words[j], words[k], words[l]).correct;
+      const grade = gradeGuess(deal.pairs, words[i], words[j], words[k], words[l]);
+      const isDesigned = grade.correct;
+      if (grade.nearMiss) nearMisses++;
       const isCarried = relationHint(stats(vec[i], vec[j], vec[k], vec[l]), thresholds) === 'carried';
       if (isDesigned) designed++;
       if (isCarried) carried++;
@@ -67,7 +69,7 @@ it('Guess partial credit: designed vs carried vs random picks', () => {
         if (examples.length < 40 && b % 5 === 0) examples.push(`${words[i]} : ${words[j]} :: ${words[k]} : ${words[l]}  (${deal.category})`);
       }
       // Half-informed: a dealt pair as a, b, then any c, d.
-      if (dealtPair.has(`${words[i]}|${words[j]}`)) { pairPicks++; if (isDesigned) pairDesigned++; if (isCarried && !isDesigned) pairCarried++; }
+      if (dealtPair.has(`${words[i]}|${words[j]}`)) { pairPicks++; if (isDesigned) pairDesigned++; if (grade.nearMiss) pairNear++; if (isCarried && !isDesigned) pairCarried++; }
     }
     perBoardCarriedOnly.push(carriedOnly);
   }
@@ -87,6 +89,9 @@ it('Guess partial credit: designed vs carried vs random picks', () => {
     designedShare: share(designed, picks), carriedShare: share(carried, picks),
     carriedAmongDesigned: share(carriedDesigned, designed),
     anchoredShare: share(anchored, picks), anchoredExamples,
+    nearMissShare: share(nearMisses, picks),
+    // Shipped rule (2026-10-05): designed 100, near miss 25, vector hint 0.
+    shipped: { random: +((100 * designed + 25 * nearMisses) / picks).toFixed(2), halfInformed: +((100 * pairDesigned + 25 * pairNear) / pairPicks).toFixed(2), skilled: 100 },
     carriedOnlyPerBoard: { median: sorted[Math.floor(sorted.length / 2)], p10: sorted[Math.floor(sorted.length * 0.1)], p90: sorted[Math.floor(sorted.length * 0.9)] },
     table, examples,
   };

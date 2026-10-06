@@ -61,7 +61,7 @@ const WordLink = ({ word, strong = false }: { word: string; strong?: boolean }) 
 const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
   const { lastPlay } = store;
   if (!lastPlay) return null;
-  const { a, b, c, answer, similarity, points, isNewQuestion, alternatives, hint, verdict, modelAnswer, guess, relation, easy } = lastPlay;
+  const { a, b, c, answer, similarity, points, isNewQuestion, alternatives, hint, verdict, modelAnswer, guess, relation, easy, nearMiss } = lastPlay;
   return (
     <div className={styles.LogCard} data-testid="last-play">
       <div className={styles.LogText}>
@@ -82,7 +82,8 @@ const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
       {(verdict || hint || guess) && (
         <div className={styles.Verdict} data-testid="play-verdict">
           {guess && verdict === "full" && <span className={styles.VerdictGood}>✓ a real analogy: both pairs are {relation}{easy ? " (an easy one: the words look alike)" : ""} · </span>}
-          {guess && verdict === "none" && <span>✗ not an analogy from this round's pairs{modelAnswer ? ` (the model would answer ${modelAnswer})` : ""} · </span>}
+          {guess && verdict === "none" && nearMiss && <span className={styles.VerdictGood}>≈ almost: both pairs are {relation}, but one is backwards · </span>}
+          {guess && verdict === "none" && !nearMiss && <span>✗ not an analogy from this round's pairs{modelAnswer ? ` (the model would answer ${modelAnswer})` : ""} · </span>}
           {guess && verdict === undefined && <span>already guessed this round · </span>}
           {!guess && verdict === "full" && <span className={styles.VerdictGood}>completes a dealt pair{modelAnswer ? ` (the model's first choice was ${modelAnswer})` : ""} · </span>}
           {!guess && verdict === "penalty" && <span className={styles.VerdictBad}>fell back onto your first pair · </span>}

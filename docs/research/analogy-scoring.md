@@ -159,7 +159,9 @@ Skilled points per category (top-3 leniency): world capitals 90, present partici
 * **But the hint rewards word soup.** Carried-but-not-designed picks are mostly nonsense from one semantic region: *likely : unclear :: unlikely : low*, *clear : comfortable :: unclear : unlikely*, *unlikely : low :: tall : lowest*. Requiring one side of the guess to be a real dealt pair ("anchored", 0.49% of picks) doesn't filter it: *likely : low :: unlikely : lowest* passes.
 * A player who learns to spot what the hint likes would earn the partial value on every play, for nonsense.
 
-**Decision (2026-10-05)**: ship the swapped-form fix (the play-tested guess now scores +100). The vector hint stays a learning hint with no points. **Open for the owner**: partial credit for a structural near miss instead, for example both pairs dealt in one relation but one of them reversed ("right pairs, one backwards"), which rewards real understanding rather than the embedding's opinion.
+**Decision (2026-10-05)**: ship the swapped-form fix (the play-tested guess now scores +100). The vector hint stays a learning hint with no points.
+
+**Near miss (owner: "our game should be forgiving in this way", 2026-10-05)**: both pairs are dealt pairs of one relation, but one is backwards (*man : woman :: queen : king*, or in the swapped form *woman : king :: man : queen*); crossing both pairs (*man : king :: queen : woman*) earns nothing. +25 points, half a win for the rating. Measured on the same million picks: near misses are 0.63% of random picks (as many as real analogies), so with 100 / 25 / 0 random play earns **0.79** points per play (< 1% of skilled) and half-informed play 3.57: forgiving without making guessing pay.
 
 ## References
 

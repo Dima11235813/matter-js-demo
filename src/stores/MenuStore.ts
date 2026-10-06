@@ -40,6 +40,8 @@ export interface LastPlay {
     relation?: string
     /** Guess mode: correct, but with an obvious pair (heavy → heavier), so it counts as an easier find. */
     easy?: boolean
+    /** Guess mode: the right pairs of one relation, but one reversed (+25). */
+    nearMiss?: boolean
 }
 
 /** An analogy played on the current board (newest first in `boardAnalogies`). */
@@ -134,6 +136,8 @@ export class MenuStore extends CommonStore {
         this.mode = newMode
     }
     setView = (newView: AppView) => {
+        // A play card belongs to the mode it was played in (a Guess verdict showed on in Connect).
+        if (newView !== this.view) this.lastPlay = null
         this.view = newView
     }
     setRole = (newRole: "admin" | "user" | "anon") => {

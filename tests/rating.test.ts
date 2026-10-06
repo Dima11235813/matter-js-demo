@@ -43,6 +43,14 @@ describe('skill rating (Feature 2.12)', () => {
     for (let i = 0; i < 30; i++) expect(['gram3-comparative', 'gram5-present-participle', 'gram2-opposite']).not.toContain(pickCategory(1000, categories, random, 3, difficulty));
   });
 
+  it('counts a near miss as half a win', () => {
+    const r = { value: 1000, plays: 20 };
+    const near = rateGuess(r, 1000, 0.5).value;
+    expect(near).toBe(1000); // expected 50% at equal odds: half a win changes nothing
+    expect(rateGuess(r, 1000, true).value).toBeGreaterThan(near);
+    expect(rateGuess(r, 1000, false).value).toBeLessThan(near);
+  });
+
   it('stays within bounds', () => {
     let r: Rating = { value: RATING_RULES.max - 1, plays: 50 };
     for (let i = 0; i < 100; i++) r = rateGuess(r, 100, true);
