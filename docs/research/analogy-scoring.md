@@ -138,6 +138,29 @@ Skilled points per category (top-3 leniency): world capitals 90, present partici
 4. Use the categories with skilled ≥ 60: capitals (common and world), family, nationality adjectives, comparative, superlative, present participle, past tense, city-in-state, opposites. Currency and adjective → adverb are excluded.
 5. The vector verdict (relatedness ≥ p90, offset ≥ 0.20, collapse warning) is shown as a learning hint in both modes and changes no points.
 
+## 8. Guess mode: the swapped form, and partial credit (2026-10-05)
+
+**Owner play-test** (live site, phone): *husband : father :: wife : mother* scored 0, with "not an analogy from this round's pairs" and "✓ the relation husband → father carried over". Feedback: "Maybe it's not a full analogy but it's also not zero, because our own graph connected all four of them."
+
+**It was a full analogy.** The round dealt husband → wife and father → mother. The guess used the swapped form: an analogy a : b :: c : d holds exactly when a : c :: b : d does. `gradeGuess` only accepted the dealt order. **Fix**: correct when (a → b, c → d) or (a → c, b → d) are two dealt pairs of one relation in one direction (unit test with the screenshot's case).
+
+**Should vector-only guesses earn partial points?** Reproduce: `npx vitest run --config docs/research/experiments/vitest.research.config.ts guessPartial` (writes [`results/guess-partial.json`](experiments/results/guess-partial.json)). On 200 dealt Guess boards (10 words each), the experiment classifies all 1,008,000 ordered four-word picks:
+
+| Measure | Value |
+|---|---|
+| Designed picks (correct, swapped form included) | 0.63% |
+| Picks the hint calls "carried" | 0.66% |
+| Designed picks the hint calls "carried" | **25%** (the model misses 3 of 4 real analogies) |
+| Carried but not designed, per board | median 12, p90 66 |
+| Random play, expected points per play at partial 0 / 10 / 25 / 50 | 0.63 / 0.68 / 0.76 / 0.88 (≤ 1% of skilled) |
+| Half-informed (a dealt pair, then any two words) | 2.9 at every partial value |
+
+* **Partial credit is safe against random play**: carried picks are rare, so random play stays under 1% of skilled play.
+* **But the hint rewards word soup.** Carried-but-not-designed picks are mostly nonsense from one semantic region: *likely : unclear :: unlikely : low*, *clear : comfortable :: unclear : unlikely*, *unlikely : low :: tall : lowest*. Requiring one side of the guess to be a real dealt pair ("anchored", 0.49% of picks) doesn't filter it: *likely : low :: unlikely : lowest* passes.
+* A player who learns to spot what the hint likes would earn the partial value on every play, for nonsense.
+
+**Decision (2026-10-05)**: ship the swapped-form fix (the play-tested guess now scores +100). The vector hint stays a learning hint with no points. **Open for the owner**: partial credit for a structural near miss instead, for example both pairs dealt in one relation but one of them reversed ("right pairs, one backwards"), which rewards real understanding rather than the embedding's opinion.
+
 ## References
 
 * Mikolov, Yih, Zweig (2013), *Linguistic Regularities in Continuous Space Word Representations* (3CosAdd).

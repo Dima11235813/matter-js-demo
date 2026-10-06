@@ -147,6 +147,14 @@ describe('guess mode: four picks graded against the dealt pairs', () => {
     expect(gradeGuess(pairs, 'King', 'Queen', 'MAN', 'woman')).toMatchObject({ correct: true, category: 'family' });
   });
 
+  it('accepts the swapped form: a : b :: c : d holds exactly when a : c :: b : d does (owner play-test)', () => {
+    // Dealt: man → woman, king → queen. Played: man : king :: woman : queen (the screenshot's husband : father :: wife : mother).
+    expect(gradeGuess(pairs, 'man', 'king', 'woman', 'queen')).toMatchObject({ correct: true, category: 'family' });
+    expect(gradeGuess(pairs, 'france', 'japan', 'paris', 'tokyo')).toMatchObject({ correct: true, category: 'capital-world' });
+    // Swapping still needs one consistent direction: man : king :: queen : woman mixes them.
+    expect(gradeGuess(pairs, 'man', 'king', 'queen', 'woman').correct).toBe(false);
+  });
+
   it('earns nothing for mixed directions, mixed relations, the same pair twice, or words not dealt', () => {
     expect(gradeGuess(pairs, 'france', 'paris', 'tokyo', 'japan')).toEqual({ correct: false, points: 0 });
     expect(gradeGuess(pairs, 'france', 'paris', 'man', 'woman').correct).toBe(false);

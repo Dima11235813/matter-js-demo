@@ -177,20 +177,26 @@ export const GUESS_POINTS = 100;
 /**
  * Grades a four-word guess a : b :: c : d against the round's dealt pairs (Epic 2 · Feature 2.13).
  * Correct when a → b and c → d are different pairs of the same category, both forward or both
- * reversed. This is research §7's "board-only" case: skilled 94.6 points per play, random −0.7.
+ * reversed, or in the swapped form: an analogy a : b :: c : d holds exactly when a : c :: b : d does
+ * (husband : father :: wife : mother is husband : wife :: father : mother). This is research §7's
+ * "board-only" case: skilled 94.6 points per play, random −0.7.
  */
 export function gradeGuess(pairs: readonly RelationPair[], a: string, b: string, c: string, d: string): GuessGrade {
     const [wa, wb, wc, wd] = [a, b, c, d].map(w => w.toLowerCase());
+    const category = dealtQuad(pairs, wa, wb, wc, wd) ?? dealtQuad(pairs, wa, wc, wb, wd);
+    return category ? { correct: true, category, points: GUESS_POINTS } : { correct: false, points: 0 };
+}
+
+/** The category when a → b and c → d are two different dealt pairs of it, in the same direction. */
+function dealtQuad(pairs: readonly RelationPair[], wa: string, wb: string, wc: string, wd: string): string | undefined {
     for (const p of pairs) {
         const forward = p.x === wa && p.y === wb;
         const backward = p.y === wa && p.x === wb;
         if (!forward && !backward) continue;
         for (const q of pairs) {
             if (q === p || q.category !== p.category) continue;
-            if ((forward && q.x === wc && q.y === wd) || (backward && q.y === wc && q.x === wd)) {
-                return { correct: true, category: p.category, points: GUESS_POINTS };
-            }
+            if ((forward && q.x === wc && q.y === wd) || (backward && q.y === wc && q.x === wd)) return p.category;
         }
     }
-    return { correct: false, points: 0 };
+    return undefined;
 }
