@@ -44,9 +44,23 @@ export function expectedScore(rating: number, difficulty: number): number {
     return 1 / (1 + 10 ** ((difficulty - rating) / 400));
 }
 
-export function difficultyOf(category: string): number {
-    return CATEGORY_DIFFICULTY[category] ?? RATING_RULES.start;
+export function difficultyOf(category: string, obviousPairs: number = 0): number {
+    return (CATEGORY_DIFFICULTY[category] ?? RATING_RULES.start) - OBVIOUS_PAIR_EASE * obviousPairs;
 }
+
+/** Each obvious pair (heavy → heavier) in a correct guess makes it this much easier on the Elo scale. */
+export const OBVIOUS_PAIR_EASE = 150;
+
+/**
+ * A relation's difficulty for dealing: its prior, eased by how many of its pairs are obvious word forms
+ * (a guess uses two pairs). Comparatives (35 of 37 obvious) drop from 900 to ~615, capitals stay put.
+ */
+export function relationDifficulty(category: string, obviousShare: number): number {
+    return difficultyOf(category) - 2 * OBVIOUS_PAIR_EASE * obviousShare;
+}
+
+/** From this rating up, rounds deal subtle pairs (bad → worse) before obvious word forms. */
+export const SUBTLE_PAIRS_FROM = 1050;
 
 /** The rating after one graded guess: up when right, down when wrong, by how surprising that was. Bounded. */
 export function rateGuess(rating: Rating, difficulty: number, correct: boolean): Rating {
@@ -59,8 +73,9 @@ export function rateGuess(rating: Rating, difficulty: number, correct: boolean):
  * The relation a round should deal for this rating: one of the `spread` categories whose difficulty is
  * nearest the rating, chosen at random so a player doesn't see the same relation every round.
  */
-export function pickCategory(rating: number, categories: readonly string[], random: () => number = Math.random, spread = 3): string {
-    const nearest = [...categories].sort((a, b) => Math.abs(difficultyOf(a) - rating) - Math.abs(difficultyOf(b) - rating) || a.localeCompare(b));
+export function pickCategory(rating: number, categories: readonly string[], random: () => number = Math.random, spread = 3,
+    difficulty: (category: string) => number = c => difficultyOf(c)): string {
+    const nearest = [...categories].sort((a, b) => Math.abs(difficulty(a) - rating) - Math.abs(difficulty(b) - rating) || a.localeCompare(b));
     const pool = nearest.slice(0, Math.max(1, Math.min(spread, nearest.length)));
     return pool[Math.floor(random() * pool.length)];
 }

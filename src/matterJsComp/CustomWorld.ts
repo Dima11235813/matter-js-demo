@@ -180,6 +180,12 @@ export class CustomWorld implements WordWorld {
     wordTexts = (): string[] => {
         return this.shapesFac.boxes.filter(b => b.embedding !== undefined && b.body).map(b => b.text)
     }
+    removeWords = (words: readonly string[]) => {
+        const gone = new Set(words)
+        this.shapesFac.boxes
+            .filter(b => b.embedding !== undefined && b.body && gone.has(b.text))
+            .forEach(b => this.collisionHandler.removeBody(b.body!, false, b.matterId))
+    }
     /** Removes every word box (used when a timed round restarts in the same world). */
     clearWordBoxes = () => {
         deps.pendingWordSpawns = []

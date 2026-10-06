@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CATEGORY_DIFFICULTY, difficultyOf, expectedScore, NEW_RATING, pickCategory, rateGuess, Rating, RATING_RULES } from '../src/game/rating';
+import { CATEGORY_DIFFICULTY, difficultyOf, expectedScore, NEW_RATING, OBVIOUS_PAIR_EASE, pickCategory, rateGuess, Rating, RATING_RULES, relationDifficulty } from '../src/game/rating';
 
 const categories = Object.keys(CATEGORY_DIFFICULTY);
 function lcg(seed: number) {
@@ -25,6 +25,22 @@ describe('skill rating (Feature 2.12)', () => {
     const hard = rateGuess({ value: 1000, plays: 20 }, difficultyOf('city-in-state'), true).value;
     const easy = rateGuess({ value: 1000, plays: 20 }, difficultyOf('family'), true).value;
     expect(hard - 1000).toBeGreaterThan(easy - 1000);
+  });
+
+  it('an obvious pair makes a correct guess easier, so it moves the rating less', () => {
+    expect(difficultyOf('gram3-comparative', 1)).toBe(difficultyOf('gram3-comparative') - OBVIOUS_PAIR_EASE);
+    const subtle = rateGuess({ value: 1000, plays: 20 }, difficultyOf('gram3-comparative', 0), true).value;
+    const easy = rateGuess({ value: 1000, plays: 20 }, difficultyOf('gram3-comparative', 2), true).value;
+    expect(subtle).toBeGreaterThan(easy);
+  });
+
+  it('relations made of obvious pairs count as easier, so stronger players are not dealt them', () => {
+    expect(relationDifficulty('gram3-comparative', 35 / 37)).toBeLessThan(650);
+    expect(relationDifficulty('capital-world', 0)).toBe(difficultyOf('capital-world'));
+    const shares: Record<string, number> = { 'gram3-comparative': 35 / 37, 'gram5-present-participle': 1, 'gram2-opposite': 1, 'capital-world': 0, family: 3 / 18 };
+    const difficulty = (c: string) => relationDifficulty(c, shares[c] ?? 0);
+    const random = lcg(3);
+    for (let i = 0; i < 30; i++) expect(['gram3-comparative', 'gram5-present-participle', 'gram2-opposite']).not.toContain(pickCategory(1000, categories, random, 3, difficulty));
   });
 
   it('stays within bounds', () => {

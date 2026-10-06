@@ -75,6 +75,14 @@ export class SpaceWorld implements WordWorld {
         return this.sim.bodies.map(b => b.word);
     }
 
+    removeWords(words: readonly string[]): void {
+        const gone = new Set(words);
+        this.sim.bodies.filter(b => gone.has(b.word)).forEach(b => {
+            this.sim.remove(b.id);
+            this.colors.delete(b.id);
+        });
+    }
+
     clearWordBoxes(): void {
         deps.pendingWordSpawns = [];
         this.sim.clear();

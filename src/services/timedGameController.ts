@@ -2,7 +2,7 @@ import deps from "../matterJsComp/Deps";
 import { AnalogyResult } from "../embeddings/analogy";
 import { applyPlay, PlayOutcome, startGame, tick, TIMED_RULES_VERSION, TimedGameState } from "../game/timedGame";
 import { DesignedScore, GuessGrade, gradeGuess, scoreDesignedPlay } from "../game/relationPairs";
-import { pickCategory } from "../game/rating";
+import { pickCategory, SUBTLE_PAIRS_FROM } from "../game/rating";
 import { analogyKey } from "../persistence/LexicalRepository";
 import { RootStore } from "../stores/RootStore";
 import { logger } from "../utils/logger";
@@ -35,8 +35,10 @@ export function startTimedRound(stores: RootStore, carried: readonly SpawnReques
     gameStore.setGame(startGame(now, gameStore.rules));
     // Designed questions: 3 pairs share the round's relation, 2 more come from another relation.
     // The round's relation comes from the categories nearest the player's rating (Feature 2.12).
-    const category = pickCategory(gameStore.rating, semanticEngine.relationCategories());
-    const deal = semanticEngine.dealRelationPairs({ mainPairs: 3, otherPairs: 2, inPlay: carried.map(r => r.word), category });
+    const category = pickCategory(gameStore.rating, semanticEngine.relationCategories(), Math.random, 3, c => semanticEngine.relationDifficulty(c));
+    // Stronger players get subtle pairs (bad → worse) before obvious word forms (heavy → heavier).
+    const preferSubtle = gameStore.rating >= SUBTLE_PAIRS_FROM;
+    const deal = semanticEngine.dealRelationPairs({ mainPairs: 3, otherPairs: 2, inPlay: carried.map(r => r.word), category, preferSubtle });
     gameStore.setRelationDeal(deal);
     queueWords(deal.words);
     timer = setInterval(() => tickRound(stores), TICK_MS);
@@ -81,7 +83,7 @@ function settlePlay(stores: RootStore, outcome: PlayOutcome): void {
     gameStore.setGame(outcome.state);
     gameStore.setLastRoundPoints({ points: outcome.points, duplicate: outcome.duplicate });
     if (outcome.wordsToDeal > 0) {
-        const reward = semanticEngine.dealRelationPairs({ mainPairs: Math.ceil(outcome.wordsToDeal / 2), otherPairs: 0, category: deal.category, inPlay: wordsInPlay() });
+        const reward = semanticEngine.dealRelationPairs({ mainPairs: Math.ceil(outcome.wordsToDeal / 2), otherPairs: 0, category: deal.category, inPlay: wordsInPlay(), preferSubtle: gameStore.rating >= SUBTLE_PAIRS_FROM });
         gameStore.setRelationDeal({ ...deal, pairs: [...deal.pairs, ...reward.pairs], words: [...deal.words, ...reward.words] });
         queueWords(reward.words);
     }

@@ -239,16 +239,18 @@ test('Guess mode: four picks are graded against the dealt pairs; nothing spawns 
     return false;
   }, { timeout: 15_000 }).toBe(true);
   const [p, q] = quad!;
+  // A wrong quad (the second pair reversed) earns nothing, and its words stay.
+  for (const word of [p.x, p.y, q.y, q.x]) await pick(word);
+  await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: p.x, b: p.y, c: q.y, answer: q.x, points: 0, verdict: 'none', guess: true });
+  await expect(page.getByTestId('play-verdict')).toContainText('not an analogy');
+  expect((await state()).score).toBe(0);
+
+  // The correct quad scores, then its four words leave the board to make room.
   for (const word of [p.x, p.y, q.x, q.y]) await pick(word);
   await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: p.x, b: p.y, c: q.x, answer: q.y, points: 100, verdict: 'full', guess: true });
   await expect(page.getByTestId('play-verdict')).toContainText('a real analogy');
   expect((await state()).score).toBe(100);
-
-  // A wrong quad (the second pair reversed) earns nothing.
-  for (const word of [p.x, p.y, q.y, q.x]) await pick(word);
-  await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.lastPlay)).toMatchObject({ a: p.x, b: p.y, c: q.y, answer: q.x, points: 0, verdict: 'none', guess: true });
-  await expect(page.getByTestId('play-verdict')).toContainText('not an analogy');
-  expect((await state()).score).toBe(100);
+  await expect.poll(async () => (await boardWords(page)).filter(w => [p.x, p.y, q.x, q.y].includes(w)), { timeout: 5_000 }).toEqual([]);
 
   // Nothing spawned: every word on the board was there before the guesses or dealt as a reward pair.
   const { dealt } = await state();
@@ -568,8 +570,9 @@ test('personas have their own skill rating, and each is dealt relations of its l
     await expect(page.getByTestId('round-relation')).toBeVisible({ timeout: 20_000 });
     return page.evaluate(() => (window.__lexical.stores.gameStore as unknown as { relationDeal: { category: string } }).relationDeal.category);
   };
-  const easy = ['family', 'gram2-opposite', 'gram3-comparative', 'gram5-present-participle'];
-  const hard = ['city-in-state', 'capital-world', 'gram6-nationality-adjective'];
+  // Effective difficulty eases relations made of obvious pairs (comparatives ~615, opposites ~550).
+  const easy = ['family', 'gram2-opposite', 'gram3-comparative', 'gram4-superlative', 'gram5-present-participle', 'gram7-past-tense'];
+  const hard = ['city-in-state', 'capital-world', 'capital-common-countries', 'gram6-nationality-adjective'];
   await openSandbox(page, '2d');
 
   await signInAs(page, novice);

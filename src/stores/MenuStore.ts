@@ -37,6 +37,8 @@ export interface LastPlay {
     guess?: boolean
     /** Guess mode: the relation both pairs share, when the guess was correct. */
     relation?: string
+    /** Guess mode: correct, but with an obvious pair (heavy → heavier), so it counts as an easier find. */
+    easy?: boolean
 }
 
 /** An analogy played on the current board (newest first in `boardAnalogies`). */

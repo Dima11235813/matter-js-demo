@@ -31,6 +31,8 @@ export interface WordWorld {
     letterSnapshot?(): LetterSnapshot[];
     wordTexts(): string[];
     clearWordBoxes(): void;
+    /** Removes these words from the board (a solved Guess analogy makes room). */
+    removeWords(words: readonly string[]): void;
     wordProbes(): WordProbe[];
     /**
      * Brings words into view and highlights them briefly: in 3D the camera flies to them; in 2D

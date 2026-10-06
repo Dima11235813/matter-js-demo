@@ -109,6 +109,9 @@ export async function submitPlayerWord(store: MenuStore, input: string): Promise
     }
 }
 
+/** How long a solved Guess analogy stays on the board (its verdict is showing) before it clears. */
+export const CLEAR_SOLVED_MS = 1500;
+
 /** Words a play takes: Discovery asks the model for the fourth word; Guess mode picks all four (Feature 2.13). */
 export function picksFor(view: string): number {
     return view === "game" ? 4 : 3;
@@ -147,7 +150,7 @@ export async function playGuess(stores: RootStore, a: string, b: string, c: stri
     const relation = round.category ?? stores.gameStore.relationDeal?.category;
     if (!round.duplicate && relation) {
         const before = stores.gameStore.rating;
-        const next = await semanticEngine.rateGuess(relation, round.correct);
+        const next = await semanticEngine.rateGuess(relation, round.correct, round.obviousPairs ?? 0);
         stores.gameStore.setRating(next.value, next.value - before);
     }
     const result = await semanticEngine.playGuess(a, b, c, round.points);
@@ -167,7 +170,13 @@ export async function playGuess(stores: RootStore, a: string, b: string, c: stri
         modelAnswer: result && result.answer !== d ? result.answer : undefined,
         guess: true,
         relation: round.category ? categoryLabel(round.category) : undefined,
+        easy: round.correct && (round.obviousPairs ?? 0) > 0,
     };
+    // A solved analogy leaves the board after a moment, making room for the reward pairs (owner play-test).
+    if (round.correct && !round.duplicate) {
+        const solved = [a, b, c, d];
+        window.setTimeout(() => deps.activeWorld?.removeWords(solved), CLEAR_SOLVED_MS);
+    }
     menuStore.setLastPlay(lastPlay);
     menuStore.addBoardAnalogy(lastPlay);
     stores.privacyStore.notePlay();

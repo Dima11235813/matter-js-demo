@@ -16,9 +16,9 @@ import { extractKeywords, KeywordResult } from "../game/keywords";
 import { expressionAsAnalogy, ExpressionTerm } from "../game/wordEntry";
 import stopwordsText from "../../data/vocab/stopwords.txt?raw";
 import relationPairsText from "../../data/vocab/relation-pairs.txt?raw";
-import { dealRelationPairs, DealRelationOptions, parseRelationBank, RelationBank, RelationDeal } from "../game/relationPairs";
+import { dealRelationPairs, DealRelationOptions, obviousPair, parseRelationBank, RelationBank, RelationDeal } from "../game/relationPairs";
 import { RelationStats } from "../game/relationHint";
-import { difficultyOf, NEW_RATING, Rating, RATING_RULES, rateGuess } from "../game/rating";
+import { difficultyOf, NEW_RATING, Rating, RATING_RULES, rateGuess, relationDifficulty } from "../game/rating";
 import { BASE_RULES, ConnectNode, ConnectRules } from "../game/connectAll";
 import { playLogExport, PlayLogExport, summarizePlayLog, PlayLogSummary } from "../game/playLog";
 import { logger } from "../utils/logger";
@@ -237,9 +237,9 @@ export class SemanticEngine {
     }
 
     /** Updates the rating after a graded guess in a relation category; returns the new rating. */
-    async rateGuess(category: string, correct: boolean): Promise<Rating> {
+    async rateGuess(category: string, correct: boolean, obviousPairs: number = 0): Promise<Rating> {
         const { repo } = this.require();
-        const next = rateGuess(this.rating, difficultyOf(category), correct);
+        const next = rateGuess(this.rating, difficultyOf(category, obviousPairs), correct);
         await repo.updateMeta({ rating: next });
         return next;
     }
@@ -277,6 +277,13 @@ export class SemanticEngine {
     /** Relation categories a round can deal (Feature 2.12 picks one by rating). */
     relationCategories(): string[] {
         return [...RELATION_BANK.keys()];
+    }
+
+    /** A relation's dealing difficulty: its prior eased by its share of obvious pairs (heavy → heavier). */
+    relationDifficulty(category: string): number {
+        const pairs = RELATION_BANK.get(category) ?? [];
+        const share = pairs.length ? pairs.filter(p => obviousPair(p.x, p.y)).length / pairs.length : 0;
+        return relationDifficulty(category, share);
     }
 
     /** Relation pairs for a timed round (designed questions); only words the index knows and allows. */

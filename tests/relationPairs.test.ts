@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  categoryLabel, dealRelationPairs, designedAnswer, DESIGNED_POINTS, gradeGuess, GUESS_POINTS, parseRelationBank, RelationPair, scoreDesignedPlay,
+  categoryLabel, dealRelationPairs, designedAnswer, DESIGNED_POINTS, gradeGuess, GUESS_POINTS, obviousPair, parseRelationBank, RelationPair, scoreDesignedPlay,
 } from '../src/game/relationPairs';
 import { relationHint } from '../src/game/relationHint';
 import { VocabManifest } from '../src/embeddings/vocabAsset';
@@ -142,7 +142,7 @@ describe('guess mode: four picks graded against the dealt pairs', () => {
   ];
 
   it('is correct for two pairs of one relation in the same direction, either way round', () => {
-    expect(gradeGuess(pairs, 'france', 'paris', 'japan', 'tokyo')).toEqual({ correct: true, category: 'capital-world', points: GUESS_POINTS });
+    expect(gradeGuess(pairs, 'france', 'paris', 'japan', 'tokyo')).toEqual({ correct: true, category: 'capital-world', points: GUESS_POINTS, obviousPairs: 0 });
     expect(gradeGuess(pairs, 'tokyo', 'japan', 'paris', 'france').correct).toBe(true);
     expect(gradeGuess(pairs, 'King', 'Queen', 'MAN', 'woman')).toMatchObject({ correct: true, category: 'family' });
   });
@@ -161,5 +161,41 @@ describe('guess mode: four picks graded against the dealt pairs', () => {
     expect(gradeGuess(pairs, 'france', 'paris', 'france', 'paris').correct).toBe(false);
     expect(gradeGuess(pairs, 'france', 'paris', 'japan', 'kyoto').correct).toBe(false);
     expect(gradeGuess(pairs, 'paris', 'france', 'japan', 'tokyo').correct).toBe(false);
+  });
+});
+
+describe('obvious pairs count as easier finds (owner play-test 2026-10-05)', () => {
+  it('flags word forms that give the answer away, and keeps pairs that look different', () => {
+    for (const [x, y] of [['cool', 'cooler'], ['small', 'smaller'], ['heavy', 'heavier'], ['smile', 'smiling'], ['likely', 'unlikely'], ['sweden', 'swedish'], ['japan', 'japanese'], ['big', 'biggest']]) {
+      expect(obviousPair(x, y), `${x} → ${y}`).toBe(true);
+    }
+    for (const [x, y] of [['bad', 'worse'], ['good', 'better'], ['fly', 'flew'], ['mouse', 'mice'], ['king', 'queen'], ['france', 'paris'], ['go', 'went'], ['sing', 'sang']]) {
+      expect(obviousPair(x, y), `${x} → ${y}`).toBe(false);
+    }
+  });
+
+  it('reports how many pairs of a correct guess are obvious', () => {
+    const pairs: RelationPair[] = [
+      { x: 'bad', y: 'worse', category: 'gram3-comparative' },
+      { x: 'heavy', y: 'heavier', category: 'gram3-comparative' },
+      { x: 'cool', y: 'cooler', category: 'gram3-comparative' },
+    ];
+    expect(gradeGuess(pairs, 'bad', 'worse', 'heavy', 'heavier').obviousPairs).toBe(1);
+    expect(gradeGuess(pairs, 'heavy', 'heavier', 'cool', 'cooler').obviousPairs).toBe(2);
+    expect(gradeGuess(pairs, 'bad', 'heavy', 'worse', 'heavier').obviousPairs).toBe(1); // swapped form
+  });
+
+  it('deals subtle pairs first when asked, obvious ones only to fill', () => {
+    const comparatives = parseRelationBank(`: gram3-comparative
+bad worse
+good better
+heavy heavier
+cool cooler
+small smaller
+`);
+    for (let seed = 1; seed <= 20; seed++) {
+      const deal = dealRelationPairs(comparatives, { mainPairs: 2, otherPairs: 0, preferSubtle: true, random: seq(seed / 21, (seed * 7 % 20) / 21, 0.3, 0.9) });
+      expect(deal.pairs.map(p => p.x).sort()).toEqual(['bad', 'good']);
+    }
   });
 });

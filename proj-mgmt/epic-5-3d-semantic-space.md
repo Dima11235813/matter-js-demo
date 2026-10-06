@@ -79,6 +79,7 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
 * **Known limitation**: two molecules can lock together interleaved (seen: king wedged between hospital and nurse). Rigid shapes can't slide past each other; this is the motivating case for Feature 5.8.
 
 ### Feature 5.7: Zoom & Camera (roadmap)
+* [ ] **Task 5.7.0** (owner play-test on a phone, 2026-10-05: "on mobile we zoomed out to make enough space in the hint mode as well as when they're in a pile"): 2D words are drawn at desktop size, so a 352 px phone board fits only a few and hint layouts overflow into piles. Scale word boxes (and layout lengths) to the board size, and zoom out when the board is crowded.
 * **Description**: There is no way to make more room on a crowded canvas. In 2D this is a zoom/pan view transform (canvas ↔ world coordinates for input, keep-out, and spawning); in 3D it is camera manipulation (dolly, orbit, focus-on-word), so it lands naturally with the three.js camera work in Phase 3.
 * **Input (decided 2026-09-23)**: the scroll wheel zooms in both 2D and 3D, toward the pointer; pinch does the same on touch.
 * [ ] **Task 5.7.1**: 2D view transform: scroll-wheel/pinch zoom toward the pointer, drag-pan in Move mode, with correct hit-testing, dashboard keep-out, and spawning in world coordinates.

@@ -58,6 +58,8 @@ export interface DealRelationOptions {
     inPlay?: Iterable<string>;
     /** Force the main category (reward deals keep the round's relation). */
     category?: string;
+    /** Deal pairs whose words look different (bad → worse) before obvious word forms (heavy → heavier). */
+    preferSubtle?: boolean;
     allow?: (word: string) => boolean;
     random?: () => number;
 }
@@ -82,7 +84,22 @@ export function dealRelationPairs(bank: RelationBank, options: DealRelationOptio
     const pairs: RelationPair[] = [];
     const isFree = (word: string) => allow(word) && !taken.includes(word) && !taken.some(t => sharesStem(t, word));
     const pick = (from: string, count: number) => {
-        const pool = [...(bank.get(from) ?? [])];
+        let pool = [...(bank.get(from) ?? [])];
+        if (options.preferSubtle) {
+            // Subtle pairs first (in random order), obvious word forms only when the subtle ones run out.
+            const subtle = pool.filter(p => !obviousPair(p.x, p.y));
+            const obvious = pool.filter(p => obviousPair(p.x, p.y));
+            const shuffled = (list: RelationPair[]) => list.map(p => [random(), p] as const).sort((a, b) => a[0] - b[0]).map(([, p]) => p);
+            pool = [...shuffled(subtle), ...shuffled(obvious)];
+            while (count > 0 && pool.length > 0) {
+                const pair = pool.shift()!;
+                if (!isFree(pair.x) || !isFree(pair.y)) continue;
+                taken.push(pair.x, pair.y);
+                pairs.push(pair);
+                count--;
+            }
+            return;
+        }
         while (count > 0 && pool.length > 0) {
             const [pair] = pool.splice(Math.floor(random() * pool.length), 1);
             if (!isFree(pair.x) || !isFree(pair.y)) continue;
@@ -169,6 +186,8 @@ export interface GuessGrade {
     /** The shared relation of a correct guess. */
     category?: string;
     points: number;
+    /** A correct guess: how many of its two pairs are obvious word forms (heavy → heavier). */
+    obviousPairs?: number;
 }
 
 /** Guess mode: a correct four-word analogy earns this; anything else earns nothing (no penalty). */
@@ -183,8 +202,11 @@ export const GUESS_POINTS = 100;
  */
 export function gradeGuess(pairs: readonly RelationPair[], a: string, b: string, c: string, d: string): GuessGrade {
     const [wa, wb, wc, wd] = [a, b, c, d].map(w => w.toLowerCase());
-    const category = dealtQuad(pairs, wa, wb, wc, wd) ?? dealtQuad(pairs, wa, wc, wb, wd);
-    return category ? { correct: true, category, points: GUESS_POINTS } : { correct: false, points: 0 };
+    const direct = dealtQuad(pairs, wa, wb, wc, wd);
+    const category = direct ?? dealtQuad(pairs, wa, wc, wb, wd);
+    if (!category) return { correct: false, points: 0 };
+    const matched: [string, string][] = direct ? [[wa, wb], [wc, wd]] : [[wa, wc], [wb, wd]];
+    return { correct: true, category, points: GUESS_POINTS, obviousPairs: matched.filter(([x, y]) => obviousPair(x, y)).length };
 }
 
 /** The category when a → b and c → d are two different dealt pairs of it, in the same direction. */
@@ -199,4 +221,18 @@ function dealtQuad(pairs: readonly RelationPair[], wa: string, wb: string, wc: s
         }
     }
     return undefined;
+}
+
+/**
+ * A pair whose answer gives itself away: one word is a form of the other (cool → cooler, smile →
+ * smiling, likely → unlikely, sweden → swedish), unlike pairs that look different (bad → worse, good →
+ * better, mouse → mice). Owner play-test 2026-10-05: obvious pairs stay in the game but count as easier.
+ */
+export function obviousPair(x: string, y: string): boolean {
+    const [a, b] = [x.toLowerCase(), y.toLowerCase()];
+    if (sharesStem(a, b) || a.endsWith(b) || b.endsWith(a)) return true;
+    const shorter = Math.min(a.length, b.length);
+    let common = 0;
+    while (common < shorter && a[common] === b[common]) common++;
+    return common >= 3 && common >= shorter - 2;
 }
