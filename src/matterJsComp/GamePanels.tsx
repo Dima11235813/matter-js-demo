@@ -8,7 +8,7 @@ import { nextPuzzle } from "../services/connectPuzzle";
 import { focusWords } from "../services/playground";
 import { stores as rootStores } from "../stores";
 import { categoryLabel } from "../game/relationPairs";
-import { toggleDimension, toggleHintMode, toggleLayout3d } from "../services/playground";
+import { cycleWordSize, toggleDimension, toggleHintMode, toggleLayout3d } from "../services/playground";
 import styles from "./AnalogyDashboard.module.scss";
 
 export const HintToggle = observer(({ stores }: { stores: RootStore }) => {
@@ -62,6 +62,24 @@ export const LayoutToggle = observer(({ stores }: { stores: RootStore }) => {
         : "Orbits: related words orbit their core word. Click for the embedding-shaped layout."}
     >
       {shape ? "Shape" : "Orbits"}
+    </button>
+  );
+});
+
+/** Word size for the 2D board (small / medium / large): bigger words are easier to tap in a pile. */
+export const WordSizeToggle = observer(({ stores }: { stores: RootStore }) => {
+  if (stores.gameStore.spaceActive) return null;
+  const size = stores.gameStore.wordSize;
+  const label = { small: "Aa S", medium: "Aa M", large: "Aa L" }[size];
+  return (
+    <button
+      type="button"
+      className={styles.HintOff}
+      data-testid="word-size-toggle"
+      onClick={() => cycleWordSize(stores)}
+      title={`Word size: ${size}. Tap for ${size === "small" ? "medium" : size === "medium" ? "large" : "small"} (bigger words are easier to tap when they pile up)`}
+    >
+      {label}
     </button>
   );
 });

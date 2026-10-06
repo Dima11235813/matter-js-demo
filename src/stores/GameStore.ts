@@ -4,6 +4,7 @@ import { RootStore } from './RootStore';
 import { defaultTimedRules, remainingMs, TimedGameRules, TimedGameState } from '../game/timedGame';
 import { Layout3d, loadLayout3d } from '../physics/layoutPresets';
 import { loadColorHints } from '../services/colorHints';
+import { loadWordSize, WordSize } from '../physics/boardZoom';
 import type { Puzzle } from '../game/connectPuzzles';
 import { RelationDeal } from '../game/relationPairs';
 
@@ -18,6 +19,8 @@ export class GameStore extends CommonStore {
     layout3d: Layout3d = loadLayout3d()
     /** Color hint mode (Feature 5.17): similar meanings get similar colors. Per device; independent of hint mode. */
     colorHints: boolean = loadColorHints()
+    /** 2D word size on small and crowded boards (Task 5.7.0): small / medium (default) / large. Per device. */
+    wordSize: WordSize = loadWordSize()
     /** Guess-mode skill rating (Feature 2.12): sets the relation each round deals. */
     rating = 1000
     /** How much the last graded guess moved the rating. */
@@ -43,6 +46,8 @@ export class GameStore extends CommonStore {
             setLayout3d: action,
             colorHints: observable,
             setColorHints: action,
+            wordSize: observable,
+            setWordSize: action,
             rating: observable,
             lastRatingChange: observable,
             setRating: action,
@@ -86,6 +91,9 @@ export class GameStore extends CommonStore {
 
     setColorHints = (on: boolean) => {
         this.colorHints = on
+    }
+    setWordSize = (size: WordSize) => {
+        this.wordSize = size
     }
 
     setPuzzle = (puzzle: (Puzzle & { moves: string[] }) | null) => {

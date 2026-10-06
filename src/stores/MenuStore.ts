@@ -6,6 +6,7 @@ import { Neighbor } from '../embeddings/VectorIndex';
 import { CorpusStats } from '../services/semanticEngine';
 import { loadThemePreference, ThemeName } from '../theme/palette';
 import { prependBoardAnalogy } from '../game/boardAnalogies';
+import type { SavedSession } from '../game/sessions';
 
 export type EngineStatus = "loading" | "ready" | "error"
 export type AppView = "sandbox" | "fountain" | "game" | "puzzle"
@@ -54,6 +55,10 @@ export class MenuStore extends CommonStore {
     lastPlay: LastPlay | null = null
     boardAnalogies: BoardAnalogy[] = []
     privacyOpen = false
+    /** Saved sessions panel (owner, 2026-10-05). */
+    sessionsOpen = false
+    sessions: SavedSession[] = []
+    sessionsMessage = ""
     analogiesOpen: boolean = false
     private nextAnalogyId = 1
     wordInputMessage: string = ""
@@ -107,6 +112,13 @@ export class MenuStore extends CommonStore {
             setLastPlay: action,
             privacyOpen: observable,
             setPrivacyOpen: action,
+            sessionsOpen: observable,
+            sessions: observable.ref,
+            sessionsMessage: observable,
+            setSessionsOpen: action,
+            setSessions: action,
+            setSessionsMessage: action,
+            restoreBoardAnalogies: action,
             clearLastPlay: action,
             boardAnalogies: observable.ref,
             analogiesOpen: observable,
@@ -164,6 +176,21 @@ export class MenuStore extends CommonStore {
         this.corpusStats = stats
         this.score = stats.score
     }
+    setSessionsOpen = (open: boolean) => {
+        this.sessionsOpen = open
+        // The sessions and analogies panels share the top-left corner: one at a time.
+        if (open) this.analogiesOpen = false
+    }
+    setSessions = (sessions: SavedSession[]) => {
+        this.sessions = sessions
+    }
+    setSessionsMessage = (message: string) => {
+        this.sessionsMessage = message
+    }
+    /** A loaded session's analogies, oldest last (the list is newest first). */
+    restoreBoardAnalogies = (plays: LastPlay[]) => {
+        this.boardAnalogies = plays.map(play => ({ ...play, id: this.nextAnalogyId++, playedAt: Date.now() }))
+    }
     setPrivacyOpen = (open: boolean) => {
         this.privacyOpen = open
     }
@@ -181,6 +208,7 @@ export class MenuStore extends CommonStore {
     }
     setAnalogiesOpen = (open: boolean) => {
         this.analogiesOpen = open
+        if (open) this.sessionsOpen = false
     }
     clearLastPlay = () => {
         this.lastPlay = null

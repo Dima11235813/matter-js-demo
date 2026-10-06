@@ -6,7 +6,7 @@ import { stores as rootStores } from "../stores";
 import { focusWords, picksFor } from "../services/playground";
 import { analogyWords } from "../game/boardAnalogies";
 import { relationHintText } from "../game/relationHint";
-import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle, PuzzleHud } from "./GamePanels";
+import { CompactClock, DimensionToggle, GameHud, GameOverCard, HintToggle, LayoutToggle, PuzzleHud, WordSizeToggle } from "./GamePanels";
 import { useDashboardPlacement } from "./useDashboardPlacement";
 import { WordEntryForm } from "./WordEntryForm";
 import { ConsentPrompt } from "./PrivacyPanels";
@@ -124,6 +124,7 @@ const AnalogyDashboardComponent = (props: AnalogyDashboardProps) => {
           {!collapsed && <HintToggle stores={rootStores} />}
           {!collapsed && <DimensionToggle stores={rootStores} />}
           {!collapsed && <LayoutToggle stores={rootStores} />}
+          {!collapsed && <WordSizeToggle stores={rootStores} />}
           <div className={styles.ScoreCard}>
             <span className={styles.ScoreLabel}>{isGame ? "ROUND" : "SCORE"}</span>
             <span className={styles.ScoreValue}>{score}</span>

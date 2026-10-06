@@ -7,6 +7,7 @@ import WordWorld from "./WordWorld";
 import { AnalogyDashboard } from "./matterJsComp/AnalogyDashboard";
 import { BoardAnalogies } from "./matterJsComp/BoardAnalogies";
 import { PrivacyPanel } from "./matterJsComp/PrivacyPanels";
+import { SessionsPanel } from "./matterJsComp/SessionsPanel";
 import { stores } from "./stores";
 import { uiPalettes } from "./theme/palette";
 
@@ -32,6 +33,7 @@ const App = observer(() => {
         <AnalogyDashboard />
         <BoardAnalogies />
         <PrivacyPanel />
+        <SessionsPanel />
         <WordWorld />
       </div>
     </ThemeProvider>

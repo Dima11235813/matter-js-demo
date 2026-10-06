@@ -30,6 +30,7 @@ import ListAltIcon from "@material-ui/icons/ListAlt";
 import PolicyIcon from "@material-ui/icons/Policy";
 import PaletteIcon from "@material-ui/icons/Palette";
 import DeviceHubIcon from "@material-ui/icons/DeviceHub";
+import BookmarksIcon from "@material-ui/icons/Bookmarks";
 import { MenuStore, isWordView } from "../stores/MenuStore";
 import { GameStore } from "../stores/GameStore";
 import { stores } from "../stores";
@@ -89,7 +90,7 @@ const MainMenu = (props: MainMenuProps) => {
     prevOpen.current = open;
   }, [open]);
 
-  const { setMode, mode, setView, view, theme, analogiesOpen, boardAnalogies, setAnalogiesOpen, privacyOpen, setPrivacyOpen } = props.menuStore!;
+  const { setMode, mode, setView, view, theme, analogiesOpen, boardAnalogies, setAnalogiesOpen, privacyOpen, setPrivacyOpen, sessionsOpen, setSessionsOpen } = props.menuStore!;
   const { hintMode, dimension } = props.gameStore!;
 
   const handleCreateMode = (event: React.MouseEvent<EventTarget>) => {
@@ -152,6 +153,13 @@ const MainMenu = (props: MainMenuProps) => {
                 icon={<ListAltIcon />}
               />
             )}
+            <MenuButton
+              id="sessions-toggle"
+              tooltip="Saved sessions: save this board, reload it later, download or upload sessions and play logs"
+              active={sessionsOpen}
+              onClick={() => setSessionsOpen(!sessionsOpen)}
+              icon={<BookmarksIcon />}
+            />
             <MenuButton
               id="privacy-toggle"
               tooltip="Account, privacy & your data: sign in and sync, research sharing, export, erase"

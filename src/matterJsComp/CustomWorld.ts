@@ -57,7 +57,7 @@ export class CustomWorld implements WordWorld {
         // create a shapes factory
         this.shapesFac = new ShapesFactory()
         // Start at the screen's zoom, so the first words on a phone spawn small instead of shrinking later.
-        this.shapesFac.zoom = boardZoom(deps.browserInfo.width, deps.browserInfo.height, [])
+        this.shapesFac.zoom = boardZoom(deps.browserInfo.width, deps.browserInfo.height, [], stores.gameStore.wordSize)
         // Letters mode fetches its dictionary on open, so the first letters dropped can already merge.
         this.collisionHandler = new CollisionHandler(this.shapesFac, stores.menuStore.view === "sandbox")
 
@@ -99,6 +99,10 @@ export class CustomWorld implements WordWorld {
                 .catch(() => { /* status surfaced by bootSemanticPlayground */ })
         }
 
+        if (view === "sandbox" && deps.pendingRestore?.view === "sandbox") {
+            deps.lettersBoard = deps.pendingRestore.letters
+            deps.pendingRestore = undefined
+        }
         if (view === "sandbox" && deps.lettersBoard) {
             // Back in letters mode: the board as it was left. Restored boxes rest in contact, so hold
             // merges for a moment; otherwise they would merge into something the player never made.
@@ -131,14 +135,16 @@ export class CustomWorld implements WordWorld {
             }
         })
         if (mode === AppModes.MOVE) {
-            this.shapesFac.boxes.forEach((box: Box) => {
-                if (this.checkLocationIsInBox(box, x, y, slop)) {
-                    deps.boxLastClicked = box
-                    if (box.body) {
-                        Matter.Body.setStatic(box.body, true)
-                    }
-                }
-            })
+            // Grab one word: the one whose centre is nearest the pointer. Freezing every word under it
+            // (the old loop) left all but the last frozen; grabbing a frozen word again saved its infinite
+            // static mass as its "original", and releasing it gave a moving body infinite mass, whose NaN
+            // spread through the forces to every word (owner: "everything jumps off the screen").
+            const hits = this.shapesFac.boxes.filter(box => box.body && !box.body.isStatic && this.checkLocationIsInBox(box, x, y, slop))
+            const nearest = hits.sort((a, b) => Math.hypot(a.body!.position.x - x, a.body!.position.y - y) - Math.hypot(b.body!.position.x - x, b.body!.position.y - y))[0]
+            if (nearest) {
+                deps.boxLastClicked = nearest
+                Matter.Body.setStatic(nearest.body!, true)
+            }
         }
         if (clickedOnPreviewBox || clickedOnWordBox) {
             this.clickType = EventClickType.SELECT_LETTER
@@ -152,13 +158,30 @@ export class CustomWorld implements WordWorld {
             .filter(b => b.embedding !== undefined && b.body)
             .map(b => ({ text: b.text, x: b.body!.position.x, y: b.body!.position.y, position: [b.body!.position.x, b.body!.position.y], color: b.baseColor ?? b.color }))
     }
+    /**
+     * Safety net: a word whose physics went non-finite (position, velocity, or mass) is removed and dropped
+     * back in at an open spot, before its NaN can spread through the forces to the whole board.
+     */
+    healBrokenBodies = () => {
+        const broken = this.shapesFac.boxes.filter(b => b.body && b.embedding !== undefined
+            && ![b.body.position.x, b.body.position.y, b.body.velocity.x, b.body.velocity.y].every(Number.isFinite)
+            || (b.body && !b.body.isStatic && !(Number.isFinite(b.body.mass) && b.body.mass > 0)))
+        broken.forEach(b => {
+            if (deps.boxLastClicked === b) deps.boxLastClicked = undefined
+            this.collisionHandler.removeBody(b.body!, false, b.matterId)
+            if (b.embedding !== undefined) deps.pendingWordSpawns.push({ word: b.text, color: b.baseColor ?? b.color })
+        })
+    }
+    private zoomSize = stores.gameStore.wordSize
     /** Zoom out on phones and crowded boards (Task 5.7.0); rechecked twice a second, applied in 0.05 steps. */
     updateZoom = () => {
         const { p } = deps
-        if (!p || p.frameCount % 30 !== 0) return
+        // Twice a second, or right away when the player changes the word size.
+        if (!p || (p.frameCount % 30 !== 0 && this.zoomSize === stores.gameStore.wordSize)) return
+        this.zoomSize = stores.gameStore.wordSize
         const { width, height } = deps.browserInfo
         const areas = this.shapesFac.boxes.filter(b => b.baseSize && b.body).map(b => b.baseSize!.w * b.baseSize!.h)
-        this.shapesFac.applyZoom(boardZoom(width, height, areas))
+        this.shapesFac.applyZoom(boardZoom(width, height, areas, stores.gameStore.wordSize))
     }
     /** Color hint mode (Feature 5.17): paint word boxes by meaning (molecules share a hue), or restore their own colors. */
     applyColorHints = () => {
@@ -177,6 +200,12 @@ export class CustomWorld implements WordWorld {
             if (!b.baseColor) b.baseColor = b.color
             b.setColor(color)
         })
+    }
+    /** Letters mode: replaces the board with saved boxes (merges pause briefly, as on return). */
+    replaceLetterBoard = (snapshots: readonly LetterSnapshot[]) => {
+        this.shapesFac.boxes.filter(b => b.body).forEach(b => this.collisionHandler.removeBody(b.body!, false, b.matterId))
+        snapshots.forEach(snapshot => this.shapesFac.restoreLetterBox(snapshot))
+        this.collisionHandler.quietUntil = performance.now() + 1000
     }
     /** Letters mode: every box with its body state, captured when the view changes (Feature 2.14). */
     letterSnapshot = (): LetterSnapshot[] => {
@@ -308,6 +337,7 @@ export class CustomWorld implements WordWorld {
             
             const { view } = stores.menuStore
             if (isWordView(view)) {
+                this.healBrokenBodies()
                 this.spawnQueuedWords()
                 this.applyColorHints()
                 this.updateZoom()

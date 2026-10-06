@@ -58,6 +58,14 @@ const BoardAnalogiesPanel = ({ menuStore }: BoardAnalogiesProps) => {
         <button
           type="button"
           className={styles.Download}
+          onClick={() => store.setSessionsOpen(true)}
+          title="Save this board, or upload a session or a play log"
+        >
+          Sessions…
+        </button>
+        <button
+          type="button"
+          className={styles.Download}
           onClick={() => void downloadPlayLog()}
           title="Every analogy you played, with the model's answers, as a JSON file. Stays on this device unless you share it."
         >

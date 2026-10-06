@@ -64,8 +64,15 @@ test.describe('phone (touch)', () => {
     };
     const selected = () => page.evaluate(() => [...(window as unknown as { __lexical: { stores: { menuStore: { selectedWordTexts: string[] } } } }).__lexical.stores.menuStore.selectedWordTexts]);
 
-    // Phones zoom the board out so words fit (Task 5.7.0): half size on a ~400 px screen.
-    expect(await page.evaluate(() => (window as unknown as { __lexical: { deps: { activeWorld: { shapesFac: { zoom: number } } } } }).__lexical.deps.activeWorld.shapesFac.zoom)).toBeLessThanOrEqual(0.5);
+    // Phones zoom the board out so words fit (Task 5.7.0): medium word size is 0.7 on a ~400 px screen
+    // (at most; a crowded board shrinks further), and the Aa button cycles small / medium / large.
+    const zoom = () => page.evaluate(() => (window as unknown as { __lexical: { deps: { activeWorld: { shapesFac: { zoom: number } } } } }).__lexical.deps.activeWorld.shapesFac.zoom);
+    expect(await zoom()).toBeLessThanOrEqual(0.7 + 1e-9);
+    await page.getByTestId('word-size-toggle').tap(); // → large
+    await expect.poll(zoom).toBeGreaterThan(0.75);
+    await page.getByTestId('word-size-toggle').tap(); // → small
+    await expect.poll(zoom).toBeLessThanOrEqual(0.5 + 1e-9);
+    await page.getByTestId('word-size-toggle').tap(); // → medium again
 
     // A tap selects exactly once (before the fix the emulated mouse press could toggle it back).
     const word = await onCanvas();

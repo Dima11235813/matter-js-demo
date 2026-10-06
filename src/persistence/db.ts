@@ -2,6 +2,7 @@ import { DBSchema, IDBPDatabase, IDBPTransaction, openDB, StoreNames } from "idb
 import { DeviceCounter } from "./counters";
 import { analogyKey } from "./keys";
 import { Neighbor } from "../embeddings/VectorIndex";
+import type { SavedSession } from "../game/sessions";
 
 /**
  * Local-first persistence. Every record carries sync metadata so a future server can pull
@@ -137,12 +138,14 @@ export interface LexicalSchema extends DBSchema {
     games: { key: string; value: GameRecord; indexes: { bySyncState: SyncState; byScore: number } };
     playEvents: { key: string; value: PlayEventRecord; indexes: { bySyncState: SyncState; byAt: number } };
     meta: { key: string; value: MetaRecord };
+    /** Saved boards (owner, 2026-10-05); local to this account database, not synced. */
+    sessions: { key: string; value: SavedSession; indexes: { bySavedAt: number } };
 }
 
 export type LexicalDb = IDBPDatabase<LexicalSchema>;
 
 export const DEFAULT_DB_NAME = "lexical-fountain";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 export function openLexicalDb(name: string = DEFAULT_DB_NAME): Promise<LexicalDb> {
     return openDB<LexicalSchema>(name, DB_VERSION, {
@@ -170,6 +173,10 @@ export function openLexicalDb(name: string = DEFAULT_DB_NAME): Promise<LexicalDb
                 db.createObjectStore("meta", { keyPath: "id" });
                 // Only the upgrade transaction's own requests run here, which keeps it alive until done.
                 if (oldVersion >= 1) void migrateToDeviceCounters(transaction);
+            }
+            if (oldVersion < 5) {
+                const sessions = db.createObjectStore("sessions", { keyPath: "id" });
+                sessions.createIndex("bySavedAt", "savedAt");
             }
         },
     });

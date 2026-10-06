@@ -57,12 +57,16 @@ export class SemanticPhysics {
     /** Two related words (a p99 link) pulled into contact bond into one molecule. */
     private onCollisionStart = (event: Matter.IEventCollision<Matter.Engine>) => {
         if (!this.hintActive) return
-        const byBody = new Map(this.wordBoxes().map(box => [box.body!.id, box]))
+        // Every word with a body, the one being dragged (static) included: a molecule may hold it.
+        const byBody = new Map(this.shapesFac.boxes.filter(b => b.embedding !== undefined && b.body).map(box => [box.body!.id, box]))
         const threshold = semanticEngine.calibration.p99
         for (const { bodyA, bodyB } of event.pairs) {
             const a = byBody.get(bodyA.id)
             const b = byBody.get(bodyB.id)
             if (!a || !b || dot(a.embedding!, b.embedding!) <= threshold) continue
+            // A molecule member that left the board (solved, removed, healed) can't be laid out: skip.
+            const members = [a, b].flatMap(box => [...(this.molecules.moleculeOf(box.body!.id)?.offsets.keys() ?? [])])
+            if (members.some(id => !byBody.has(id))) continue
             const bonded = this.molecules.bond(
                 a.body!.id,
                 b.body!.id,

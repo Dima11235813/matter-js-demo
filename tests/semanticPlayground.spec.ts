@@ -625,3 +625,54 @@ test('Connect: a seeded puzzle is solved by typing bridge words; refused moves e
   await expect.poll(async () => (await puzzle()).seed).toBeGreaterThan(start.seed);
   await expect(page.getByTestId('puzzle-solved')).toHaveCount(0);
 });
+
+test('saved sessions: save a board, reload it from another mode, and round-trip session and play-log files', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openSandbox(page, '2d');
+  await wordBox(page).fill('king - man + woman');
+  await wordBox(page).press('Enter');
+  await expect(page.getByTestId('last-play')).toContainText('queen');
+  await wordBox(page).fill('zeitgeistly');
+  await wordBox(page).press('Enter');
+  await expect.poll(() => boardWords(page)).toContain('zeitgeistly');
+  const saved = (await boardWords(page)).sort();
+
+  // Save the board under a name.
+  await page.locator('#sessions-toggle').click();
+  const panel = page.getByTestId('sessions-panel');
+  await panel.getByRole('textbox', { name: 'Session name' }).fill('royal test');
+  await panel.getByRole('button', { name: 'Save this board' }).click();
+  await expect(panel.getByTestId('saved-session')).toHaveCount(1);
+
+  // Load it from letters mode: it reopens in Discovery with the same words and its analogy.
+  await page.locator('#sandbox-toggle').click();
+  await page.waitForTimeout(500);
+  await panel.getByRole('button', { name: 'Load', exact: true }).click();
+  await expect(page.getByTestId('mode-tag')).toHaveText('Discovery');
+  await expect.poll(async () => (await boardWords(page)).sort(), { timeout: 15_000 }).toEqual(saved);
+  await expect.poll(() => page.evaluate(() => window.__lexical.stores.menuStore.boardAnalogies.map(a => a.answer))).toEqual(['queen']);
+
+  // Download the session and upload the file: it is added as a second saved session.
+  const [download] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'Download', exact: true }).click()]);
+  const sessionPath = await download.path();
+  await panel.getByTestId('session-file').setInputFiles(sessionPath!);
+  await expect(panel.getByTestId('saved-session')).toHaveCount(2);
+  await expect(panel.getByTestId('sessions-message')).toContainText('Added "royal test"');
+
+  // A play log downloaded here and uploaded into a fresh account merges its plays and restores added words.
+  await page.locator('#analogies-toggle').click();
+  const [logDownload] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download my play log' }).click()]);
+  const logPath = await logDownload.path();
+  // The first account on a device adopts the guest's progress, so a second persona is the fresh one.
+  for (const who of ['adopter', 'importer']) {
+    await Promise.all([page.waitForEvent('load'), page.evaluate(s => { void (window.__lexical as unknown as { account: { devSignIn(s: string): Promise<void> } }).account.devSignIn(s); }, `${who}-${Date.now()}`)]);
+    await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
+  }
+  expect(await page.evaluate(() => Boolean(window.__lexical.semanticEngine.lookup('zeitgeistly')))).toBe(false);
+  await page.locator('#sessions-toggle').click();
+  await page.getByTestId('play-log-file').setInputFiles(logPath!);
+  await expect(page.getByTestId('sessions-message')).toContainText('plays added', { timeout: 30_000 });
+  await expect(page.getByTestId('sessions-message')).toContainText('1 words restored');
+  expect(await page.evaluate(() => Boolean(window.__lexical.semanticEngine.lookup('zeitgeistly')))).toBe(true);
+  expect(await page.evaluate(() => (window.__lexical.stores.menuStore as unknown as { score: number }).score)).toBe(0);
+});

@@ -3,6 +3,7 @@ import { AgeBand, AnalogyRecord, ConsentState, GameRecord, LexicalDb, MetaRecord
 import { counterTotal, incrementCounter } from "./counters";
 import { analogyKey } from "./keys";
 import { mergeRecords, sameRecord, type SyncRecord } from "@lexical/shared";
+import type { SavedSession, UploadedPlayEvent } from "../game/sessions";
 import {
     analogyFromSync, analogyToSync, gameFromSync, gameToSync, profileFromSync, profileToSync, wordFromSync, wordToSync,
 } from "./syncRecords";
@@ -19,6 +20,7 @@ export interface LocalDataExport {
     analogies: AnalogyRecord[];
     games: GameRecord[];
     playEvents: PlayEventRecord[];
+    sessions?: SavedSession[];
 }
 export type PlayEventInput = Omit<PlayEventRecord, keyof SyncStamp | "id" | "schema" | "at"> & { at?: number };
 
@@ -189,6 +191,41 @@ export class LexicalRepository {
         return record;
     }
 
+    /**
+     * Merges uploaded play-log events (a "Download my play log" file). Events already here (same id) are
+     * skipped. Imported events are marked synced: they are not this device's plays to upload for research.
+     */
+    async importPlayEvents(events: readonly UploadedPlayEvent[]): Promise<{ added: number; skipped: number }> {
+        const tx = this.db.transaction("playEvents", "readwrite");
+        let added = 0;
+        for (const event of events) {
+            if (await tx.store.get(event.id)) continue;
+            const t = Date.now();
+            await tx.store.put({ ...event, context: event.context as unknown as PlayEventRecord["context"], createdAt: t, updatedAt: t, syncState: "synced", deviceId: "imported" });
+            added++;
+        }
+        await tx.done;
+        return { added, skipped: events.length - added };
+    }
+
+    // --- saved sessions (boards), newest first; local only -------------------------------------------
+
+    async listSessions(): Promise<SavedSession[]> {
+        return (await this.db.getAllFromIndex("sessions", "bySavedAt")).reverse();
+    }
+
+    async saveSession(session: SavedSession): Promise<void> {
+        await this.db.put("sessions", session);
+    }
+
+    getSession(id: string): Promise<SavedSession | undefined> {
+        return this.db.get("sessions", id);
+    }
+
+    async deleteSession(id: string): Promise<void> {
+        await this.db.delete("sessions", id);
+    }
+
     /** Play events in time order, optionally only those at or after `since`. */
     listPlayEvents(since = 0): Promise<PlayEventRecord[]> {
         return this.db.getAllFromIndex("playEvents", "byAt", IDBKeyRange.lowerBound(since));
@@ -312,8 +349,8 @@ export class LexicalRepository {
      * future GDPR export (Epic 6 · Task 6.3.1). The device secret is left out: it is a credential.
      */
     async exportAll(): Promise<LocalDataExport> {
-        const [words, analogies, games, playEvents] = await Promise.all([
-            this.db.getAll("words"), this.db.getAll("analogies"), this.db.getAll("games"), this.db.getAll("playEvents"),
+        const [words, analogies, games, playEvents, sessions] = await Promise.all([
+            this.db.getAll("words"), this.db.getAll("analogies"), this.db.getAll("games"), this.db.getAll("playEvents"), this.db.getAll("sessions"),
         ]);
         const { deviceSecret: _secret, ...meta } = this.meta;
         return {
@@ -326,12 +363,13 @@ export class LexicalRepository {
             analogies,
             games,
             playEvents,
+            sessions,
         };
     }
 
     /** Clears every store on this device (Epic 6 · Task 6.3.2). The next open starts a fresh profile. */
     async eraseAll(): Promise<void> {
-        const names = ["words", "analogies", "profile", "games", "playEvents", "meta"] as const;
+        const names = ["words", "analogies", "profile", "games", "playEvents", "meta", "sessions"] as const;
         const tx = this.db.transaction([...names], "readwrite");
         await Promise.all([...names.map(name => tx.objectStore(name).clear()), tx.done]);
     }

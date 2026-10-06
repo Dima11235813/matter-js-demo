@@ -44,6 +44,8 @@ class Deps {
      * view adopts them, so switching 2D <-> 3D keeps the board instead of restarting it.
      */
     public worldHandoff: BoardHandoff | undefined
+    /** A saved session waiting for the world of its view (set when loading switches the view). */
+    public pendingRestore: { view: string; words: { word: string; x: number; y: number; color?: string }[]; letters?: LetterSnapshot[] } | undefined
     /** The letters board left when leaving letters mode; restored when letters mode opens again. */
     public lettersBoard: LetterSnapshot[] | undefined
     public overlayRect: OverlayRect | undefined

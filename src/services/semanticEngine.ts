@@ -20,6 +20,7 @@ import { dealRelationPairs, DealRelationOptions, obviousPair, parseRelationBank,
 import { RelationStats } from "../game/relationHint";
 import { difficultyOf, NEW_RATING, Rating, RATING_RULES, rateGuess, relationDifficulty } from "../game/rating";
 import { BASE_RULES, ConnectNode, ConnectRules } from "../game/connectAll";
+import type { SavedSession, UploadedPlayEvent } from "../game/sessions";
 import { playLogExport, PlayLogExport, summarizePlayLog, PlayLogSummary } from "../game/playLog";
 import { logger } from "../utils/logger";
 
@@ -272,6 +273,23 @@ export class SemanticEngine {
     /** Connect-All rules (research: base rules at this vocabulary's p99 link). */
     connectRules(): ConnectRules {
         return { ...BASE_RULES, link: this.calibration.p99 };
+    }
+
+    // --- saved sessions and uploaded play logs (owner, 2026-10-05) ---------------------------------------
+    listSessions(): Promise<SavedSession[]> {
+        return this.require().repo.listSessions();
+    }
+    saveSession(session: SavedSession): Promise<void> {
+        return this.require().repo.saveSession(session);
+    }
+    getSession(id: string): Promise<SavedSession | undefined> {
+        return this.require().repo.getSession(id);
+    }
+    deleteSession(id: string): Promise<void> {
+        return this.require().repo.deleteSession(id);
+    }
+    importPlayEvents(events: readonly UploadedPlayEvent[]): Promise<{ added: number; skipped: number }> {
+        return this.require().repo.importPlayEvents(events);
     }
 
     /** Relation categories a round can deal (Feature 2.12 picks one by rating). */

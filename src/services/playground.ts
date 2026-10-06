@@ -8,6 +8,7 @@ import { isRoundRunning, recordRoundAnalogy, recordRoundGuess, startTimedRound }
 import { applyTheme, saveThemePreference } from "../theme/palette";
 import { saveLayout3d } from "../physics/layoutPresets";
 import { saveColorHints } from "./colorHints";
+import { saveWordSize } from "../physics/boardZoom";
 import { boardTransfer, BoardTransfer, SpawnRequest } from "../space/handoff";
 import { expressionAsAnalogy, ExpressionTerm, formatExpression } from "../game/wordEntry";
 import { Keyword } from "../game/keywords";
@@ -214,6 +215,12 @@ export function focusWords(words: readonly string[]): void {
 export function takeBoardTransfer(view: string): BoardTransfer | undefined {
     const handoff = deps.worldHandoff;
     deps.worldHandoff = undefined;
+    // Loading a saved session switched the view: the session is the board.
+    const restore = deps.pendingRestore;
+    if (restore && restore.view === view) {
+        deps.pendingRestore = undefined;
+        return { kind: "continue", queue: restore.words };
+    }
     return boardTransfer(handoff, view, isWordView(view as Parameters<typeof isWordView>[0]));
 }
 
@@ -239,6 +246,14 @@ export function toggleDimension(stores: RootStore): void {
     const next = stores.gameStore.dimension === "3d" ? "2d" : "3d";
     stores.gameStore.setDimension(next);
     if (semanticEngine.isReady) void semanticEngine.setDimension(next);
+}
+
+/** Word size: small → medium → large → small (Task 5.7.0). Per device. */
+export function cycleWordSize(stores: RootStore): void {
+    const order = ["small", "medium", "large"] as const;
+    const next = order[(order.indexOf(stores.gameStore.wordSize) + 1) % order.length];
+    stores.gameStore.setWordSize(next);
+    saveWordSize(next);
 }
 
 /** Color hint mode on/off (Feature 5.17): an isolated, per-device preference. */

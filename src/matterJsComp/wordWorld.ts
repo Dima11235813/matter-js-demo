@@ -29,6 +29,8 @@ export interface WordWorld {
     readonly dimension: "2d" | "3d";
     /** Letters mode only: every box on the board (letters, fragments, words). */
     letterSnapshot?(): LetterSnapshot[];
+    /** Letters mode only: replaces the board with saved boxes (loading a session). */
+    replaceLetterBoard?(snapshots: readonly LetterSnapshot[]): void;
     wordTexts(): string[];
     clearWordBoxes(): void;
     /** Removes these words from the board (a solved Guess analogy makes room). */
