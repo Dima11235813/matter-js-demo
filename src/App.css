@@ -7,6 +7,10 @@
 }
 /* The side menu stays on phones too: without the margin the canvas covered it, and the modes
    (letters, Discovery, Guess) could not be switched below 768 px (Epic 4 · Task 4.5.3). */
+/* Phones: a finger on the board drags words; the browser must not take it for page pan or zoom. */
+#worldContainter canvas {
+  touch-action: none;
+}
 #worldContainter {
   margin-left: 60px;
   flex: 1;

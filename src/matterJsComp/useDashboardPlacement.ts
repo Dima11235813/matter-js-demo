@@ -8,6 +8,8 @@ interface Placement {
 }
 
 const STORAGE_KEY = "lexical-fountain.dashboard";
+/** Pointer travel (px) under which a press on the header is a tap, not a drag. */
+const TAP_SLOP = 6;
 const DEFAULT_PLACEMENT: Placement = { x: 0, y: 0, collapsed: false };
 
 function loadPlacement(): Placement {
@@ -37,7 +39,7 @@ function savePlacement(placement: Placement): void {
 export function useDashboardPlacement(mountKey: string) {
     const rootRef = useRef<HTMLDivElement>(null);
     const [placement, setPlacement] = useState<Placement>(loadPlacement);
-    const drag = useRef<{ pointerId: number; startX: number; startY: number; origin: Placement; rect: DOMRect } | null>(null);
+    const drag = useRef<{ pointerId: number; startX: number; startY: number; origin: Placement; rect: DOMRect; moved: boolean } | null>(null);
 
     const publishRect = useCallback((retries = 20) => {
         const el = rootRef.current;
@@ -79,12 +81,15 @@ export function useDashboardPlacement(mountKey: string) {
         const rect = rootRef.current?.getBoundingClientRect();
         if (!rect) return;
         event.currentTarget.setPointerCapture(event.pointerId);
-        drag.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, origin: placement, rect };
+        drag.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, origin: placement, rect, moved: false };
     };
 
     const onPointerMove = (event: React.PointerEvent<HTMLElement>) => {
         const d = drag.current;
         if (!d || d.pointerId !== event.pointerId) return;
+        // A docked chip doesn't move; a press that travels under TAP_SLOP is still a tap.
+        if (Math.hypot(event.clientX - d.startX, event.clientY - d.startY) > TAP_SLOP) d.moved = true;
+        if (placement.collapsed || !d.moved) return;
         // Clamp so at least the header stays on screen.
         const dx = Math.min(Math.max(event.clientX - d.startX, -d.rect.left), window.innerWidth - d.rect.right);
         const dy = Math.min(Math.max(event.clientY - d.startY, -d.rect.top), window.innerHeight - d.rect.top - 48);
@@ -92,15 +97,20 @@ export function useDashboardPlacement(mountKey: string) {
     };
 
     const onPointerUp = (event: React.PointerEvent<HTMLElement>) => {
-        if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+        const d = drag.current;
+        if (!d || d.pointerId !== event.pointerId) return;
         drag.current = null;
+        // A tap on the header collapses the dashboard into a docked chip, and a tap on the chip
+        // restores it where it was (owner, 2026-10-05: "tap to collapse … docks somewhere").
+        if (!d.moved) return update({ ...placement, collapsed: !placement.collapsed });
         savePlacement(placement);
     };
 
     return {
         rootRef,
         collapsed: placement.collapsed,
-        style: { transform: `translate(calc(-50% + ${placement.x}px), ${placement.y}px)` } as React.CSSProperties,
+        // Collapsed, the dashboard docks in the board's bottom-right corner (class DashboardCollapsed).
+        style: (placement.collapsed ? {} : { transform: `translate(calc(-50% + ${placement.x}px), ${placement.y}px)` }) as React.CSSProperties,
         handleProps: { onPointerDown, onPointerMove, onPointerUp, onDoubleClick: () => update({ ...placement, x: 0, y: 0 }) },
         toggleCollapsed: () => update({ ...placement, collapsed: !placement.collapsed }),
     };

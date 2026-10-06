@@ -110,12 +110,13 @@ export class CustomWorld implements WordWorld {
     // setMouseMoveCoordinates = (x: number, y: number) => {
     //     this.mouseX
     // }
-    catogorizeClickType = (x: number, y: number) => {
+    /** `slop` widens every word's hit box (px): fingers are less precise than a mouse pointer. */
+    catogorizeClickType = (x: number, y: number, slop: number = 0) => {
         const { mode, view } = stores.menuStore!
 
         let clickedOnWordBox = false
         if (isWordView(view)) {
-            const box = this.shapesFac.boxes.find(b => b.embedding !== undefined && this.checkLocationIsInBox(b, x, y))
+            const box = this.shapesFac.boxes.find(b => b.embedding !== undefined && this.checkLocationIsInBox(b, x, y, slop))
             if (box) clickedOnWordBox = selectWordForAnalogy(stores, box.matterId, box.text)
         }
 
@@ -128,7 +129,7 @@ export class CustomWorld implements WordWorld {
         })
         if (mode === AppModes.MOVE) {
             this.shapesFac.boxes.forEach((box: Box) => {
-                if (this.checkLocationIsInBox(box, x, y)) {
+                if (this.checkLocationIsInBox(box, x, y, slop)) {
                     deps.boxLastClicked = box
                     if (box.body) {
                         Matter.Body.setStatic(box.body, true)
@@ -230,7 +231,13 @@ export class CustomWorld implements WordWorld {
     }
     moveBoxIfOneSelected = (x: number, y: number) => {
         if (deps.boxLastClicked && deps.boxLastClicked.body) {
-            Matter.Body.setPosition(deps.boxLastClicked.body, { x, y })
+            // Keep a held word on the board: past the edge, Box.show deletes it as out of bounds (a finger
+            // easily leaves the narrow canvas on a phone).
+            const { w, h } = deps.boxLastClicked.boxOptions
+            const { width, height } = deps.browserInfo
+            const cx = Math.min(Math.max(x, w / 2), Math.max(w / 2, width - w / 2))
+            const cy = Math.min(Math.max(y, h / 2), Math.max(h / 2, height - h / 2))
+            Matter.Body.setPosition(deps.boxLastClicked.body, { x: cx, y: cy })
             Matter.Body.setVelocity(deps.boxLastClicked.body, { x: 0, y: 0 })
         }
     }
@@ -242,8 +249,9 @@ export class CustomWorld implements WordWorld {
         this.shapesFac.updateHardBodies()
         this.shapesFac.updatePreviewBoxes()
     }
-    checkLocationIsInBox = (box: Box, x: number, y: number): boolean => {
-        const { w: boxW, h: boxH } = box.boxOptions
+    checkLocationIsInBox = (box: Box, x: number, y: number, slop: number = 0): boolean => {
+        const { w, h } = box.boxOptions
+        const [boxW, boxH] = [w + 2 * slop, h + 2 * slop]
         if (!box.body) return false
         const { position } = box.body
         const { x: xPos, y: yPos } = position

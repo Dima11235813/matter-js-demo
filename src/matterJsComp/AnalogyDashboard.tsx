@@ -114,16 +114,16 @@ const AnalogyDashboardComponent = (props: AnalogyDashboardProps) => {
   return (
     <div ref={placement.rootRef} className={collapsed ? styles.DashboardCollapsed : styles.DashboardRoot} style={placement.style}>
       <div className={styles.TopRow}>
-        <div className={styles.DragHandle} {...placement.handleProps} title="Drag to move · double-click to reset">
+        <div className={styles.DragHandle} {...placement.handleProps} data-testid="dashboard-handle" title={collapsed ? "Tap to open the dashboard" : "Tap to dock · drag to move · double-click to reset"}>
           <span className={styles.Grip} aria-hidden="true">⠿</span>
-          <span className={styles.Logo}>Lexical Fountain</span>
+          {!collapsed && <span className={styles.Logo}>Lexical Fountain</span>}
           <span className={styles.ModeTag} data-testid="mode-tag">{isGame ? "Guess" : store.view === "puzzle" ? "Connect" : "Discovery"}</span>
         </div>
         <div className={styles.TopControls}>
           {collapsed && isGame && <CompactClock gameStore={gameStore} />}
-          <HintToggle stores={rootStores} />
-          <DimensionToggle stores={rootStores} />
-          <LayoutToggle stores={rootStores} />
+          {!collapsed && <HintToggle stores={rootStores} />}
+          {!collapsed && <DimensionToggle stores={rootStores} />}
+          {!collapsed && <LayoutToggle stores={rootStores} />}
           <div className={styles.ScoreCard}>
             <span className={styles.ScoreLabel}>{isGame ? "ROUND" : "SCORE"}</span>
             <span className={styles.ScoreValue}>{score}</span>
