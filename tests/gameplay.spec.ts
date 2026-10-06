@@ -74,6 +74,17 @@ test.describe('phone (touch)', () => {
     await expect.poll(zoom).toBeLessThanOrEqual(0.5 + 1e-9);
     await page.getByTestId('word-size-toggle').tap(); // → medium again
 
+    // Legible words: one font size for every word, and each box is wide enough for its text.
+    const legibility = await page.evaluate(() => {
+      type B = { text: string; baseSize?: unknown; body?: unknown; boxOptions: { w: number; textSize: number } };
+      const { p, activeWorld } = (window as unknown as { __lexical: { deps: { p: { push(): void; pop(): void; textFont(f: string): void; textSize(s: number): void; textWidth(t: string): number }; activeWorld: { shapesFac: { boxes: B[] } } } } }).__lexical.deps;
+      const words = activeWorld.shapesFac.boxes.filter(b => b.baseSize && b.body);
+      const sizes = new Set(words.map(b => Math.round(b.boxOptions.textSize * 100)));
+      const overflow = words.filter(b => { p.push(); p.textFont('Outfit, Inter, system-ui, -apple-system, sans-serif'); p.textSize(b.boxOptions.textSize); const w = p.textWidth(b.text); p.pop(); return w > b.boxOptions.w - 4; }).map(b => b.text);
+      return { sizes: sizes.size, overflow };
+    });
+    expect(legibility).toEqual({ sizes: 1, overflow: [] });
+
     // A tap selects exactly once (before the fix the emulated mouse press could toggle it back).
     const word = await onCanvas();
     await page.touchscreen.tap(canvas.x + word.x, canvas.y + word.y);

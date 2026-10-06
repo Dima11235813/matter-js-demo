@@ -8,6 +8,9 @@ import { getRandomLetterOrSpace } from '../../utils/textUtils';
 import { stores } from '../../stores';
 import { AppModes } from '../models/appMode';
 
+/** The font every box label is drawn (and word boxes are measured) in. */
+export const WORD_FONT_FAMILY = "Outfit, Inter, system-ui, -apple-system, sans-serif"
+
 export class Box {
     static readonly border = 4
     static readonly mass = 1
@@ -146,7 +149,7 @@ export class Box {
                 const { textSize = 20 } = textOptions
                 p.textAlign(p.CENTER, p.CENTER)
                 p.textSize(textSize)
-                p.textFont("Outfit, Inter, system-ui, -apple-system, sans-serif")
+                p.textFont(WORD_FONT_FAMILY)
                 p.text(this.text, 0, 2)
             }
 

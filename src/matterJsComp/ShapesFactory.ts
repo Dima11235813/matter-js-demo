@@ -1,4 +1,4 @@
-import { Box } from "./Shapes/Box";
+import { Box, WORD_FONT_FAMILY } from "./Shapes/Box";
 import { BoxOptions, HardBodyOptions, ShapeTypes, decordateWithTextProps, ShapeBase } from "./models/boxOptions";
 import p5 from "p5";
 import { World } from "matter-js";
@@ -199,8 +199,26 @@ export class ShapesFactory {
         })
         this.zoom = zoom
     }
+    /**
+     * Word boxes share one font size, and each box is as wide as its text (owner, 2026-10-05: "font size
+     * and proportion to the container … legible"). Before, the font grew with the box width, so long
+     * words got huge text and short ones tiny text, and descenders (g, j, p, y) were clipped.
+     */
+    static readonly wordFontSize = 22
+    static readonly wordBoxHeight = 40
+    static readonly wordPaddingX = 14
+    measureWord = (text: string): number => {
+        const { p } = deps
+        if (!p) return text.length * ShapesFactory.wordFontSize * 0.58
+        p.push()
+        p.textFont(WORD_FONT_FAMILY)
+        p.textSize(ShapesFactory.wordFontSize)
+        const width = p.textWidth(text)
+        p.pop()
+        return width
+    }
     createWordBox = (text: string, x: number, y: number): Box => {
-        const baseSize = { w: text.length * 20 + 20, h: 44 }
+        const baseSize = { w: Math.ceil(this.measureWord(text)) + 2 * ShapesFactory.wordPaddingX, h: ShapesFactory.wordBoxHeight }
         let newWidth = baseSize.w * this.zoom
         let newHeight = baseSize.h * this.zoom
         let newBoxOptions = {
@@ -213,7 +231,8 @@ export class ShapesFactory {
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), text)
         newBox.embedding = semanticEngine.lookup(text)
-        newBox.baseSize = baseSize
+        newBox.baseSize = baseSize;
+        (newBox.boxOptions as BoxOptions).textSize = ShapesFactory.wordFontSize * this.zoom
         newBox.boxOptions.type = ShapeTypes.BOX
         this.boxes.push(newBox)
         
