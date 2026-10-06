@@ -109,7 +109,7 @@ export function useDashboardPlacement(mountKey: string) {
     return {
         rootRef,
         collapsed: placement.collapsed,
-        // Collapsed, the dashboard docks in the board's bottom-right corner (class DashboardCollapsed).
+        // Collapsed, the dashboard docks in the board's top-right corner (class DashboardCollapsed).
         style: (placement.collapsed ? {} : { transform: `translate(calc(-50% + ${placement.x}px), ${placement.y}px)` }) as React.CSSProperties,
         handleProps: { onPointerDown, onPointerMove, onPointerUp, onDoubleClick: () => update({ ...placement, x: 0, y: 0 }) },
         toggleCollapsed: () => update({ ...placement, collapsed: !placement.collapsed }),

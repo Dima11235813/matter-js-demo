@@ -184,9 +184,25 @@ export class ShapesFactory {
         this.totalCount += 1
         return newBox
     }
+    /** 2D board zoom for word boxes (Task 5.7.0): smaller on phones and on crowded boards. */
+    public zoom: number = 1
+    /** Resizes every word box (body, box, and text) to `zoom`. */
+    applyZoom = (zoom: number) => {
+        const k = zoom / this.zoom
+        if (Math.abs(k - 1) < 1e-6) return
+        this.boxes.filter(b => b.baseSize && b.body).forEach(b => {
+            Matter.Body.scale(b.body!, k, k)
+            const options = b.boxOptions as BoxOptions
+            options.w *= k
+            options.h *= k
+            options.textSize = (options.textSize ?? 20) * k
+        })
+        this.zoom = zoom
+    }
     createWordBox = (text: string, x: number, y: number): Box => {
-        let newWidth = text.length * 20 + 20
-        let newHeight = 44
+        const baseSize = { w: text.length * 20 + 20, h: 44 }
+        let newWidth = baseSize.w * this.zoom
+        let newHeight = baseSize.h * this.zoom
         let newBoxOptions = {
             x: x,
             y: y,
@@ -197,6 +213,7 @@ export class ShapesFactory {
         }
         let newBox = new Box(decordateWithTextProps(newBoxOptions), text)
         newBox.embedding = semanticEngine.lookup(text)
+        newBox.baseSize = baseSize
         newBox.boxOptions.type = ShapeTypes.BOX
         this.boxes.push(newBox)
         

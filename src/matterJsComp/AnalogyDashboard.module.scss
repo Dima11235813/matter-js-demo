@@ -27,13 +27,14 @@
   }
 }
 
-// Docked chip: the collapsed dashboard sits in the board's bottom-right corner, as small as it gets.
+// Docked chip: the collapsed dashboard sits in the board's top-right corner, as small as it gets
+// (not the bottom: words pile up there under gravity).
 .DashboardCollapsed {
   composes: DashboardRoot;
-  top: auto;
+  top: 12px;
   left: auto;
   right: 12px;
-  bottom: 12px;
+  bottom: auto;
   width: auto;
   max-width: none;
   padding: 6px 10px;

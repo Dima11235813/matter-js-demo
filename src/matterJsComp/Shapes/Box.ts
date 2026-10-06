@@ -16,6 +16,8 @@ export class Box {
     previewBox: boolean = false
     outOfBounds: boolean = false
     color: string = getRandomColor()
+    /** Word boxes: the full-size box (zoom 1); the drawn size is this times the board zoom (Task 5.7.0). */
+    baseSize: { w: number, h: number } | undefined
     /** The box's own color while color hint mode paints it (restored when the mode is turned off). */
     baseColor: string | undefined
     /** Black or white, whichever meets WCAG AA contrast against this box's fill. */

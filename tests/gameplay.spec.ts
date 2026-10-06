@@ -64,6 +64,9 @@ test.describe('phone (touch)', () => {
     };
     const selected = () => page.evaluate(() => [...(window as unknown as { __lexical: { stores: { menuStore: { selectedWordTexts: string[] } } } }).__lexical.stores.menuStore.selectedWordTexts]);
 
+    // Phones zoom the board out so words fit (Task 5.7.0): half size on a ~400 px screen.
+    expect(await page.evaluate(() => (window as unknown as { __lexical: { deps: { activeWorld: { shapesFac: { zoom: number } } } } }).__lexical.deps.activeWorld.shapesFac.zoom)).toBeLessThanOrEqual(0.5);
+
     // A tap selects exactly once (before the fix the emulated mouse press could toggle it back).
     const word = await onCanvas();
     await page.touchscreen.tap(canvas.x + word.x, canvas.y + word.y);
@@ -100,21 +103,22 @@ test.describe('phone (touch)', () => {
     expect((await boxes(page)).map(b => b.text)).toContain(target.text);
   });
 
-  test('tapping the dashboard header docks it as a small chip, and tapping the chip restores it', async ({ page }) => {
+  test('tapping the dashboard header docks it as a small top-right chip, and tapping the chip restores it', async ({ page }) => {
     await page.goto('/');
     await ready(page);
     const viewport = page.viewportSize()!;
     const dashboard = page.getByTestId('dashboard-handle').locator('xpath=ancestor::div[contains(@class, "Dashboard")][1]');
     const open = (await dashboard.boundingBox())!;
-    expect(open.y).toBeLessThan(100);
+    expect(open.height).toBeGreaterThan(120);
 
+    // Docked top-right (words pile up at the bottom under gravity).
     await page.getByTestId('dashboard-handle').tap();
-    await expect.poll(async () => (await dashboard.boundingBox())!.y).toBeGreaterThan(viewport.height - 120);
+    await expect.poll(async () => (await dashboard.boundingBox())!.height).toBeLessThan(80);
     const docked = (await dashboard.boundingBox())!;
-    expect(docked.height).toBeLessThan(80);
+    expect(docked.y).toBeLessThan(60);
     expect(docked.x + docked.width).toBeGreaterThan(viewport.width - 40);
 
     await page.getByTestId('dashboard-handle').tap();
-    await expect.poll(async () => (await dashboard.boundingBox())!.y).toBeLessThan(100);
+    await expect.poll(async () => (await dashboard.boundingBox())!.height).toBeGreaterThan(120);
   });
 });

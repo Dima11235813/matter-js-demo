@@ -10,6 +10,7 @@ import { stores } from "../stores";
 import { AppModes } from "./models/appMode";
 import { semanticEngine } from "../services/semanticEngine";
 import { colorHintPainter } from "../services/colorHints";
+import { boardZoom } from "../physics/boardZoom";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { focusTargets, LetterSnapshot, WordProbe, WordWorld } from "./wordWorld";
 import { isWordView } from "../stores/MenuStore";
@@ -55,6 +56,8 @@ export class CustomWorld implements WordWorld {
 
         // create a shapes factory
         this.shapesFac = new ShapesFactory()
+        // Start at the screen's zoom, so the first words on a phone spawn small instead of shrinking later.
+        this.shapesFac.zoom = boardZoom(deps.browserInfo.width, deps.browserInfo.height, [])
         // Letters mode fetches its dictionary on open, so the first letters dropped can already merge.
         this.collisionHandler = new CollisionHandler(this.shapesFac, stores.menuStore.view === "sandbox")
 
@@ -148,6 +151,14 @@ export class CustomWorld implements WordWorld {
         return this.shapesFac.boxes
             .filter(b => b.embedding !== undefined && b.body)
             .map(b => ({ text: b.text, x: b.body!.position.x, y: b.body!.position.y, position: [b.body!.position.x, b.body!.position.y], color: b.baseColor ?? b.color }))
+    }
+    /** Zoom out on phones and crowded boards (Task 5.7.0); rechecked twice a second, applied in 0.05 steps. */
+    updateZoom = () => {
+        const { p } = deps
+        if (!p || p.frameCount % 30 !== 0) return
+        const { width, height } = deps.browserInfo
+        const areas = this.shapesFac.boxes.filter(b => b.baseSize && b.body).map(b => b.baseSize!.w * b.baseSize!.h)
+        this.shapesFac.applyZoom(boardZoom(width, height, areas))
     }
     /** Color hint mode (Feature 5.17): paint word boxes by meaning (molecules share a hue), or restore their own colors. */
     applyColorHints = () => {
@@ -299,6 +310,7 @@ export class CustomWorld implements WordWorld {
             if (isWordView(view)) {
                 this.spawnQueuedWords()
                 this.applyColorHints()
+                this.updateZoom()
                 this.semanticOverlay.drawThreads(p)
             }
             
