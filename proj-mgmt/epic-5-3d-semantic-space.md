@@ -130,8 +130,8 @@ Offline simulation over the real vocabulary (Spearman correlation between pair s
 
 ### Feature 5.13: Create (+) Mode in 3D (roadmap)
 * **Description**: The + menu mode works in 3D: clicking empty space adds a word where you clicked.
-* [ ] **Task 5.13.1**: Click on empty space (not a word, not an orbit drag) spawns a random word on the camera-facing plane through the orbit target at the click point.
-* [ ] **Task 5.13.2**: Same rules as 2D: sandbox only (timed rounds keep their scarce, dealt supply); Move mode (hand) maps to Feature 5.12 dragging.
+* [x] **Task 5.13.1** (2026-10-05, owner: "3D mode supported new word addition to the world in the plus mode while the usual pinch and zoom and rotate would be the hand mode"): in + mode a tap on empty space adds a random word on the camera-facing plane through the orbit target (Discovery only); the view doesn't rotate or pan in + mode, and hand mode is the navigation mode (drag rotates, two fingers pan); pinch / scroll zoom works in both. Taps on words select in either mode. e2e: a + tap adds a word, a + drag leaves the camera still, a hand drag rotates it.
+* [~] **Task 5.13.2**: ✅ Same rules as 2D: Discovery only (Guess keeps its dealt supply; Connect words are typed moves). ⬜ Dragging a single word in 3D (Feature 5.12); hand mode navigates the view for now.
 
 ### Feature 5.14: Embedding-Shaped 3D Layout (MVP shipped · research complete)
 * **Description**: The 3D configuration is decided by the board's own embedding distances, so the layout is itself a visualization: ordered words form lines, cycles form rings, families form clusters or sheets. Driven by [docs/research/embedding-shape.md](../docs/research/embedding-shape.md).

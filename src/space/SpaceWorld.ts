@@ -6,6 +6,7 @@ import { SpaceSimulation } from "../physics/spaceSimulation";
 import { Layout3d, layout3dConfig } from "../physics/layoutPresets";
 import { semanticEngine } from "../services/semanticEngine";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
+import { AppModes } from "../matterJsComp/models/appMode";
 import { stores } from "../stores";
 import { getRandomColor } from "../utils/colorUtils";
 import { colorHintPainter } from "../services/colorHints";
@@ -156,6 +157,11 @@ export class SpaceWorld implements WordWorld {
         this.view.syncThreads(this.sim.bodies, threads, this.hovered);
         this.view.syncPills(this.sim.bodies, threads, this.hovered);
         this.director.update(this.sim.bodies, this.size, deps.overlayRect);
+        // Hand (Move) mode navigates: drag rotates, two fingers pan; + (Create) mode keeps the view still so
+        // taps add words. Pinch / scroll zoom works in both (owner, 2026-10-05).
+        const navigating = stores.menuStore.mode === AppModes.MOVE;
+        this.controls.enableRotate = navigating;
+        this.controls.enablePan = navigating;
         this.controls.update();
         this.view.updateFog(this.camera.position.distanceTo(this.controls.target));
         this.renderer.render(this.view.scene, this.camera);
@@ -196,7 +202,29 @@ export class SpaceWorld implements WordWorld {
         const id = this.pick(event);
         const body = this.sim.bodies.find(b => b.id === id);
         if (body) selectWordForAnalogy(stores, body.id, body.word);
+        else if (stores.menuStore.mode === AppModes.CREATE) this.addWordAt(event);
     };
+
+    /**
+     * + mode on empty space (Epic 5 · Feature 5.13): a random word lands where you tapped, on the plane
+     * through the orbit target facing the camera. Discovery only, like 2D: Guess deals a scarce supply and
+     * every Connect word is a typed move.
+     */
+    private addWordAt(event: PointerEvent): void {
+        if (stores.menuStore.view !== "fountain" || !semanticEngine.isReady) return;
+        const rect = this.renderer.domElement.getBoundingClientRect();
+        const ndc = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+        this.raycaster.setFromCamera(ndc, this.camera);
+        const normal = this.camera.getWorldDirection(new THREE.Vector3());
+        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, this.controls.target);
+        const point = this.raycaster.ray.intersectPlane(plane, new THREE.Vector3());
+        const [word] = semanticEngine.randomWords(1);
+        if (!point || !word || this.sim.bodies.some(b => b.word === word)) return;
+        const vector = semanticEngine.lookup(word);
+        if (!vector) return;
+        const body = this.sim.add(word, vector, semanticEngine.rankOf(word), [point.x, point.y, point.z]);
+        this.colors.set(body.id, getRandomColor());
+    }
 
     private onPointerMove = (event: PointerEvent) => {
         if (event.buttons !== 0) return; // orbiting, not hovering

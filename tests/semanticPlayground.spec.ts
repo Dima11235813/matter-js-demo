@@ -676,3 +676,40 @@ test('saved sessions: save a board, reload it from another mode, and round-trip 
   expect(await page.evaluate(() => Boolean(window.__lexical.semanticEngine.lookup('zeitgeistly')))).toBe(true);
   expect(await page.evaluate(() => (window.__lexical.stores.menuStore as unknown as { score: number }).score)).toBe(0);
 });
+
+test('3D: + mode taps add words and keep the view still; hand mode drags rotate the view (Feature 5.13)', async ({ page }) => {
+  await openSandbox(page, '3d');
+  await page.waitForFunction(() => window.__lexical.deps.activeWorld?.dimension === '3d', null, { timeout: 20_000 });
+  await expect.poll(async () => (await boardWords(page)).length, { timeout: 20_000 }).toBeGreaterThanOrEqual(8);
+  await page.waitForTimeout(1_500);
+  const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
+  type Space = { camera: { position: { x: number; y: number; z: number } } };
+  const cameraAt = () => page.evaluate(() => { const p = (window.__lexical.deps.activeWorld as unknown as Space).camera.position; return [p.x, p.y, p.z].map(v => Math.round(v)); });
+
+  // + mode (the default): a tap on empty space adds a word; taps on words only select them.
+  const before = (await boardWords(page)).length;
+  for (const [fx, fy] of [[0.15, 0.85], [0.85, 0.85], [0.15, 0.6], [0.85, 0.6], [0.5, 0.92]]) {
+    await page.mouse.click(canvas.x + canvas.width * fx, canvas.y + canvas.height * fy);
+    await page.waitForTimeout(300);
+    if ((await boardWords(page)).length > before) break;
+  }
+  expect((await boardWords(page)).length).toBe(before + 1);
+
+  // + mode: a drag doesn't rotate the view.
+  const drag = async () => {
+    await page.mouse.move(canvas.x + canvas.width * 0.3, canvas.y + canvas.height * 0.75);
+    await page.mouse.down();
+    await page.mouse.move(canvas.x + canvas.width * 0.7, canvas.y + canvas.height * 0.7, { steps: 12 });
+    await page.mouse.up();
+    await page.waitForTimeout(800);
+  };
+  const still = await cameraAt();
+  await drag();
+  const afterCreateDrag = await cameraAt();
+  // Hand mode: the same drag rotates the camera.
+  await page.getByRole('menuitem', { name: 'Move: drag words around' }).click();
+  await drag();
+  const afterMoveDrag = await cameraAt();
+  const moved = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  expect(moved(afterMoveDrag, afterCreateDrag)).toBeGreaterThan(5 * Math.max(1, moved(afterCreateDrag, still)));
+});
