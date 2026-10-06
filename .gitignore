@@ -43,8 +43,8 @@ credentials*.json
 __pycache__/
 /.wrangler
 
-# generated embedding vocabulary (yarn vocab:build)
-/public/vocab
+# The embedding vocabulary (public/vocab) is committed: hosts build in < 300 s, and embedding takes ~5 min.
+# Rebuild with `yarn vocab:build` when its inputs change, and commit the result.
 /.playwright-mcp
 
 # stray Vite dependency cache (created when the dev server ran without package.json)

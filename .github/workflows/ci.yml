@@ -49,17 +49,12 @@ jobs:
           path: node_modules/@huggingface/transformers/.cache
           key: hf-model-all-MiniLM-L6-v2-q8-${{ steps.vk.outputs.rt }}
 
-      # Keyed by every input scripts/build-vocab.mjs reads, plus the model runtime versions.
-      - name: Restore vocabulary
-        id: vocab
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: public/vocab
-          key: vocab-${{ steps.vk.outputs.rt }}-${{ hashFiles('scripts/build-vocab.mjs', 'data/vocab/**', 'src/utils/Dictionary/googleMostCommonDict.js', 'src/utils/Dictionary/combinationOfAllDict.js', 'src/utils/Dictionary/scribdDict.js', 'src/utils/Dictionary/Dict3.ts', 'src/utils/Dictionary/corporaExplitives.js', 'src/mitDict.txt') }}
-
-      - name: Build vocabulary (cache miss only; several minutes)
-        if: steps.vocab.outputs.cache-hit != 'true'
-        run: yarn vocab:build
+      # The vocabulary is committed (public/vocab): hosts like SiteGround build in < 300 s and embedding
+      # takes ~5 min. CI tests exactly the committed files; rebuild locally with `yarn vocab:build`.
+      - name: Committed vocabulary present
+        run: |
+          test -s public/vocab/vocab.bin || { echo "::error::public/vocab/vocab.bin is missing: run yarn vocab:build and commit it"; exit 1; }
+          test -s public/vocab/vocab.json || { echo "::error::public/vocab/vocab.json is missing"; exit 1; }
 
       - name: Typecheck (web app, then server)
         run: |

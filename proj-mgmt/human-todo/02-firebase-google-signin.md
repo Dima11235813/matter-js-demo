@@ -20,4 +20,4 @@
 * ☐ Restrict the browser key to `http://localhost:3000/*` and the workers.dev URL (APIs & Services → Credentials).
 * ☐ Budget alert $50/month with alerts at $10/$25/$50 (Billing).
 
-**Done when**: `yarn dev:server` + `yarn start` → menu (shield icon) → **Sign in with Google** appears. Then do item 6.
+**Done when**: `yarn dev:server` + `yarn dev` → menu (shield icon) → **Sign in with Google** appears. Then do item 6.

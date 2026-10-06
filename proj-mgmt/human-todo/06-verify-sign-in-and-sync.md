@@ -4,7 +4,7 @@
 
 **Needs**: item 2.
 
-**Steps** (local: `yarn dev:server` in one terminal, `yarn start` in another):
+**Steps** (local: `yarn dev:server` in one terminal, `yarn dev` in another):
 * ☐ Play a few analogies as a guest. Menu → shield icon → **Sign in with Google** (answer the age question once). The guest's score appears in the account (the first account on a device adopts the guest's progress).
 * ☐ In a second browser (or a private window), sign in with the **same** Google account: after a few seconds both show the same score and analogies (plays on each add up).
 * ☐ **Account switching**: sign in with a **second** Google account (the chooser appears): it starts fresh; switch back with the account list: the first account's progress is still there. **Play as guest** returns to the guest's data.

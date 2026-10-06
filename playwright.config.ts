@@ -29,7 +29,7 @@ export default defineConfig({
   // `--mode e2e` bundle served by `vite preview`, so tests exercise what players get.
   webServer: [
     {
-      command: process.env.E2E_SERVER === 'preview' ? 'yarn preview:e2e' : 'yarn start',
+      command: process.env.E2E_SERVER === 'preview' ? 'yarn preview:e2e' : 'yarn dev',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: process.env.CI ? 120_000 : 10_000,

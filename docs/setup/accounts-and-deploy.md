@@ -133,7 +133,8 @@ cp .env.example .env.local                   # then fill the VITE_FIREBASE_* val
 cp server/.env.example server/.env.local     # then fill FIREBASE_PROJECT_ID (1.4)
 yarn install
 yarn dev:server    # API on http://localhost:8787 (in-process Postgres; no Docker needed)
-yarn start         # game on http://localhost:3000; /api is proxied to the server
+yarn dev          # game on http://localhost:3000; /api is proxied to the server
+# Production-like: `yarn build && NODE_ENV=production PORT=8790 yarn start` serves the built game and the API on one port
 ```
 
 Without the Firebase values the game works exactly as before, with no sign-in button: accounts are optional by design. With them: menu → shield icon → **Account, privacy & your data** → **Sign in with Google** (after the one-time age question). Sign in on two browsers (or a normal and a private window) to watch the score, analogies, words, and games converge.

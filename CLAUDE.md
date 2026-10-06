@@ -9,7 +9,7 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - `src/space/` three.js 3D view; `src/matterJsComp/` 2D Matter/p5 world, dashboard, menu glue
 - `src/persistence/` IndexedDB (sync-ready records); `src/services/` use cases; `src/stores/` MobX
 - `proj-mgmt/` epics and roadmap (source of truth for plans); `docs/research/` reports + reproducible experiments that drive plans
-- `scripts/build-vocab.mjs` builds `public/vocab/` (gitignored; `yarn start`/`yarn build` build it if missing)
+- `scripts/build-vocab.mjs` builds `public/vocab/`, which is **committed** (SiteGround builds within 300 s and embedding takes ~5 min). After changing its inputs (`data/vocab/**`, the dictionaries, the script), run `yarn vocab:build` and commit `public/vocab`; CI tests the committed files
 - Monorepo (Yarn 1 workspaces; the web app stays at the root because files are never moved on Drive): `packages/shared` (`@lexical/shared`: zod DTOs, merge rules, keys, counters; TypeScript source, no build step) and `server/` (`@lexical/server`: Hono API, PGlite locally / Postgres in production). Define a contract once in `@lexical/shared`; `src/persistence/counters.ts` and `keys.ts` only re-export it
 
 ## Commands
@@ -22,6 +22,8 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - Rebuild vocabulary: `yarn vocab:build`
 - Local sign-in without Google: the local API has dev sign-in on by default (only without `DATABASE_URL` and not in production); dev builds show **test personas** in the account panel, or run `window.__lexical.account.devSignIn("name")`. Each account/persona has its own local database (`lexical-fountain@<uid>`); switching reloads.
 - API server: `yarn dev:server` (watch mode) or `yarn start:server` (port 8787; Vite proxies `/api`, `vite preview` too; config in `server/.env.local`, see `server/.env.example`). Server typecheck: `npx tsc --noEmit -p server`. Shared and server tests run in `yarn test:unit` (PGlite in memory)
+- Scripts: `yarn dev` = Vite dev server; `yarn start` = the **production** server (`server/src/main.ts` serves `dist/` plus `/api` on `PORT`; SiteGround runs it); `yarn build` = `vite build` only (type-checking is CI's job).
+- Deployment (2026-10-05): SiteGround Node.js hosting deploys every push to `main` (install, `yarn build`, `yarn start`); settings and env vars in `proj-mgmt/human-todo/12-siteground-node-hosting.md`. The Cloudflare job stays gated off. Check a deploy locally with `yarn build && NODE_ENV=production PORT=8790 yarn start`.
 - Dev server: `npx vite --port 3000 --strictPort --open false`; add `--host 0.0.0.0` so the owner can play-test from another device (they often follow from the Claude mobile app), and run `yarn start:server` alongside for sign-in. At each milestone, share the network URL (`http://<LAN IPv4 from ipconfig>:3000/`), never `localhost`.
 - Dev handle in the browser console: `window.__lexical` (`wordBoxes()`, `layoutFidelity()`, `semanticEngine`, `stores`, `deps`)
 

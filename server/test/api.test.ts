@@ -74,8 +74,10 @@ describe('API basics and auth', () => {
 
   it('refuses the dev token issuer in production configuration', () => {
     expect(() => loadConfig({ NODE_ENV: 'production', DEV_AUTH_SECRET: DEV_SECRET, DATABASE_URL: 'postgres://x' })).toThrow(/DEV_AUTH_SECRET/);
-    expect(() => loadConfig({ NODE_ENV: 'production' })).toThrow(/DATABASE_URL/);
     expect(loadConfig({ NODE_ENV: 'production', DATABASE_URL: 'postgres://x' })).toMatchObject({ devAuthSecret: undefined, devAuthSource: 'off' });
+    // Hosting without a database URL (SiteGround): PGlite on disk or in memory, and still never dev sign-in.
+    expect(loadConfig({ NODE_ENV: 'production', PGLITE_DATA_DIR: '/data/lexical' })).toMatchObject({ pgliteDataDir: '/data/lexical', devAuthSecret: undefined, devAuthSource: 'off' });
+    expect(loadConfig({ NODE_ENV: 'production' })).toMatchObject({ pgliteDataDir: 'memory://', devAuthSecret: undefined, devAuthSource: 'off' });
   });
 
   it('enables dev sign-in by default only for local runs on the in-process database', () => {

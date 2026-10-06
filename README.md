@@ -8,10 +8,14 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 In the project directory, you can run:
 
+### `yarn dev`
+
+Runs the app in the development mode (Vite).<br />
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+
 ### `yarn start`
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Runs the production server: the built game (`dist/`, from `yarn build`) and the API on `PORT`. This is what Node.js hosting (SiteGround) runs.
 
 The page will reload if you make edits.<br />
 You will also see any lint errors in the console.
