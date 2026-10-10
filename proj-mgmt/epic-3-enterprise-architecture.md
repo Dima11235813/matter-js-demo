@@ -144,7 +144,7 @@ Refactor the codebase from a single client-side project containing all vocabular
 
     It then pushes on a timer and when the browser comes back online.
   * The age rule: accounts need an age band of 13 or older (Epic 6 · Task 6.2.2.1); the age question is asked first if needed.
-  * Vite dev proxies `/api` to `http://localhost:8787`, so the API is same-origin as in production (the Worker `/api/*` route later).
+  * Vite dev proxies `/api` to the local API (`http://localhost:8787` then; `127.0.0.1:41941` since 2026-10-10, `ports.config.ts`), so the API is same-origin as in production (the Worker `/api/*` route later).
 * **Increments**:
   1. Workspaces + `@lexical/shared` (DTOs, merge rules, keys, counters) + unit tests; the web app imports it.
   2. `server/`: migrations, auth (Firebase + dev issuer), claim, push/pull with merge, export, delete; API tests on PGlite.

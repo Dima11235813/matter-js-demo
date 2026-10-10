@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { LOCAL_HOST, PORTS } from './ports.config';
+
+// Locally the dev server (reused if running); CI (E2E_SERVER=preview) the e2e bundle on the preview port.
+const preview = process.env.E2E_SERVER === 'preview';
+const webUrl = `http://${LOCAL_HOST}:${preview ? PORTS.preview : PORTS.dev}`;
 
 export default defineConfig({
   testDir: './tests',
@@ -14,7 +19,7 @@ export default defineConfig({
   // CI: failures also become GitHub annotations, readable through the public API without `gh auth`.
   reporter: process.env.CI ? [['list'], ['github']] : 'list',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: webUrl,
     navigationTimeout: 45_000,
     // Locally keep a trace of every failure (rare flakes are otherwise unexplainable).
     trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
@@ -29,18 +34,18 @@ export default defineConfig({
   // `--mode e2e` bundle served by `vite preview`, so tests exercise what players get.
   webServer: [
     {
-      command: process.env.E2E_SERVER === 'preview' ? 'yarn preview:e2e' : 'yarn dev',
-      url: 'http://localhost:3000',
+      command: preview ? 'yarn preview:e2e' : 'yarn dev --open false',
+      url: webUrl,
       reuseExistingServer: !process.env.CI,
       timeout: process.env.CI ? 120_000 : 10_000,
     },
     {
       // The API for sync tests: in-memory Postgres, dev sign-in tokens (never used in production).
       command: 'yarn start:server',
-      url: 'http://localhost:8787/api/v1/health',
+      url: `http://${LOCAL_HOST}:${PORTS.api}/api/v1/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
-      env: { PORT: '8787', PGLITE_DATA_DIR: 'memory://', DEV_AUTH_SECRET: 'e2e-dev-auth-secret-0123456789' },
+      env: { PORT: String(PORTS.api), PGLITE_DATA_DIR: 'memory://', DEV_AUTH_SECRET: 'e2e-dev-auth-secret-0123456789' },
     },
   ],
 });

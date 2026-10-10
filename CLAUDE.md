@@ -1,5 +1,40 @@
 # Lexical Fountain (matter-js-demo)
 
+<!-- workspace-harness-pointer: see D:\GDrive\proj-mgmt\workspace-harness-adoption.md -->
+## Shared machine — workspace harness
+
+This project shares one machine with ~40 others. The workspace harness at
+[`D:\GDrive\AGENTS.md`](file:///D:/GDrive/AGENTS.md) **takes precedence over local convenience**:
+
+- **Ports** — claim a block in [`local-ports.md`](file:///D:/GDrive/proj-mgmt/inventory/local-ports.md)
+  before binding. Never use framework defaults (3000, 4173, 4200, 5173, 8080…).
+  Bind `127.0.0.1` unless LAN exposure is deliberate and recorded in the registry.
+- **Resources** — ceilings and pacing in [`local-resources.md`](file:///D:/GDrive/proj-mgmt/inventory/local-resources.md).
+  **Never drive a resource to 100%; a slower batch beats a burst.**
+
+Before any dev server, build, or job touching many files:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File D:\GDrive\proj-mgmt\inventory\scripts\preflight-resources.ps1 -Port <your-port>
+```
+
+Exit non-zero means **wait**, not "proceed carefully".
+
+> **Why.** On 2026-10-10 `D:` — a 7200 rpm HDD holding every project — ran at 94% active with
+> 41.6 ms response while delivering about **5% of its sequential capability**. Saturating it made
+> it *slower*. Three real-time antivirus engines also inspect every file touch, so budget any
+> pass over `node_modules` or `.git` accordingly, and keep scratch on `C:` or `F:\ai\`.
+
+> **Done for this project (2026-10-10).** Block **41940–41959** is claimed in the registry
+> (it was port 3000 on `0.0.0.0`, a banned default). Assignments live in `ports.config.ts`:
+> **41940** Vite dev · **41941** API · **41942** `vite preview` (CI-mode e2e) · **41943** local
+> production check · **41944–41945** scratch previews (bundle and render measurements) ·
+> 41946–41959 spare. Everything binds `127.0.0.1` with `strictPort` (never fall back to another
+> port). LAN exposure is deliberate only for the owner's phone play-tests (`yarn dev --host 0.0.0.0`,
+> recorded in the registry's *Long-running by design* table) and stops when the session ends.
+
+---
+
 Word-embedding playground: Matter.js + a Canvas2D sketch (2D) and three.js (3D) physics where screen distance mirrors meaning. Workspace rules in `D:\GDrive\AGENTS.md` also apply (never delete files; Google Drive sync).
 
 ## Where things live
@@ -15,16 +50,16 @@ Word-embedding playground: Matter.js + a Canvas2D sketch (2D) and three.js (3D) 
 ## Commands
 
 - Type-check: `npx tsc --noEmit -p .` · Unit tests: `yarn test:unit` · Build: `yarn build`
-- End-to-end: `yarn test:e2e` (Playwright, reuses the dev server on port 3000, runs serially; new specs use the `window.__lexical` handle for setup, including `focusedWords()`, and the real UI for the feature under test). CI mode, against the built bundle: `yarn build:e2e` then `CI=1 E2E_SERVER=preview yarn test:e2e` (ports 3000 and 8787 must be free). Playwright also starts the API (`yarn start:server`, in-memory PGlite, dev sign-in tokens) for the sync test; dev-token sign-in from the page is `window.__lexical.account.devSignIn(subject)`
+- End-to-end: `yarn test:e2e` (Playwright, reuses the dev server on port 41940, runs serially; new specs use the `window.__lexical` handle for setup, including `focusedWords()`, and the real UI for the feature under test). CI mode, against the built bundle: `yarn build:e2e` then `CI=1 E2E_SERVER=preview yarn test:e2e` (ports 41942 and 41941 must be free). Playwright also starts the API (`yarn start:server`, in-memory PGlite, dev sign-in tokens) for the sync test; dev-token sign-in from the page is `window.__lexical.account.devSignIn(subject)`
 - CI: `.github/workflows/ci.yml` (verify: frozen install with scripts ignored, cached vocabulary, typecheck, unit tests with `REQUIRE_VOCAB=1`, production and e2e builds, guards; e2e: Playwright against the e2e bundle). The dev handle exists only in dev and `--mode e2e`; the guard fails the build if `__lexical` reaches `dist/`
 - Sentry initializes only when a build sets `VITE_SENTRY_DSN` (dev and e2e never report)
 - Research experiments (kept out of the unit suite): `yarn research:cross-dim` runs all of them; run one with `npx vitest run --config docs/research/experiments/vitest.research.config.ts <name>`
 - Rebuild vocabulary: `yarn vocab:build`
 - Local sign-in without Google: the local API has dev sign-in on by default (only without `DATABASE_URL` and not in production); dev builds show **test personas** in the account panel, or run `window.__lexical.account.devSignIn("name")`. Each account/persona has its own local database (`lexical-fountain@<uid>`); switching reloads.
-- API server: `yarn dev:server` (watch mode) or `yarn start:server` (port 8787; Vite proxies `/api`, `vite preview` too; config in `server/.env.local`, see `server/.env.example`). Server typecheck: `npx tsc --noEmit -p server`. Shared and server tests run in `yarn test:unit` (PGlite in memory)
+- API server: `yarn dev:server` (watch mode) or `yarn start:server` (port 41941 on `127.0.0.1`; Vite proxies `/api`, `vite preview` too; config in `server/.env.local`, see `server/.env.example`). Server typecheck: `npx tsc --noEmit -p server`. Shared and server tests run in `yarn test:unit` (PGlite in memory)
 - Scripts: `yarn dev` = Vite dev server; `yarn start` = the **production** server (`server/src/main.ts` serves `dist/` plus `/api` on `PORT`, what any Node host runs); `yarn build` = `vite build` only (type-checking is CI's job; the native `tsc` crashed in SiteGround's sandbox).
-- Deployment: **no host right now** (owner, 2026-10-09: no longer deploying to SiteGround, used 2026-10-05 → 09; the next host is undecided). Pushes to `main` deploy nowhere once SiteGround's auto-deploy is paused (human-todo 12); the Cloudflare job stays gated off. Don't assume a host: ask. Check a production build locally with `yarn build && NODE_ENV=production PORT=8790 yarn start`.
-- Dev server: `npx vite --port 3000 --strictPort --open false`; add `--host 0.0.0.0` so the owner can play-test from another device (they often follow from the Claude mobile app), and run `yarn start:server` alongside for sign-in. At each milestone, share the network URL (`http://<LAN IPv4 from ipconfig>:3000/`), never `localhost`.
+- Deployment: **no host right now** (owner, 2026-10-09: no longer deploying to SiteGround, used 2026-10-05 → 09; the next host is undecided). Pushes to `main` deploy nowhere once SiteGround's auto-deploy is paused (human-todo 12); the Cloudflare job stays gated off. Don't assume a host: ask. Check a production build locally with `yarn build && NODE_ENV=production HOST=127.0.0.1 PORT=41943 yarn start` (production binds every interface unless `HOST` is set).
+- Dev server: run the workspace preflight first (`powershell -ExecutionPolicy Bypass -File D:\GDrive\proj-mgmt\inventory\scripts\preflight-resources.ps1 -Port 41940`; non-zero = wait), then `npx vite --open false` (41940, loopback, from `vite.config.ts`). For the owner's phone play-test add `--host 0.0.0.0` (they often follow from the Claude mobile app) and share the network URL (`http://<LAN IPv4 from ipconfig>:41940/`), never `localhost`; run `yarn start:server` alongside only when sign-in is needed. Humans browse `http://localhost:41940` (Firebase authorizes `localhost`, not `127.0.0.1`); scripts and tests use `127.0.0.1` (Windows may resolve `localhost` to `::1` first). Stop the servers you started when the session's work is done (workspace rule: own what you start).
 - Dev handle in the browser console: `window.__lexical` (`wordBoxes()`, `layoutFidelity()`, `semanticEngine`, `stores`, `deps`)
 
 ## Working agreements
@@ -47,7 +82,7 @@ Word-embedding playground: Matter.js + a Canvas2D sketch (2D) and three.js (3D) 
 - Vite reloads the page the first time a lazily imported dependency is optimized; list every lazily imported dependency in `optimizeDeps.include` (three.js, zod/mini, firebase/app, firebase/auth). An unlisted one made the sync e2e test take 1.8 min and flake. The first test run after a `vite.config.ts` change can still hit one reload: rerun before investigating.
 - Lazy-loading something an event handler needs: never drop the events that arrive while it loads. Physics events like `collisionStart` fire once per contact (resting letters never collide again), so start the load when the mode opens and replay queued events (the lazy dictionary silently broke letter merging, Epic 4 · Task 4.5.8). Every lazy split needs an e2e test of the feature's result, not only of the chunk loading.
 - Measure the bundle before shrinking it: build with `--sourcemap hidden` into the scratchpad and attribute bytes per package via the source map. The guess (zod) was 94 KB; the real weight was p5 at 1,040 KB.
-- Stopping an `npx vite` background task leaves the Vite node process holding port 3000: find the PID on the port and stop it before restarting.
+- Stopping an `npx vite` background task leaves the Vite node process holding port 41940: find the PID on the port, confirm from its command line that it is this repo's, and stop it before restarting.
 - q8 ONNX models quantize activations per batch: embed vocabulary words one at a time so build-time vectors match the browser's single-word encodes.
 - Matter.js clears forces after every step: apply custom forces in `Events.on(engine, "beforeUpdate")`, not in the sketch's draw loop; start the engine with `Runner.run` and stop it with `Runner.stop` on teardown.
 - In 384-d embedding space unrelated words are all ~sqrt(2) apart: raw distances make layouts a sphere. Use board-relative targets (see `docs/research/embedding-shape.md`).
@@ -81,4 +116,5 @@ Word-embedding playground: Matter.js + a Canvas2D sketch (2D) and three.js (3D) 
 - Browser probes outside the test suite: put a Playwright script in the scratchpad and import `file:///D:/GDrive/Dev/matter-js-demo/node_modules/playwright/index.mjs`; drive the app through `window.__lexical` and measure the user's scenario (fresh page, their kind of drop) before tuning a constant.
 - `Matter.Body.scale` recomputes mass and inertia even on a static body: after scaling, restore a dragged (static) body's mass and hint mode's infinite inertia (`ShapesFactory.applyZoom`), or words tilt and a held word can be pushed.
 - The 2D world has no p5 (Task 4.5.7): `src/matterJsComp/Sketch.ts` implements only the calls the game used, with p5's names and semantics. Add a drawing call there (and keep it small) instead of bringing a canvas library back.
+- Shared machine (workspace harness, 2026-10-10: `D:` was measured 94–99.9% busy with 6 watchers): builds, the e2e suite, `yarn install`, `yarn vocab:build`, and bundle measurements are heavy `D:` jobs. Run the preflight first and wait while it reports a breach of `D:` active time, response, watchers, RAM, CPU, or the port (its "Real-time AV engines" row is a standing machine setting on the owner's queue and keeps the exit code at 1 on its own, so read the rows instead of the exit code); run one heavy job at a time; build measurement bundles into the scratchpad on `C:` (`--outDir`); serve them on 41944–41945 and stop the preview servers right after. Keep at most the dev server and the API running.
 - Before writing a file with the Write tool, check whether it already exists (`git ls-files`, `ls`): Write replaces it whole. A tracked `.env.example` was overwritten once and had to be merged back from git.

@@ -37,7 +37,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     const localDefault = !production && !databaseUrl && env.DEV_AUTH !== "off" && !devAuthSecret;
     const effectiveDevSecret = devAuthSecret ?? (localDefault ? randomBytes(32).toString("hex") : undefined);
     return {
-        port: Number(env.PORT || 8787),
+        // Local default: the workspace block 41940–41959 (ports.config.ts at the repo root); hosts set PORT.
+        port: Number(env.PORT || 41941),
         production,
         firebaseProjectId: env.FIREBASE_PROJECT_ID || undefined,
         databaseUrl,
@@ -46,6 +47,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
         devAuthSecret: effectiveDevSecret,
         devAuthSource: devAuthSecret ? "explicit" : localDefault ? "local-default" : "off",
         staticDir: env.STATIC_DIR || undefined,
-        host: env.HOST || undefined,
+        // Loopback locally (shared machine: never expose by accident); every interface in production.
+        host: env.HOST || (production ? undefined : "127.0.0.1"),
     };
 }

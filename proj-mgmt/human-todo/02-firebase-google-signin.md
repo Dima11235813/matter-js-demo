@@ -17,7 +17,7 @@
 | `projectId` | `D:\GDrive\Dev\matter-js-demo\server\.env.local` | `FIREBASE_PROJECT_ID=` |
 
   (Create each file by copying its `.env.example` next to it. These values are public identifiers, not secrets.)
-* ☐ Restrict the browser key to `http://localhost:3000/*` and the workers.dev URL (APIs & Services → Credentials).
+* ☐ Restrict the browser key to `http://localhost:41940/*` and the workers.dev URL (APIs & Services → Credentials). The dev server moved from 3000 to 41940 on 2026-10-10 (workspace port registry); if the key already lists `localhost:3000`, replace it.
 * ☐ Budget alert $50/month with alerts at $10/$25/$50 (Billing).
 
 **Done when**: `yarn dev:server` + `yarn dev` → menu (shield icon) → **Sign in with Google** appears. Then do item 6.

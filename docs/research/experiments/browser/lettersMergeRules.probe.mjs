@@ -1,4 +1,4 @@
-// Reproduce: start the dev server (npx vite --port 3000), then
+// Reproduce: start the dev server (npx vite: port 41940, ports.config.ts), then
 //   node docs/research/experiments/browser/lettersMergeRules.probe.mjs current,vocab,vocab8k,prefix,prefixCurrent 4
 // "current" measures whatever letters mode ships; the others override its rules in the page.
 // Compare letter dictionaries: sprinkle 40 letters, count real words vs fragments.
@@ -14,7 +14,7 @@ for (const variant of variants) {
   results[variant] = [];
   for (let t = 0; t < trials; t++) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    await page.goto("http://localhost:3000/", { timeout: 120000 });
+    await page.goto("http://127.0.0.1:41940/", { timeout: 120000 });
     await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === "ready", null, { timeout: 120000 });
     await page.bringToFront();
     await page.locator("#sandbox-toggle").click();

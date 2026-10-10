@@ -1,5 +1,8 @@
 import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { LOCAL_HOST, PORTS } from './ports.config';
+
+const api = `http://${LOCAL_HOST}:${PORTS.api}`;
 
 export default defineConfig({
   plugins: [
@@ -17,17 +20,24 @@ export default defineConfig({
     // reload mid-test made the sync e2e test slow and flaky.
     include: ['three', 'three/examples/jsm/controls/OrbitControls.js', 'zod/mini', 'firebase/app', 'firebase/auth'],
   },
+  // Ports from the workspace block 41940–41959 (ports.config.ts); never fall back to another port, and
+  // stay on loopback unless `--host 0.0.0.0` is passed for a phone play-test.
   server: {
-    port: 3000,
+    port: PORTS.dev,
+    strictPort: true,
+    host: LOCAL_HOST,
     open: true,
     // Same-origin API in dev, as in production (the Worker's /api/* route): run `yarn dev:server`.
     proxy: {
-      '/api': 'http://localhost:8787',
+      '/api': api,
     },
   },
   preview: {
+    port: PORTS.preview,
+    strictPort: true,
+    host: LOCAL_HOST,
     proxy: {
-      '/api': 'http://localhost:8787',
+      '/api': api,
     },
   },
   test: {

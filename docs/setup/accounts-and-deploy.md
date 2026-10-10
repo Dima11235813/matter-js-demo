@@ -54,7 +54,7 @@ feature/*  ──PR──►  develop  (you test locally)  ──PR──►  ma
 
   These four values are **public identifiers, not secrets** (they ship in the web page). Still, restrict the key:
 
-☐ **1.5 Restrict the browser key**: console.cloud.google.com → your project → **APIs & Services → Credentials → Browser key (auto created by Firebase)** → Application restrictions **Websites**: `http://localhost:3000/*`, `https://lexical-fountain.<your-subdomain>.workers.dev/*`, and later your domain.
+☐ **1.5 Restrict the browser key**: console.cloud.google.com → your project → **APIs & Services → Credentials → Browser key (auto created by Firebase)** → Application restrictions **Websites**: `http://localhost:41940/*` (the dev server moved off 3000 on 2026-10-10; update the entry if you added 3000), `https://lexical-fountain.<your-subdomain>.workers.dev/*`, and later your domain.
 ☐ **1.6 Budget alerts** (Google Cloud billing): **Billing → Budgets & alerts → Create budget**: `lexical-fountain`, amount $50/month, alerts at 20% / 50% / 100% ($10 / $25 / $50). Firebase Auth's Google sign-in is free up to 50k monthly users; billing only matters once the server runs on Cloud Run (step 2).
 
 ## 2. Google Cloud: keyless CI deploys and Secret Manager — needed for deploy-on-merge (Stage B)
@@ -132,9 +132,10 @@ Until `DEPLOY_ENABLED` is `true`, the deploy job is skipped and CI still checks 
 cp .env.example .env.local                   # then fill the VITE_FIREBASE_* values (1.4)
 cp server/.env.example server/.env.local     # then fill FIREBASE_PROJECT_ID (1.4)
 yarn install
-yarn dev:server    # API on http://localhost:8787 (in-process Postgres; no Docker needed)
-yarn dev          # game on http://localhost:3000; /api is proxied to the server
-# Production-like: `yarn build && NODE_ENV=production PORT=8790 yarn start` serves the built game and the API on one port
+yarn dev:server    # API on http://127.0.0.1:41941 (in-process Postgres; no Docker needed)
+yarn dev          # game on http://localhost:41940; /api is proxied to the server
+# Production-like: `yarn build && NODE_ENV=production HOST=127.0.0.1 PORT=41943 yarn start` serves the built game and the API on one port
+# (ports: block 41940–41959 in D:\GDrive\proj-mgmt\inventory\local-ports.md; see ports.config.ts)
 ```
 
 Without the Firebase values the game works exactly as before, with no sign-in button: accounts are optional by design. With them: menu → shield icon → **Account, privacy & your data** → **Sign in with Google** (after the one-time age question). Sign in on two browsers (or a normal and a private window) to watch the score, analogies, words, and games converge.

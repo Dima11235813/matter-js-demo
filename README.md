@@ -61,8 +61,8 @@ proj-mgmt/        epics, roadmap, and the owner's to-do list (human-todo/)
 
 | Command | What it does |
 |---|---|
-| `yarn dev` | Vite dev server on http://localhost:3000 (add `--host 0.0.0.0` to try it from a phone on your network) |
-| `yarn dev:server` | the API on :8787 in watch mode (Vite proxies `/api`); local sign-in without Google |
+| `yarn dev` | Vite dev server on http://localhost:41940 (this project's ports are 41940–41959, `ports.config.ts`; add `--host 0.0.0.0` to try it from a phone on your network) |
+| `yarn dev:server` | the API on :41941 in watch mode (Vite proxies `/api`); local sign-in without Google |
 | `yarn build` | production build into `dist/` |
 | `yarn start` | the production server: the built game and `/api` on `PORT` (what Node hosting runs) |
 | `yarn test:unit` | unit tests (web app, shared package, server) |
