@@ -1,5 +1,5 @@
 import Matter from "matter-js";
-import p5 from "p5";
+import type { Sketch } from "./Sketch";
 import { Box } from "./Shapes/Box";
 import { ShapesFactory } from "./ShapesFactory";
 import { SemanticPhysics } from "./SemanticPhysics";
@@ -33,7 +33,7 @@ export class SemanticOverlay {
     }
 
     /** Hint-mode threads (drawn under the boxes): stronger links are more opaque and thicker. */
-    drawThreads(p: p5) {
+    drawThreads(p: Sketch) {
         if (!stores.gameStore.hintMode) return
         const [r, g, b] = rgb(palettes[stores.menuStore.theme].thread)
         this.drawMoleculeHalos(p)
@@ -51,7 +51,7 @@ export class SemanticOverlay {
      * gets its own hue (golden-angle spacing by id) so neighbouring molecules stay distinguishable
      * even when they touch or tangle.
      */
-    private drawMoleculeHalos(p: p5) {
+    private drawMoleculeHalos(p: Sketch) {
         if (this.molecules.count === 0) return
         const byBody = new Map(this.shapesFac.boxes.filter(box => box.body).map(box => [box.body!.id, box]))
         const light = stores.menuStore.theme === "light"
@@ -74,7 +74,7 @@ export class SemanticOverlay {
      * Similarity numbers only for the hovered word's links (drawn over the boxes). Labelling every
      * link covered the words themselves on dense boards.
      */
-    drawThreadLabels(p: p5) {
+    drawThreadLabels(p: Sketch) {
         if (!stores.gameStore.hintMode || !this.hovered) return
         const palette = palettes[stores.menuStore.theme]
         p.push()

@@ -1,5 +1,5 @@
 /**
- * Single source of truth for colors in both themes. `canvas` tokens are drawn by p5; `ui` tokens
+ * Single source of truth for colors in both themes. `canvas` tokens are drawn on the 2D canvas and in 3D; `ui` tokens
  * are written to CSS custom properties (--text, --surface, ...) by applyTheme() and consumed by
  * the SCSS modules. Word boxes keep their random fill and pick text via readableTextColor().
  * Every text/background pair here is checked against WCAG AA in tests/colorUtils.test.ts.
@@ -101,7 +101,7 @@ export function saveThemePreference(theme: ThemeName): void {
     }
 }
 
-/** Hex color to p5-friendly [r, g, b]. */
+/** Hex color to [r, g, b] (for the canvas sketch's stroke/fill with alpha). */
 export function rgb(hex: string): [number, number, number] {
     const n = parseInt(hex.slice(1), 16);
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255];

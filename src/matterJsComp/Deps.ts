@@ -1,4 +1,4 @@
-import type p5 from "p5"
+import type { Sketch } from "./Sketch"
 import { AppModes } from "./models/appMode"
 import type { Box } from "./Shapes/Box"
 import type { LetterSnapshot, WordWorld } from "./wordWorld"
@@ -50,7 +50,8 @@ class Deps {
     public lettersBoard: LetterSnapshot[] | undefined
     public overlayRect: OverlayRect | undefined
     browserInfo: BrowserInfo
-    p: p5 | undefined
+    /** The 2D canvas sketch (Canvas2D; p5 until Task 4.5.7). */
+    p: Sketch | undefined
     engine: Matter.Engine | undefined
     world: Matter.World | undefined
 

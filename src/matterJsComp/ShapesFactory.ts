@@ -1,7 +1,6 @@
 import { Box, WORD_FONT_FAMILY } from "./Shapes/Box";
 import { LETTER_DROPS, letterTileColor } from "../game/letterDrops";
 import { BoxOptions, HardBodyOptions, ShapeTypes, decordateWithTextProps, ShapeBase } from "./models/boxOptions";
-import p5 from "p5";
 import { World } from "matter-js";
 import Matter from "matter-js";
 import deps from "./Deps";

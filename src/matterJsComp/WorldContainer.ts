@@ -1,18 +1,18 @@
 import { SketchHandler } from './SketchHandler';
-import p5 from 'p5';
+import { Sketch } from './Sketch';
 import deps from './Deps';
 import Matter from 'matter-js';
 
 export class WorldContainer {
-    sketch: p5;
+    sketch: Sketch;
     sketchHandler: SketchHandler | undefined;
     constructor(
         public worldDomContainer: HTMLElement
     ) {
-        //create a p5 instancve
-        this.sketch = new p5(this.sketchHandlerCb, this.worldDomContainer)
+        // A thin Canvas2D sketch (it replaced p5, Epic 4 · Task 4.5.7).
+        this.sketch = new Sketch(this.sketchHandlerCb, this.worldDomContainer)
     }
-    sketchHandlerCb = (p: p5) => {
+    sketchHandlerCb = (p: Sketch) => {
         deps.p = p
         this.sketchHandler = new SketchHandler()
     }

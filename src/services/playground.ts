@@ -67,7 +67,7 @@ export function toggleHintMode(stores: RootStore): void {
     if (semanticEngine.isReady) void semanticEngine.setHintMode(next);
 }
 
-/** Dark/light theme: a per-device UI preference, applied to CSS variables and the p5 canvas. */
+/** Dark/light theme: a per-device UI preference, applied to CSS variables and the 2D canvas. */
 export function toggleTheme(stores: RootStore): void {
     const next = stores.menuStore.theme === "dark" ? "light" : "dark";
     stores.menuStore.setTheme(next);

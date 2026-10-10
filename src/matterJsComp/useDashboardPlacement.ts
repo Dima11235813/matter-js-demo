@@ -46,7 +46,7 @@ export function useDashboardPlacement(mountKey: string) {
         const canvas = document.querySelector("#worldContainter canvas");
         if (!el) return;
         if (!canvas) {
-            // p5 creates its canvas after the first React layout pass; try again shortly.
+            // The sketch creates its canvas after the first React layout pass; try again shortly.
             if (retries > 0) window.setTimeout(() => publishRect(retries - 1), 250);
             return;
         }

@@ -28,7 +28,7 @@ export function viewportScale(width: number, height: number): number {
 
 /**
  * Applies semantic forces to word bodies on every physics step (Matter's beforeUpdate), so each
- * step receives exactly one dose regardless of p5's frame timing.
+ * step receives exactly one dose regardless of the sketch's frame timing.
  *
  * Hint mode: near-zero gravity, air damping, locked rotation (words stay readable), and orbital
  * forces from physics/orbitalForces.ts. Related words that touch bond into rigid molecules

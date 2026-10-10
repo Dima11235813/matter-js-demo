@@ -3,7 +3,7 @@ import { dot } from "../embeddings/vectorMath";
 
 /**
  * Hint-mode "semantic gravity": distance on screen mirrors distance in embedding space.
- * Dimension-agnostic: positions may be 2D (Matter/p5 view) or 3D (space view).
+ * Dimension-agnostic: positions may be 2D (Matter view) or 3D (space view).
  *
  * Every pair of words gets a target distance:
  *   - Linked pairs (top 1% of random-pair similarity) are springs whose rest length shrinks as

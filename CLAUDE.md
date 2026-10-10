@@ -1,12 +1,12 @@
 # Lexical Fountain (matter-js-demo)
 
-Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where screen distance mirrors meaning. Workspace rules in `D:\GDrive\AGENTS.md` also apply (never delete files; Google Drive sync).
+Word-embedding playground: Matter.js + a Canvas2D sketch (2D) and three.js (3D) physics where screen distance mirrors meaning. Workspace rules in `D:\GDrive\AGENTS.md` also apply (never delete files; Google Drive sync).
 
 ## Where things live
 
 - `src/embeddings/` vector math, index, analogy solver, calibration, profanity policy
 - `src/physics/` pure layout/physics models (orbital forces and target models, 3D simulation, molecules, metrics, PCA)
-- `src/space/` three.js 3D view; `src/matterJsComp/` 2D Matter/p5 world, dashboard, menu glue
+- `src/space/` three.js 3D view; `src/matterJsComp/` 2D Matter world (drawn by `Sketch.ts`, a Canvas2D stand-in for the p5 calls the game used), dashboard, menu glue
 - `src/persistence/` IndexedDB (sync-ready records); `src/services/` use cases; `src/stores/` MobX
 - `proj-mgmt/` epics and roadmap (source of truth for plans); `docs/research/` reports + reproducible experiments that drive plans
 - `scripts/build-vocab.mjs` builds `public/vocab/`, which is **committed** (embedding takes ~5 min, longer than a host's build limit, e.g. SiteGround's 300 s). After changing its inputs (`data/vocab/**`, the dictionaries, the script), run `yarn vocab:build` and commit `public/vocab`; CI tests the committed files
@@ -49,7 +49,7 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - Measure the bundle before shrinking it: build with `--sourcemap hidden` into the scratchpad and attribute bytes per package via the source map. The guess (zod) was 94 KB; the real weight was p5 at 1,040 KB.
 - Stopping an `npx vite` background task leaves the Vite node process holding port 3000: find the PID on the port and stop it before restarting.
 - q8 ONNX models quantize activations per batch: embed vocabulary words one at a time so build-time vectors match the browser's single-word encodes.
-- Matter.js clears forces after every step: apply custom forces in `Events.on(engine, "beforeUpdate")`, not in the p5 draw loop; start the engine with `Runner.run` and stop it with `Runner.stop` on teardown.
+- Matter.js clears forces after every step: apply custom forces in `Events.on(engine, "beforeUpdate")`, not in the sketch's draw loop; start the engine with `Runner.run` and stop it with `Runner.stop` on teardown.
 - In 384-d embedding space unrelated words are all ~sqrt(2) apart: raw distances make layouts a sphere. Use board-relative targets (see `docs/research/embedding-shape.md`).
 - Keep Playwright at one worker: parallel pages (three.js, 8 MB vocabulary, per-frame physics) time out on navigation against the dev server.
 - Game out scoring rules before building them: simulate populations (known-good plays, typical plays, exploit strategies, nonsense) and check that no strategy beats real play (see `docs/research/analogy-scoring.md`).
@@ -71,7 +71,7 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - The local API's PGlite store (OS temp dir) can be corrupted by a killed process: sync then fails with Postgres `58P01` ("could not open file") in the server log. Run the dev API with `PGLITE_DATA_DIR=memory://` (as Playwright does); when an e2e sync test fails, check whether a reused server on port 8787 is the cause.
 - Chain `git add`, `git commit`, and `git push` with `&&` in **one** command line. A push on the next line ran after `git add` failed on a Drive lock and moved `main` (which deploys) to the previous commit.
 - Matter.js: freeze (`setStatic(true)`) only the one body being dragged, never an already static one: `setStatic(true)` saves the current mass as the "original", so a second freeze restores infinite mass on release, and gravity then makes Infinity × 0 = NaN, which the semantic forces spread to every word (drawn at the top-left). The world heals non-finite bodies as a safety net (Epic 4 · Task 4.5.13).
-- p5 1.x on phones: a touchstart never calls `mousePressed`; implement `touchStarted/touchMoved/touchEnded` and return `false` on the canvas (cancels the browser's emulated mouse events, which would press twice, and its pan/zoom). Give fingers a hit margin, and keep dragged bodies inside the board (out-of-bounds boxes are deleted).
+- Touch on the 2D canvas (`Sketch.ts` keeps p5 1.x's rules): a touchstart never calls `mousePressed`; implement `touchStarted/touchMoved/touchEnded` and return `false` on the canvas (cancels the browser's emulated mouse events, which would press twice, and its pan/zoom). Give fingers a hit margin, and keep dragged bodies inside the board (out-of-bounds boxes are deleted).
 - Phone e2e: `test.use` a device profile without `defaultBrowserType` inside a describe (`const { defaultBrowserType: _, ...pixel7 } = devices['Pixel 7']`); drive finger drags with CDP `Input.dispatchTouchEvent`, and find reproductions with a random-drag stress probe that checks every body for non-finite values.
 - `expect.poll` does not retry a callback that throws: test helpers that read the board must return a value (e.g. `[]`) while worlds swap, not throw.
 - 3D tests: the camera director keeps re-framing (and re-orienting) the board until the player navigates, so measure rotation as `controls.getAzimuthalAngle()` with `director.autoFrame = false`, not camera positions.
@@ -79,4 +79,6 @@ Word-embedding playground: Matter.js + p5 (2D) and three.js (3D) physics where s
 - Live play-tests come as phone screenshots: reproduce on an emulated phone (Pixel 7) and measure the thing in the screenshot (coverage, overflow, NaN bodies) before and after the fix.
 - A stale `.git/index.lock` (empty, old, no `git.exe` running; left by a killed process) blocks every git command. Move it to the scratchpad instead of deleting it (never-delete rule), after confirming no git process is running.
 - Browser probes outside the test suite: put a Playwright script in the scratchpad and import `file:///D:/GDrive/Dev/matter-js-demo/node_modules/playwright/index.mjs`; drive the app through `window.__lexical` and measure the user's scenario (fresh page, their kind of drop) before tuning a constant.
+- `Matter.Body.scale` recomputes mass and inertia even on a static body: after scaling, restore a dragged (static) body's mass and hint mode's infinite inertia (`ShapesFactory.applyZoom`), or words tilt and a held word can be pushed.
+- The 2D world has no p5 (Task 4.5.7): `src/matterJsComp/Sketch.ts` implements only the calls the game used, with p5's names and semantics. Add a drawing call there (and keep it small) instead of bringing a canvas library back.
 - Before writing a file with the Write tool, check whether it already exists (`git ls-files`, `ls`): Write replaces it whole. A tracked `.env.example` was overwritten once and had to be merged back from git.

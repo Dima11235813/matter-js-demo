@@ -1,4 +1,3 @@
-import p5 from "p5"
 import { CustomWorld, EventClickType } from './CustomWorld';
 import deps from "./Deps";
 import { stores } from "../stores";
@@ -8,7 +7,7 @@ import Matter from "matter-js";
 export class SketchHandler {
     /** Extra hit margin around words for a finger (px), so a slightly-off tap still grabs or selects. */
     static readonly touchSlop = 14
-    canvas: p5.Renderer | undefined
+    canvas: { elt: HTMLCanvasElement } | undefined
     customWorld: CustomWorld | undefined
     constructor() {
         const { p } = deps
@@ -34,14 +33,14 @@ export class SketchHandler {
             this.drag(p!.mouseX, p!.mouseY)
         }
         p!.mousePressed = (event?: MouseEvent) => {
-            // p5 listens on window, so clicks on overlay UI (inputs, menu) would otherwise spawn boxes.
+            // The sketch listens on window, so clicks on overlay UI (inputs, menu) would otherwise spawn boxes.
             if (!this.isCanvasEvent(event)) return
             this.press(p!.mouseX, p!.mouseY)
         }
-        // Phones: p5 1.x does not turn a touchstart into mousePressed, so without these a finger never
-        // grabbed a word (Move mode) and only quick taps worked, through the browser's emulated mouse
-        // events. Returning false on the canvas cancels those emulated events (a tap would otherwise
-        // press twice) and the browser's own pan and zoom; touches on the menu or dashboard pass through.
+        // Phones: a touchstart is not a mousePressed (as in p5 1.x, which this sketch replaced), so without
+        // these a finger never grabbed a word (Move mode). Returning false on the canvas cancels the browser's
+        // emulated mouse events (a tap would otherwise press twice) and its own pan and zoom; touches on the
+        // menu or dashboard pass through.
         p!.touchStarted = (event?: TouchEvent) => {
             if (!this.isCanvasEvent(event)) return
             const { x, y } = this.touchPoint(event) ?? { x: p!.mouseX, y: p!.mouseY }
@@ -82,7 +81,7 @@ export class SketchHandler {
             deps.boxLastClicked = undefined
         }
     }
-    /** The first touch in canvas coordinates (touchend has none left, so it falls back to p5's mouse). */
+    /** The first touch in canvas coordinates (touchend has none left, so it falls back to the sketch's mouse). */
     touchPoint = (event?: TouchEvent): { x: number, y: number } | undefined => {
         const touch = event?.touches?.[0] ?? event?.changedTouches?.[0]
         if (!touch || !this.canvas) return undefined

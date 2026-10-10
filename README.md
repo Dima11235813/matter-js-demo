@@ -36,7 +36,7 @@ A word-physics playground where **distance on screen mirrors meaning**. Words ar
 ## How it works
 
 * **Embeddings**: `Xenova/all-MiniLM-L6-v2` (384-d, quantized) runs in the browser. A 20,001-word vocabulary is pre-embedded at build time (`public/vocab`, committed), and new words you type are embedded on the fly.
-* **Physics**: Matter.js + p5 in 2D, three.js with a custom integrator in 3D. Semantic forces are calibrated from the vocabulary's similarity percentiles, so "related" means more related than 99% of random pairs.
+* **Physics**: Matter.js in 2D (drawn with a small Canvas2D sketch), three.js with a custom integrator in 3D. Semantic forces are calibrated from the vocabulary's similarity percentiles, so "related" means more related than 99% of random pairs.
 * **Fair scoring**: game rules are gamed out before they ship. Simulated players (skilled, half-informed, exploit, random) check that no cheap strategy beats real play: Guess grading leaves random play under 1% of skilled, and Connect's hub-word trick solves 1% of puzzles. See [`docs/research/`](docs/research/README.md).
 * **Local-first**: everything is stored in your browser (IndexedDB, one database per account). Sync goes through a small API with shared, unit-tested merge rules.
 
@@ -49,7 +49,7 @@ src/              web app (React 18 + Vite, MobX)
   embeddings/     vector math, vocabulary index, analogy solver, calibration, profanity policy
   game/           pure game rules: relation pairs, Guess grading, rating, letters rules, Connect-All, sessions
   physics/        layout and physics models (orbital forces, 3D simulation, molecules, board zoom)
-  space/          three.js 3D world          matterJsComp/   2D Matter/p5 world, dashboard, panels
+  space/          three.js 3D world          matterJsComp/   2D Matter world, dashboard, panels
   services/       use cases                  persistence/    IndexedDB repository   stores/  MobX
 packages/shared/  @lexical/shared: zod DTOs and merge rules shared by the app and the server
 server/           @lexical/server: Hono API (accounts, sync, export, delete) that also serves the built app

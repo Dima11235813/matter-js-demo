@@ -1,4 +1,4 @@
-import p5 from 'p5'
+import type { Sketch } from '../Sketch'
 import Matter, { IEventCollision, Engine } from 'matter-js'
 import { BoxOptions, HardBodyOptions, ShapeTypes } from '../models/boxOptions';
 import deps from '../Deps';
@@ -66,7 +66,7 @@ export class Box {
     }
     count = 0
     /** Pulsing ring while focused: 2D has no camera, so focus is shown by drawing the eye to the word. */
-    private drawFocusRing = (p: p5, w: number, h: number, color: string) => {
+    private drawFocusRing = (p: Sketch, w: number, h: number, color: string) => {
         const now = performance.now()
         if (now >= this.focusUntil) return
         const pulse = 0.5 + 0.5 * Math.sin(now / 110)
@@ -107,8 +107,6 @@ export class Box {
             const { boxLastClicked } = deps
             const { x, y, w, h } = this.boxOptions
 
-            //Rect options
-            //https://p5js.org/reference/#/p5/rectMode
             const isSelected = stores.menuStore.selectedWordIds.includes(this.matterId)
             const palette = palettes[stores.menuStore.theme]
             if (isSelected) {
