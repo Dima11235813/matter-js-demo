@@ -139,4 +139,83 @@ test.describe('phone (touch)', () => {
     await page.getByTestId('dashboard-handle').tap();
     await expect.poll(async () => (await dashboard.boundingBox())!.height).toBeGreaterThan(120);
   });
+
+  test('3D on a phone: readable labels, all words framed, + taps add a glowing word (Discovery only), pinch zooms (Task 5.7.3)', async ({ page, context }) => {
+    test.setTimeout(120_000);
+    await page.goto('/');
+    await ready(page);
+    await page.bringToFront();
+    type Space = {
+      dimension: string;
+      size: [number, number];
+      sim: { bodies: unknown[] };
+      camera: { position: { distanceTo(t: unknown): number } };
+      controls: { target: unknown };
+    };
+    const lexical = () => (window as unknown as { __lexical: { deps: { activeWorld?: Space }; stores: { gameStore: { setHintMode(on: boolean): void; setDimension(d: string): void } }; focusedWords(): string[] } }).__lexical;
+    await page.evaluate(`(${lexical})().stores.gameStore.setHintMode(true); (${lexical})().stores.gameStore.setDimension('3d')`);
+    await page.waitForFunction(`(${lexical})().deps.activeWorld?.dimension === '3d' && (${lexical})().deps.activeWorld.sim.bodies.length >= 8`, null, { timeout: 30_000 });
+    await page.getByTestId('dashboard-handle').tap(); // dock the dashboard, as players do
+    await page.waitForTimeout(6_000); // the camera frames the board after ~1.2 s and eases in
+
+    // Labels at least the 2D word size on screen (28 px on a phone; perspective makes far ones smaller),
+    // measured along the camera's up axis; every word inside the canvas.
+    const view = () => page.evaluate(() => {
+      type V = { clone(): V; addScaledVector(v: V, s: number): V; project(c: unknown): { x: number; y: number }; normalize(): V };
+      const w = (window as unknown as { __lexical: { deps: { activeWorld: { size: [number, number]; camera: { position: { constructor: new (x: number, y: number, z: number) => V }; updateMatrixWorld(): void; matrixWorld: { elements: number[] } }; view: { labels: Map<number, { sprite: { position: V; scale: { y: number } } }> } } } } }).__lexical.deps.activeWorld;
+      const cam = w.camera;
+      cam.updateMatrixWorld();
+      const e = cam.matrixWorld.elements;
+      const up = new cam.position.constructor(e[4], e[5], e[6]).normalize();
+      const [, height] = w.size;
+      return [...w.view.labels.values()].map(({ sprite }) => {
+        const top = sprite.position.clone().addScaledVector(up, sprite.scale.y / 2).project(cam);
+        const bottom = sprite.position.clone().addScaledVector(up, -sprite.scale.y / 2).project(cam);
+        const c = sprite.position.clone().project(cam);
+        return { px: (Math.abs(top.y - bottom.y) * height) / 2, onScreen: Math.abs(c.x) <= 1 && Math.abs(c.y) <= 1 };
+      });
+    });
+    const labels = await view();
+    const heights = labels.map(l => l.px).sort((a, b) => a - b);
+    expect(heights[Math.floor(heights.length / 2)]).toBeGreaterThan(24);
+    expect(labels.every(l => l.onScreen)).toBe(true);
+
+    // + mode (the default) in Discovery: a tap on empty space adds a word, which glows while it settles.
+    const count = () => page.evaluate(`(${lexical})().deps.activeWorld.sim.bodies.length`) as Promise<number>;
+    const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
+    const spots = [[0.5, 0.95], [0.2, 0.95], [0.8, 0.95], [0.2, 0.08], [0.5, 0.5]];
+    const before = await count();
+    for (const [fx, fy] of spots) {
+      await page.touchscreen.tap(canvas.x + canvas.width * fx, canvas.y + canvas.height * fy);
+      await page.waitForTimeout(300);
+      if ((await count()) > before) break;
+    }
+    expect(await count()).toBe(before + 1);
+    expect((await page.evaluate(`(${lexical})().focusedWords()`) as string[]).length).toBe(1);
+
+    // Pinch out with two fingers: the camera moves in (zoom works in + mode too).
+    const distance = () => page.evaluate(`(() => { const w = (${lexical})().deps.activeWorld; return w.camera.position.distanceTo(w.controls.target); })()`) as Promise<number>;
+    const cdp = await context.newCDPSession(page);
+    const [cx, cy] = [canvas.x + canvas.width / 2, canvas.y + canvas.height / 2];
+    const fingers = (s: number) => [{ x: cx - s, y: cy, id: 1 }, { x: cx + s, y: cy, id: 2 }];
+    const far = await distance();
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: fingers(30) });
+    for (let s = 40; s <= 150; s += 10) {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: fingers(s) });
+      await page.waitForTimeout(16);
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(distance).toBeLessThan(far * 0.7);
+
+    // Guess controls its own supply: the same taps add nothing there.
+    await page.locator('#game-toggle').tap();
+    await page.waitForFunction(`(${lexical})().deps.activeWorld?.dimension === '3d' && (${lexical})().deps.activeWorld.sim.bodies.length >= 4`, null, { timeout: 30_000 });
+    await page.waitForTimeout(3_000);
+    const dealt = await count();
+    for (const [fx, fy] of spots) {
+      await page.touchscreen.tap(canvas.x + canvas.width * fx, canvas.y + canvas.height * fy);
+      await page.waitForTimeout(300);
+    }
+    expect(await count()).toBe(dealt);
+  });
 });
