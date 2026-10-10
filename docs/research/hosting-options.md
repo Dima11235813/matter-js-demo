@@ -1,6 +1,6 @@
 # Hosting Options After SiteGround: Lowest Cost for Acceptable Effort
 
-**Status**: research complete 2026-10-10; recommendation awaits the owner's decision · **Drives**: [Epic 7 · Task 7.6.3](../../proj-mgmt/epic-7-delivery-operations.md) (choose the next host), and revisits decision D1 in [platform-plan.md](platform-plan.md) §5 · **Method**: repo measurements plus vendor pricing and docs pages read on 2026-10-10 (no code was run against any host)
+**Status**: research complete 2026-10-10 (round 2 the same day: three parallel deep dives, §4b, which correct the first draft); recommendation awaits the owner's decision · **Drives**: [Epic 7 · Task 7.6.3](../../proj-mgmt/epic-7-delivery-operations.md) (choose the next host), and revisits decision D1 in [platform-plan.md](platform-plan.md) §5 · **Method**: repo measurements plus vendor pricing and docs pages read on 2026-10-10 (no code was run against any host)
 
 > **Provenance**: prices and limits were read through an automated page reader on 2026-10-10. Facts that came only from third-party articles, or that could not be confirmed on an official page, are marked **(unconfirmed)**. Re-check a price before paying for it. Several vendors changed their free tiers in 2026 (Render, Hetzner, Oracle, Fly.io snapshots); see §3.4.
 
@@ -14,7 +14,7 @@ Which host (or combination) serves the game to family and friends on phones now,
 
 1. **Requirements from the repo**: read `server/src/*`, `package.json`, `vite.config.ts`, `wrangler.jsonc`, `public/_headers`, `.github/workflows/ci.yml`, `src/services/account.ts`, `src/embeddings/liveEncoder.ts`, and the earlier plans ([platform-plan.md](platform-plan.md), [delivery-cicd.md](delivery-cicd.md), [backend-sync-telemetry.md](backend-sync-telemetry.md), [docs/setup/accounts-and-deploy.md](../setup/accounts-and-deploy.md)). Measured `dist/` (the 2026-10-05 build) and `public/vocab/` on disk.
 2. **Traffic model**: the one from [delivery-cicd.md](delivery-cicd.md) §2, about **12 MB per monthly player** (1.5 cold loads of about 7.8 MB brotli; repeat visits revalidate). So about 0.25 GB/month now (about 20 play-testers), **about 12 GB/month at 1k MAU**, and about 120 GB at 10k.
-3. **API load model** (only when sign-in is on): a signed-in tab syncs every 30 s (`SYNC_INTERVAL_MS`), so about 120 API requests and about 240 database queries per open hour (`requireUser` looks up the identity, then the pull query). If 30% of 1k MAU sign in for 40 minutes a day, that is about 12k requests and 25k queries a day.
+3. **API load model** (only when sign-in is on): a signed-in tab syncs every 30 s (`SYNC_INTERVAL_MS`), so about 120 API requests and about 240 database queries per open hour (`requireUser` looks up the identity, then the pull query). If 30% of 1k MAU sign in for 40 minutes a day, that is about **24k requests and 50k queries a day** (300 players × 80 ticks; the first draft said 12k and 25k, corrected in round 2). At 10k MAU, about 240k requests a day: over Workers Free's 100k/day.
 4. **Vendor research**: official pricing, limits and docs pages for 13 options in three groups (static only; static plus serverless API; always-on Node host), with third-party articles only where official pages hid the numbers.
 
 ## 3. Findings
@@ -79,7 +79,7 @@ Costs are USD per month for hosting plus the database, with no custom domain. "N
 | Scale | Cloudflare static only | + API in the Worker, Neon Free | Fly.io all-in-one | Cloud Run + Neon (old plan) |
 |---|---|---|---|---|
 | Now (~20 players) | $0 | $0 | ~$3.90 | $0 |
-| 1k MAU (~12 GB, ~12k API requests/day) | $0 | $0 (well under 100k requests and queries a day) | ~$4.10 | $0 |
+| 1k MAU (~12 GB, ~24k API requests/day) | $0 | $0 if Neon stays under 100 CU-hours (see §4b.1); else ~$11–14 | ~$4.10 | $0 (same Neon caveat) |
 | 10k MAU (~120 GB) | $0 | ~$5 (Workers Paid, for CPU headroom) + Neon: $0, or Launch at $0.106/CU-hour [NE1] | ~$6–8 (bandwidth $2.40; probably a larger machine) | ~$0–5 + Neon |
 | Worst case for the database | — | Neon awake around the clock at 0.25 CU = 180 CU-hours ≈ **$19/month** on Launch (computed from [NE1]) | — | same |
 | Optional domain | ~$10.46/year for `.com` at Cloudflare Registrar, at cost (third-party figures $9.15–10.46, [DM1]) | same | same | same |
@@ -159,9 +159,61 @@ Costs are USD per month for hosting plus the database, with no custom domain. "N
 | D2 | Database | Neon Free (already the recommendation before telemetry) |
 | D4 | Domain, commercial use | A domain is optional; the workers.dev URL works. Commercial use would rule out Vercel Hobby, not Cloudflare |
 
+## 4b. Round 2 (2026-10-10): three deep dives
+
+The owner asked for research agents to "find the most affordable and technology aligned host". Three agents each took one path and checked this report against current vendor pages: **Cloudflare-native** ([hosting/cloudflare.md](hosting/cloudflare.md)), **Google / Firebase** ([hosting/google-firebase.md](hosting/google-firebase.md), aligned with the Firebase sign-in we already use), and **run the server unchanged** on a container host or VPS ([hosting/containers.md](hosting/containers.md)). Each has its own tables, cited sources, and an unconfirmed list.
+
+### 4b.1 What round 2 corrected or added
+
+| # | Finding | Effect on the plan |
+|---|---|---|
+| 1 | **The load model was off by 2×** (§2 item 3, now fixed): 24k requests and ~50k queries a day at 1k MAU; ~240k requests a day at 10k | 10k MAU needs Workers Paid ($5) regardless of CPU |
+| 2 | **Hyperdrive caches reads for 60 s by default.** With this API that is a bug: the first sign-in's identity lookup caches an empty result (a 500 for up to 75 s), and the first sync after claiming a device gets a 403 | Phase 2 must create the Hyperdrive config with `--caching-disabled` |
+| 3 | **Neon Free has a hard cliff**: when the 100 CU-hours (or 5 GB egress) run out, compute is suspended until the next month (data kept). With the 30 s sync poll, 1k MAU spread over 14–18 h a day uses ~105–135 CU-hours | "$0 at 1k" holds only with change-driven sync (below) or concentrated play; otherwise Neon Launch ~$11–14 |
+| 4 | **First sync CPU**: a 200-record push takes 4.5–9.7 ms of JavaScript alone ([experiments/hosting-cpu-bench.mts](experiments/hosting-cpu-bench.mts), reproduced: 200 analogies 8.6 ms) against Workers Free's 10 ms | Push in pages of ~25 records on Free (client change, 0.5 h), or Workers Paid |
+| 5 | **First sync latency**: the push runs 3 sequential queries per record (~600 round trips for 200 records); a Worker near a European player and Neon in US East could take ~50 s | Placement hint to Neon's region, and a set-based push (2–3 h) |
+| 6 | D1 is worse than stated: besides the SQL rewrite, no interactive transactions (the merge's `FOR UPDATE` can't be one) and 50 queries per request on Free | Rejection stands |
+| 7 | **Memory**: the server uses ~270–285 MB; `yarn start` adds a yarn/tsx process chain to ~560 MB | Any container host needs 512 MB and must start with `node --import tsx server/src/main.ts`, not `yarn start` |
+| 8 | **Firebase Hosting**: fits technically (2 GB per file, previews per PR, `/api/**` → Cloud Run rewrite with `pinTag`), but Spark's 360 MB/day switches the site off on a busy day, and Blaze bandwidth **can't be capped** (spend caps, in Preview, cover Functions and App Hosting, not Hosting); about $16/month at 10k MAU | Not for the static site; possible for the API |
+| 9 | PGlite can't live on Cloud Run storage (Google: GCS FUSE must not hold a database; Filestore starts at ~$164/month) | On Google, the API needs Neon, Cloud SQL (~$9.40/month floor), or a Firestore rewrite (2–4 agent-days) |
+| 10 | The ORT wasm (22.48 MiB, unused at runtime) is 2.5 MiB under Cloudflare's 25 MiB cap on a dev build of onnxruntime | Add it to `.assetsignore` (Task 7.2.5) before a dependency bump fails a deploy |
+
+### 4b.2 All paths, monthly cost (USD) at 0 / 1k / 10k players
+
+| Path | 0 | 1k | 10k | Code to write | Owner effort | Billing risk |
+|---|---|---|---|---|---|---|
+| **Cloudflare static only (Phase 1)** | **0** | **0** | **0** | none | ~1 h | none (free plan) |
+| Cloudflare static + **API in the Worker + Neon via Hyperdrive** | 0 | 0 (with change-driven sync) / 11–14 | ~24 ($5 Workers + ~$19 Neon) | ~8–12 h agent: `db.ts` split, `worker.ts`, migrations in CI, push paging | ~1–2 h | low (Free returns errors, not bills) |
+| Cloudflare static + Worker `/api/*` proxy → **Fly.io** running the server unchanged (PGlite on a volume) | ~3.84 | ~4.08 | ~6.24 | ~2–4 h: Dockerfile, `fly.toml`, deploy job, a small proxy Worker | ~1 h, card | low (small fixed bill) |
+| Cloudflare static + **Railway** (server unchanged) | 5 | 5 | ~9 | ~1–2 h | ~1 h, card | low |
+| **Firebase Hosting + Cloud Run + Neon** (all Google) | 0 | ~0.2–1 | ~17–50 | ~7–11 h (Hosting config, Dockerfile, Cloud Run job) | ~2 h, card | **uncapped Hosting bandwidth** |
+| Firebase Hosting + Functions + **Firestore** | 0 | ~0.2–1 | ~18–32 | + 2–4 days rewriting the sync storage | ~2 h, card | partly capped |
+| Koyeb Free + Neon Free (server unchanged, no card) | 0 | 0 | ~0.80 | ~2–3 h | ~1 h | none, but sleeps after 1 h (1–5 s wake) on 0.1 vCPU |
+
+**Cross-cutting cost fix**: sync on change, on tab focus, and on reconnect instead of every 30 s. It is the main driver of Neon hours and API requests on *every* path (roadmap: Epic 7 · Task 7.6.4).
+
+### 4b.3 Recommendation after round 2
+
+**Unchanged for now: Cloudflare Workers static assets, $0 at every scale, no code.** All three deep dives agree: nothing beats it on cost, CDN delivery of the 7.4 MiB vocabulary, or zero cold starts, and it is already wired (`wrangler.jsonc`, `_headers`, the deploy job).
+
+**For sign-in and sync (Phase 2), the technology-aligned choice is the API in the same Worker with Neon** ($0 until about 1k players, ~$24 at 10k). Hono was chosen because it runs on Workers; `auth.ts` already uses `jose` (no firebase-admin) and runs there unchanged; the Worker needs no secrets. Before it opens: Hyperdrive with caching off, push paging (or Workers Paid), a placement hint, and change-driven sync. The agent writes the code (~1–1.5 days), so the owner's cost is setup time, not money.
+
+**If sign-in has to open before that port is done**: the same Cloudflare static site with a small `/api/*` proxy Worker in front of the unchanged server on **Fly.io (~$4/month)**. This is the 2026-09-25 plan (D1) with Fly instead of Cloud Run: cheaper and simpler than Cloud Run, and it keeps PGlite.
+
+**Not recommended**: Firebase Hosting for the static site (bandwidth billed and uncappable on Blaze, a hard daily cap on Spark), despite the sign-in alignment. Its strongest point, keyless deploys, can be had on Cloudflare too through route A (§4.2: the token in GCP Secret Manager, read with Workload Identity).
+
+### 4b.4 Decisions for the owner (replaces §4.4 where they differ)
+
+| # | Decision | Recommendation |
+|---|---|---|
+| H1 | Host for the game now | **Cloudflare Workers static assets** (no code; ~1 h of owner setup) |
+| H2 | Deploy-token storage | Route B (GitHub environment secret, an approved exception) for less effort, or route A (GCP Secret Manager, keyless) as documented |
+| H3 | Phase 2 shape | **API in the Worker + Neon via Hyperdrive** (agent ~1–1.5 days); fallback: proxy Worker → Fly.io (~$4/month) |
+| H5 | Sync cadence | **Change-driven sync** (on change, focus, reconnect) before sign-in opens publicly; keeps Neon and Workers free longer on any host |
+
 ## 5. Limitations
 
-* **No host was tried.** Cold-start times, CPU per API request on Workers, and Fly memory use with PGlite are estimates; §4.3 step 6 measures the one that matters.
+* **No host was tried** (round 2 measured the server's memory and start time, and the API's JavaScript CPU per request, locally). Cold-start times, CPU per API request on Workers, and Fly memory use with PGlite are estimates; §4.3 step 6 measures the one that matters.
 * **Traffic model**: 12 MB per MAU comes from the 2026-09-25 measurements; the 2D/3D chunk split has changed since. It is the vocabulary (7.4 MiB) that sets the number, so the order of magnitude holds.
 * **Sources**: Render's Starter and disk prices, Hetzner's prices, Neon's resume time, and Oracle's changes came from third-party articles (the vendors' pages hid the numbers from the page reader). Card requirements for Cloudflare, GCP and Oracle, Hetzner's backup price, Koyeb volumes, and GitHub Pages headers were not confirmed on an official page.
 * **Neon's free storage** reads "1 GB/project" on the pricing page fetched today; one third-party article says 0.5 GB. Either is far above our need (a few KB per player).
