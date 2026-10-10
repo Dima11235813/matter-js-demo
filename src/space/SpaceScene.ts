@@ -55,7 +55,8 @@ export class SpaceScene {
         fog.far = cameraDistance * 2.4;
     }
 
-    syncLabels(bodies: readonly SpaceBody[], colorOf: (id: number) => string, selected: ReadonlySet<number>, glowing: ReadonlySet<number> = new Set()): void {
+    /** `scale` (>= 1) keeps labels readable when the camera is far away (viewFit.labelScale). */
+    syncLabels(bodies: readonly SpaceBody[], colorOf: (id: number) => string, selected: ReadonlySet<number>, glowing: ReadonlySet<number> = new Set(), scale = 1): void {
         const palette = palettes[this.theme ?? "dark"];
         const alive = new Set<number>();
         const pulse = 1 + 0.12 * Math.sin(performance.now() / 110);
@@ -87,8 +88,8 @@ export class SpaceScene {
             label.sprite.position.set(body.position[0], body.position[1], body.position[2]);
             // Focused labels pulse in size so the eye finds them.
             const [w, h] = labelSize(body.word);
-            const scale = isGlowing ? pulse : 1;
-            label.sprite.scale.set(w * scale, h * scale, 1);
+            const k = scale * (isGlowing ? pulse : 1);
+            label.sprite.scale.set(w * k, h * k, 1);
         }
         for (const [id, label] of this.labels) if (!alive.has(id)) this.removeLabel(id, label);
     }

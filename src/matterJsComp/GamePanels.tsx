@@ -68,7 +68,7 @@ export const LayoutToggle = observer(({ stores }: { stores: RootStore }) => {
 
 /** Word size for the 2D board (small / medium / large): bigger words are easier to tap in a pile. */
 export const WordSizeToggle = observer(({ stores }: { stores: RootStore }) => {
-  if (stores.gameStore.spaceActive) return null;
+  // 2D word boxes and 3D labels alike (3D labels keep at least this size on screen, Task 5.7.3).
   const size = stores.gameStore.wordSize;
   const label = { small: "Aa S", medium: "Aa M", large: "Aa L" }[size];
   return (

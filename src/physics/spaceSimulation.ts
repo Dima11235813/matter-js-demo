@@ -37,6 +37,11 @@ export interface SpaceConfig {
     tuning: OrbitalTuning;
     damping: number;
     boundsRadius: number;
+    /**
+     * Upright ellipsoid container: the vertical (y) radius is `boundsRadius` times this (default 1, a
+     * sphere). A portrait phone uses it so the layout stands tall like the screen (Task 5.7.3).
+     */
+    boundsStretchY?: number;
     boundsPull: number;
     collisionPush: number;
     maxSpeed: number;
@@ -159,6 +164,21 @@ export class SpaceSimulation {
         this.bodies.length = 0;
     }
 
+    /**
+     * Turns the whole layout rigidly by `angle` (radians) about `axis` (unit) through `center`: positions,
+     * velocities, and orbit planes. Stress layouts don't care how they are oriented, so this only changes
+     * the view (the phone camera turns a tall layout upright this way: its up vector is fixed).
+     */
+    rotate(center: Point3, axis: Point3, angle: number): void {
+        const turn = (v: Point3): Point3 => rotateAbout(v, axis, angle);
+        for (const body of this.bodies) {
+            const offset = turn([body.position[0] - center[0], body.position[1] - center[1], body.position[2] - center[2]]);
+            body.position = [center[0] + offset[0], center[1] + offset[1], center[2] + offset[2]];
+            body.velocity = turn(body.velocity);
+            body.orbitAxis = turn(body.orbitAxis);
+        }
+    }
+
     step(steps = 1): void {
         for (let s = 0; s < steps; s++) this.stepOnce();
     }
@@ -213,14 +233,19 @@ export class SpaceSimulation {
         }
     }
 
-    /** Spherical container: bodies beyond the radius are pulled back toward the centre. */
+    /** Spherical (or upright ellipsoid) container: bodies beyond it are pulled back toward the centre. */
     private addBounds(acc: Point[]): void {
         const { boundsRadius, boundsPull } = this.config;
+        const stretch = this.config.boundsStretchY ?? 1;
         this.bodies.forEach((b, i) => {
-            const dist = Math.hypot(b.position[0], b.position[1], b.position[2]);
+            const [x, y, z] = b.position;
+            // Distance in the container's own (sphere) coordinates; the pull follows the ellipsoid's normal.
+            const dist = Math.hypot(x, y / stretch, z);
             const excess = dist + b.radius - boundsRadius;
             if (excess <= 0 || dist === 0) return;
-            for (let k = 0; k < 3; k++) acc[i][k] -= (b.position[k] / dist) * excess * boundsPull;
+            const normal = [x, y / (stretch * stretch), z];
+            const length = Math.hypot(...normal);
+            for (let k = 0; k < 3; k++) acc[i][k] -= (normal[k] / length) * excess * boundsPull;
         });
     }
 
@@ -233,4 +258,13 @@ export class SpaceSimulation {
             for (let k = 0; k < 3; k++) b.position[k] += b.velocity[k];
         });
     }
+}
+
+/** Rodrigues' rotation of `v` by `angle` (radians) about the unit `axis`. */
+export function rotateAbout(v: Point3, axis: Point3, angle: number): Point3 {
+    const [c, s] = [Math.cos(angle), Math.sin(angle)];
+    const [kx, ky, kz] = axis;
+    const dotKV = kx * v[0] + ky * v[1] + kz * v[2];
+    const cross: Point3 = [ky * v[2] - kz * v[1], kz * v[0] - kx * v[2], kx * v[1] - ky * v[0]];
+    return [0, 1, 2].map(i => v[i] * c + cross[i] * s + axis[i] * dotKV * (1 - c)) as Point3;
 }

@@ -10,7 +10,7 @@ import { stores } from "../stores";
 import { AppModes } from "./models/appMode";
 import { semanticEngine } from "../services/semanticEngine";
 import { colorHintPainter } from "../services/colorHints";
-import { boardZoom } from "../physics/boardZoom";
+import { boardLayout, boardZoom, layoutNeed } from "../physics/boardZoom";
 import { canDrop, DropState, LETTER_DROPS } from "../game/letterDrops";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { focusTargets, LetterSnapshot, WordProbe, WordWorld } from "./wordWorld";
@@ -182,8 +182,20 @@ export class CustomWorld implements WordWorld {
         this.zoomSize = stores.gameStore.wordSize
         const { width, height } = deps.browserInfo
         const areas = this.shapesFac.boxes.filter(b => b.baseSize && b.body).map(b => b.baseSize!.w * b.baseSize!.h)
-        this.shapesFac.applyZoom(boardZoom(width, height, areas, stores.gameStore.wordSize))
+        // Hint mode: zoom out so the layout has room to push and repel (Task 5.7.4), not only to fit the boxes.
+        const physics = this.semanticPhysics
+        const hint = stores.gameStore.hintMode && semanticEngine.isReady && this.spacingZoom
+        // Lengths at full share (the tuning in use is already scaled by the current share).
+        const current = physics.tuning(width, height)
+        const separation = hint ? current.separation / physics.lengthScale : 0
+        const words = this.shapesFac.boxes.filter(b => b.embedding !== undefined && b.body).length
+        const need = hint ? layoutNeed(words, separation) : 0
+        const layout = boardLayout(width, height, areas, stores.gameStore.wordSize, need, separation)
+        physics.lengthScale = layout.lengths
+        this.shapesFac.applyZoom(layout.zoom)
     }
+    /** Dev and research A/B: false keeps the old zoom (boxes only) to compare against. */
+    spacingZoom = true
     /** Color hint mode (Feature 5.17): paint word boxes by meaning (molecules share a hue), or restore their own colors. */
     applyColorHints = () => {
         const boxes = this.shapesFac.boxes.filter(b => b.embedding !== undefined && b.body)

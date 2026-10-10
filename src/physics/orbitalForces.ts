@@ -104,6 +104,16 @@ export interface OrbitalTuning {
     groupBetweenNear: number;
     /** Grouped model: groups keep merging while their mean similarity exceeds this (0 = calibrated default). */
     groupThreshold: number;
+    /**
+     * Molecule gravity (Epic 5 · Feature 5.15; owner, 2026-10-10: "improve the molecule gravity so the
+     * distance is a bit more emphasized"). A molecule is a well whose pull on a related free word grows
+     * with its size (`moleculeWell` per extra member); unrelated words and molecules are held off beyond
+     * the separation plus the molecule's radius plus up to `moleculeGap` (the less related, the further),
+     * with a push of `moleculeRepel`. 0 turns each part off.
+     */
+    moleculeWell: number;
+    moleculeRepel: number;
+    moleculeGap: number;
 }
 
 /** Axis-aligned region words should stay out of, in the same coordinates as positions (x, y). */
@@ -141,6 +151,9 @@ export const defaultOrbitalTuning: OrbitalTuning = {
     groupWithinFar: 380,
     groupBetweenNear: 640,
     groupThreshold: 0,
+    moleculeWell: 0.0006,
+    moleculeRepel: 0.16,
+    moleculeGap: 160,
 };
 
 /** Default grouping threshold: midpoint of calibrated p95 and p99 (~p97; 0.18 for MiniLM). */
@@ -189,6 +202,7 @@ export function scaleTuning(tuning: OrbitalTuning, scale: number): OrbitalTuning
         restFar: tuning.restFar * scale,
         separation: tuning.separation * scale,
         farTarget: tuning.farTarget * scale,
+        moleculeGap: tuning.moleculeGap * scale,
     };
 }
 
@@ -294,7 +308,73 @@ export function orbitalAccelerations(
             if (!linked.has(i * n + j) && !bonded(i, j)) applyUnlinked(bodies, acc, i, j, unlinkedTarget(sims[i * n + j], cal, tuning), tuning);
         }
     }
+    if (groups) applyMoleculeGravity(bodies, acc, groups, sims, cal, tuning);
     return acc.map(a => clamp(a, tuning.maxAccel));
+}
+
+interface MoleculeUnit {
+    members: number[];
+    center: Point;
+    radius: number;
+}
+
+/**
+ * Molecule gravity (Feature 5.15): molecules act as units. Each member gets the same push (the physics
+ * adapter averages members' accelerations, so a uniform push moves the molecule as one).
+ *   - A free word linked (p99) to a member is pulled toward the molecule's centre, more strongly the
+ *     bigger the molecule (a gravity well), until it touches the molecule's edge.
+ *   - A free word or another molecule that is unrelated (no p99 pair) is held off beyond
+ *     separation + radii + moleculeGap x (1 - relatedness): the bigger and the less related, the
+ *     wider the gap, so systems read as separate at a glance. Reactions scale with the other's mass.
+ */
+function applyMoleculeGravity(bodies: readonly OrbitalBody[], acc: Point[], groups: readonly number[], sims: Float32Array, cal: Calibration, tuning: OrbitalTuning): void {
+    const n = bodies.length;
+    const byGroup = new Map<number, number[]>();
+    groups.forEach((g, i) => { if (g >= 0) byGroup.set(g, [...(byGroup.get(g) ?? []), i]); });
+    const molecules: MoleculeUnit[] = [...byGroup.values()].filter(m => m.length >= 2).map(members => {
+        const center = bodies[members[0]].position.map((_, k) => members.reduce((s, i) => s + bodies[i].position[k], 0) / members.length);
+        const radius = Math.max(...members.map(i => Math.hypot(...bodies[i].position.map((x, k) => x - center[k]))));
+        return { members, center, radius };
+    });
+    if (molecules.length === 0) return;
+    const relatedness = (s: number) => Math.max(0, Math.min(1, (s - cal.p5) / Math.max(1e-6, cal.p99 - cal.p5)));
+    // Strongest and mean similarity between two sets of words.
+    const between = (a: readonly number[], b: readonly number[]) => {
+        let max = -1, sum = 0;
+        for (const i of a) for (const j of b) { const s = sims[i * n + j]; max = Math.max(max, s); sum += s; }
+        return { max, mean: sum / (a.length * b.length) };
+    };
+    const push = (members: readonly number[], unit: Point, amount: number) => {
+        for (const i of members) addScaled(acc[i], unit, amount);
+    };
+    const keepApart = (a: readonly number[], ca: Point, ra: number, b: readonly number[], cb: Point, rb: number, mean: number) => {
+        const { unit, dist } = direction(ca, cb);
+        if (dist < 1) return;
+        const gap = tuning.separation + ra + rb + tuning.moleculeGap * (1 - relatedness(mean));
+        if (dist >= gap) return;
+        const force = tuning.moleculeRepel * (1 - dist / gap);
+        const [ma, mb] = [a.length, b.length];
+        push(a, unit, (-force * 2 * mb) / (ma + mb));
+        push(b, unit, (force * 2 * ma) / (ma + mb));
+    };
+    molecules.forEach((m, k) => {
+        for (const other of molecules.slice(k + 1)) {
+            const { max, mean } = between(m.members, other.members);
+            if (max <= cal.p99) keepApart(m.members, m.center, m.radius, other.members, other.center, other.radius, mean);
+        }
+        for (let w = 0; w < n; w++) {
+            if (groups[w] >= 0) continue;
+            const { max, mean } = between([w], m.members);
+            if (max > cal.p99) {
+                // Gravity well: pull grows with the molecule's size, stops at its edge.
+                const { unit, dist } = direction(bodies[w].position, m.center);
+                const reach = m.radius + tuning.restNear;
+                if (dist > reach) addScaled(acc[w], unit, Math.min(tuning.maxAccel, tuning.moleculeWell * (m.members.length - 1) * (dist - reach)));
+            } else {
+                keepApart(m.members, m.center, m.radius, [w], bodies[w].position, 0, mean);
+            }
+        }
+    });
 }
 
 /** Room a word needs beside the keep-out rectangle for an exit to count as open space. */

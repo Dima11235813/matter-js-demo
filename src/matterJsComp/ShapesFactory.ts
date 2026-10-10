@@ -192,7 +192,14 @@ export class ShapesFactory {
         const k = zoom / this.zoom
         if (Math.abs(k - 1) < 1e-6) return
         this.boxes.filter(b => b.baseSize && b.body).forEach(b => {
-            Matter.Body.scale(b.body!, k, k)
+            const body = b.body!
+            // Body.scale recomputes mass and inertia, even on a static body: keep a dragged (static) body's
+            // infinite mass, and hint mode's locked rotation (infinite inertia), or words start to tilt
+            // once the board zooms during hint play (Task 5.7.4).
+            const { isStatic, mass, inverseMass, inertia, inverseInertia } = body
+            Matter.Body.scale(body, k, k)
+            if (isStatic) Object.assign(body, { mass, inverseMass, inertia, inverseInertia })
+            else if (!Number.isFinite(inertia)) Matter.Body.setInertia(body, Infinity)
             const options = b.boxOptions as BoxOptions
             options.w *= k
             options.h *= k

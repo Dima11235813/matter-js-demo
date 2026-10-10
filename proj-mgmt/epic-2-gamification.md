@@ -212,3 +212,11 @@ Turn the physics prototype into an engaging, addictive educational game. Players
 * [x] **Task 2.15.2**: Upload a play log (the "Download my play log" file): events merge by id (duplicates skipped), imported events are marked not-ours-to-upload (`deviceId: "imported"`, synced), the words the player had added return to the corpus, and the score never changes.
 * [x] **Task 2.15.3**: Uploaded files are untrusted input: `parseSessionFile` / `parsePlayLogFile` (`src/game/sessions.ts`) check the kind, cap sizes, keep only valid words (letters only), coordinates, and hex colors, and report what they dropped. Unit `tests/sessions.test.ts`; e2e: save, load from letters mode, download → upload a session, download a play log → upload into a fresh persona (1 word restored, score 0).
 * [ ] **Task 2.15.4** (roadmap): sync saved sessions across devices; resume a Connect puzzle from a session.
+
+### Feature 2.16: Next-up preview (roadmap · owner, 2026-10-10: "after this batch")
+* **Owner's idea**: "enable a preview feature when enabled, shows you the next up word or letter to be added, this makes placement a bit more fun".
+* **Description**: An opt-in preview of what the next tap (+ mode) will drop: the next letter in letters mode, the next random word in Discovery (2D and 3D). Knowing what comes next turns placement into a choice: drop "queen" near "king", or a vowel next to the consonants that need it. Letters mode already has a top-bar of letter choices; the preview is the queued next piece, shown near the pointer or in a small "next" chip.
+* **Design notes**: the preview reserves the next item (a small queue, like a falling-block game's "next" box), so what you see is what drops; the toggle is per device; Guess and Connect stay unchanged (dealt supply, typed moves). In 3D the chip shows the word that lands on the tap plane.
+* [ ] **Task 2.16.1**: Pure next-item queue (`src/game/`): letters drawn by the letter frequencies, words by `randomWords`; peek/take; unit tests.
+* [ ] **Task 2.16.2**: Preview toggle and "next" chip (2D letters, 2D Discovery, 3D Discovery); a tap drops exactly the previewed item.
+* [ ] **Task 2.16.3**: e2e: with preview on, the chip's item is the one that lands (letters and Discovery, phone and desktop).

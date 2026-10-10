@@ -11,7 +11,7 @@ import { MoleculeGraph } from "../physics/molecules";
 
 const halfSize = (box: Box): Point => [box.boxOptions.w / 2, box.boxOptions.h / 2]
 import {
-    defaultOrbitalTuning, findLinks, keepOutAcceleration, orbitalAccelerations, OrbitalBody, OrbitalLink, Point, scaleTuning, similarityMatrix,
+    defaultOrbitalTuning, findLinks, keepOutAcceleration, orbitalAccelerations, OrbitalBody, OrbitalLink, OrbitalTuning, Point, scaleTuning, similarityMatrix,
 } from "../physics/orbitalForces";
 
 /** Matter integrates velocity += F / m * dt^2; orbital tuning is in px/step^2 at 60 Hz. */
@@ -22,7 +22,7 @@ const HINT = { gravity: 0.01, frictionAir: 0.06 };
 const NORMAL = { gravity: 1, frictionAir: 0.01 };
 
 /** Layout lengths are tuned for a ~560px-tall open area; shrink them on small screens. */
-function viewportScale(width: number, height: number): number {
+export function viewportScale(width: number, height: number): number {
     return Math.max(0.55, Math.min(1.3, Math.min(width, height - 240) / 560))
 }
 
@@ -39,6 +39,10 @@ export class SemanticPhysics {
     links: OrbitalLink[] = []
     linkedBoxes: Box[] = []
     readonly molecules = new MoleculeGraph()
+    /** Share of the layout's lengths in use: the board zooms out as it fills (boardLayout, Task 5.7.4). */
+    lengthScale = 1
+    /** Dev and research A/B: overrides on the hint tuning (e.g. molecule gravity off). */
+    tuningOverrides: Partial<OrbitalTuning> = {}
     private readonly savedInertia = new WeakMap<Matter.Body, number>()
     /** Pair similarities only change when the set of words changes, not every step. */
     private simsKey = ""
@@ -154,6 +158,11 @@ export class SemanticPhysics {
         }
     }
 
+    /** Hint tuning for this board: lengths for the screen, times the zoom's length share. */
+    tuning(width: number, height: number): OrbitalTuning {
+        return scaleTuning({ ...defaultOrbitalTuning, ...this.tuningOverrides }, viewportScale(width, height) * this.lengthScale)
+    }
+
     private applyOrbits(boxes: Box[]) {
         const bodies: OrbitalBody[] = boxes.map(box => ({
             position: [box.body!.position.x, box.body!.position.y],
@@ -162,7 +171,7 @@ export class SemanticPhysics {
         }))
         const { width, height } = deps.browserInfo
         const cal = semanticEngine.calibration
-        const tuning = scaleTuning(defaultOrbitalTuning, viewportScale(width, height))
+        const tuning = this.tuning(width, height)
         const sims = this.similarities(boxes, bodies)
         this.links = findLinks(bodies, cal, tuning, sims)
         this.linkedBoxes = boxes

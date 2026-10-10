@@ -3,7 +3,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import deps from "../matterJsComp/Deps";
 import { focusTargets, WordProbe, WordWorld } from "../matterJsComp/wordWorld";
 import { SpaceSimulation } from "../physics/spaceSimulation";
-import { Layout3d, layout3dConfig } from "../physics/layoutPresets";
+import { Layout3d, layout3dConfig, layoutScale3d, viewAspect } from "../physics/layoutPresets";
 import { semanticEngine } from "../services/semanticEngine";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { AppModes } from "../matterJsComp/models/appMode";
@@ -13,6 +13,8 @@ import { colorHintPainter } from "../services/colorHints";
 import { CameraDirector, FOV } from "./CameraDirector";
 import { canvasToSpace, ndcToCanvas, pixelMatchedDistance, Size } from "./handoff";
 import { SpaceScene } from "./SpaceScene";
+import { LABEL_HEIGHT } from "./labelTexture";
+import { labelScale, minLabelPx } from "./viewFit";
 
 const INITIAL_WORDS = 8;
 /** A press that moves less than this (px) is a click, not an orbit drag. */
@@ -32,7 +34,7 @@ export class SpaceWorld implements WordWorld {
     private readonly controls: OrbitControls;
     private readonly director: CameraDirector;
     private readonly view = new SpaceScene();
-    private readonly sim = new SpaceSimulation(semanticEngine.calibration, layout3dConfig(stores.gameStore.layout3d));
+    private readonly sim: SpaceSimulation;
     private layout: Layout3d = stores.gameStore.layout3d;
     private readonly colors = new Map<number, string>();
     private readonly raycaster = new THREE.Raycaster();
@@ -42,6 +44,7 @@ export class SpaceWorld implements WordWorld {
 
     constructor(private readonly container: HTMLElement) {
         this.size = [container.clientWidth || window.innerWidth, window.innerHeight];
+        this.sim = new SpaceSimulation(semanticEngine.calibration, this.layoutConfig());
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.setSize(...this.size);
@@ -138,7 +141,7 @@ export class SpaceWorld implements WordWorld {
     private frame = () => {
         if (stores.gameStore.layout3d !== this.layout) {
             this.layout = stores.gameStore.layout3d;
-            this.sim.setConfig(layout3dConfig(this.layout));
+            this.sim.setConfig(this.layoutConfig());
             this.director.reset(); // the layout changes size and shape: re-frame it (and orient, for shape)
         }
         this.spawnQueuedWords();
@@ -151,12 +154,15 @@ export class SpaceWorld implements WordWorld {
         // Connect-All: loose words (fewer than two connections) glow until they are bridged.
         const loose = stores.menuStore.view === "puzzle" ? new Set(stores.gameStore.puzzleStats?.loose ?? []) : undefined;
         if (loose) this.sim.bodies.forEach(b => { if (loose.has(b.word)) glowing.add(b.id); });
-        this.view.syncLabels(this.sim.bodies, id => hinted?.get(wordOf.get(id)!) ?? this.colors.get(id)!, selected, glowing);
+        // Labels stay at least the 2D word size on screen (phones framed them at 6 px), per the Aa size setting.
+        const minPx = minLabelPx(this.size[0], stores.gameStore.wordSize);
+        const scale = labelScale(this.camera.position.distanceTo(this.controls.target), this.size[1], FOV, LABEL_HEIGHT, minPx);
+        this.view.syncLabels(this.sim.bodies, id => hinted?.get(wordOf.get(id)!) ?? this.colors.get(id)!, selected, glowing, scale);
         // Shape layout: draw the nearest-neighbour skeleton so lines, rings, and stars are readable.
         const threads = this.layout === "shape" ? this.sim.skeleton(2) : this.sim.links;
         this.view.syncThreads(this.sim.bodies, threads, this.hovered);
         this.view.syncPills(this.sim.bodies, threads, this.hovered);
-        this.director.update(this.sim.bodies, this.size, deps.overlayRect);
+        this.director.update(this.sim.bodies, this.size, deps.overlayRect, minPx, (center, axis, angle) => this.sim.rotate(center, axis, angle));
         // Hand (Move) mode navigates: drag rotates, two fingers pan; + (Create) mode keeps the view still so
         // taps add words. Pinch / scroll zoom works in both (owner, 2026-10-05).
         const navigating = stores.menuStore.mode === AppModes.MOVE;
@@ -224,6 +230,8 @@ export class SpaceWorld implements WordWorld {
         if (!vector) return;
         const body = this.sim.add(word, vector, semanticEngine.rankOf(word), [point.x, point.y, point.z]);
         this.colors.set(body.id, getRandomColor());
+        // It glows while it moves to its place, so the eye can follow it (the camera stays put).
+        this.director.highlight([word]);
     }
 
     private onPointerMove = (event: PointerEvent) => {
@@ -232,8 +240,14 @@ export class SpaceWorld implements WordWorld {
         this.renderer.domElement.style.cursor = this.hovered !== undefined ? "pointer" : "grab";
     };
 
+    /** The layout preset with lengths for this screen (phones get a compact layout, Task 5.7.3). */
+    private layoutConfig() {
+        return layout3dConfig(this.layout, layoutScale3d(...this.size), viewAspect(...this.size));
+    }
+
     private onResize = () => {
         this.size = [this.container.clientWidth || window.innerWidth, window.innerHeight];
+        this.sim.setConfig(this.layoutConfig());
         this.renderer.setSize(...this.size);
         this.camera.aspect = this.size[0] / this.size[1];
         this.director.invalidateViewOffset();
