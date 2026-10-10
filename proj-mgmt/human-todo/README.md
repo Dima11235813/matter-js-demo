@@ -17,6 +17,6 @@ Things only the owner can do: creating accounts, pasting values into `.env.local
 | 9 | [Open product decisions](09-decisions.md) | Stage B/C planning | — | ☐ |
 | 10 | [Housekeeping: old `master` branch, git stash, skill copy](10-housekeeping.md) | tidy repo | 5 min | ☐ |
 | 11 | [Approve workspace rule additions (AGENTS.md)](11-approve-workspace-rules.md) | the same habits in every project and agent | 5 min | ☐ |
-| 12 | [SiteGround Node.js hosting: output directory `dist`, environment variables](12-siteground-node-hosting.md) | the live site at dmitril.sg-host.com; sign-in there later | 10 min | ☐ |
+| 12 | [SiteGround: superseded 2026-10-09 — pause its auto-deploy](12-siteground-node-hosting.md) | pushes to `main` stop deploying to SiteGround | 2 min | ☐ |
 
 After finishing an item, tell the agent (or tick it here); the agent then continues the work it unblocks (e.g. after 5: watch the first deploy; after 2: an end-to-end Google sign-in check).

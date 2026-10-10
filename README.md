@@ -2,7 +2,7 @@
 
 A word-physics playground where **distance on screen mirrors meaning**. Words are physics bodies, and a small language model (MiniLM, running in your browser) gives every word a meaning vector. Related words attract, form molecules and settle into clusters, in 2D and in an explorable 3D space. The game modes, from dropping letters to grading your analogies, teach you how embeddings "think".
 
-**Play it**: [dmitril.sg-host.com](https://dmitril.sg-host.com/) (phone and desktop). Each push to `main` deploys.
+**Play it**: not hosted right now (2026-10-09); run it locally with `yarn dev` (add `--host 0.0.0.0` to play from a phone on your network). It was live on SiteGround from 2026-10-05 to 10-09.
 
 ![Discovery in 2D: related words cluster, threads link close meanings, and a played analogy shows the model's answers](docs/img/readme/discovery-2d.png)
 
@@ -70,7 +70,7 @@ proj-mgmt/        epics, roadmap, and the owner's to-do list (human-todo/)
 | `yarn vocab:build` | rebuild the embedded vocabulary (about 5 minutes; commit `public/vocab` afterwards) |
 | `yarn research:cross-dim` | the research experiments |
 
-Deployment: SiteGround Node.js hosting installs dependencies, runs `yarn build`, and starts `yarn start`; settings and environment variables are in [`proj-mgmt/human-todo/12-siteground-node-hosting.md`](proj-mgmt/human-todo/12-siteground-node-hosting.md).
+Deployment: any Node.js host works the same way: install, `yarn build` (about 10 s; the vocabulary is committed), then `yarn start` on `PORT`. No host is chosen right now; environment variables are listed in [`proj-mgmt/human-todo/12-siteground-node-hosting.md`](proj-mgmt/human-todo/12-siteground-node-hosting.md) and [`server/.env.example`](server/.env.example).
 
 ## Credits
 

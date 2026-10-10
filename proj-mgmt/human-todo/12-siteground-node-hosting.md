@@ -1,4 +1,11 @@
-# 12. SiteGround Node.js hosting: settings and environment variables ☐
+# 12. SiteGround Node.js hosting: settings and environment variables (superseded 2026-10-09)
+
+> **Owner decision, 2026-10-09: no longer deploying to SiteGround.** The site was live there from 2026-10-05 to 10-09 (dmitril.sg-host.com). The next host is undecided. What it led to stays useful for any Node host: `yarn start` is one production server (game + API on `PORT`), `yarn build` takes ~10 s, and the vocabulary is committed.
+>
+> * ☐ **One action left**: Site Tools → Node.js → Deployment Options → **pause** (or disconnect) the GitHub auto-deploy, so pushes to `main` stop deploying to SiteGround. Done when a push to `main` no longer starts a SiteGround build.
+>
+> The rest of this item is kept for reference (the environment variables apply to any Node host).
+
 
 **Why**: the site is deployed from GitHub to SiteGround's Node.js hosting (owner decision, 2026-10-05). Every push to `main` deploys. SiteGround installs, runs `yarn build`, then starts the app with `yarn start`. That is now one Node server on SiteGround's `PORT`, serving the built game (`dist/`) and the API (`/api/v1`) from the same address, so nothing assumes localhost.
 

@@ -87,6 +87,12 @@ graph TD
     D -->|Production Release| E
 ```
 
+### Status snapshot (2026-10-09)
+* **Hosting**: live on SiteGround 2026-10-05 → 10-09, then dropped (owner decision); next host undecided (Epic 7 · Feature 7.6). `main` = `develop` = `249cd65` (+ this consolidation on `develop`).
+* **Shipped since 10-04** (most from live phone play-tests): Guess accepts the swapped analogy form, near-miss credit (+25), solved analogies clear the board, obvious pairs (heavy → heavier) count as easier and relations made of them are dealt to beginners (2.13.6–2.13.8, 2.12.5); saved sessions and uploads (2.15); phone: finger drags, tap-to-dock dashboard, board zoom with a word-size setting, one legible font size, and the "everything jumps" NaN fix (4.5.12, 4.5.13, 5.7.0–5.7.0c); 3D + mode adds words, hand mode navigates (5.13); paced letter drops and uniform tiles (4.5.14); a real README with screenshots.
+* **Tests**: 328 unit, 31 e2e (desktop and phone). Known rare flakes: Epic 4 · Task 4.5.11.
+* **Next candidates**: choose a host (7.6.3); 3D on phones (zoom, label size: 5.7 follow-up); molecule gravity (5.15); sync of ratings and sessions (2.12.3, 2.15.4); Connect follow-ups (beam-search par, more hard templates, removing a word: 2.10); Vite upgrade (4.5.5); p5 → Canvas2D (4.5.7).
+
 ### Progress on the 2026-10-04 plan (owner: "all recommended items except going to production")
 * ✅ 1. Mode split finished: Discovery earns no points; only correct guesses score (2.13.5).
 * ✅ 2. Letters → words: prefix rules from the vocabulary (real words 1.5 → 3.8 per 40 letters), carried words outlined and listed, the letter board returns (4.5.10, 2.14.4).
