@@ -1,6 +1,6 @@
 # Connect-All Puzzles: Rules, Par, and Balance
 
-**Status**: rule set and generator decided 2026-10-04; puzzle mode UI next · **Drives**: [Epic 2 · Feature 2.10](../../proj-mgmt/epic-2-gamification.md) · **Reproduce**: `CONNECT_PUZZLES=100 npx vitest run --config docs/research/experiments/vitest.research.config.ts connectAllBalance` (~3 min; writes [`results/connect-all-balance.json`](experiments/results/connect-all-balance.json))
+**Status**: rule set and generator decided 2026-10-04; beam-search par and a template per band 2026-10-11 (§6) · **Drives**: [Epic 2 · Feature 2.10](../../proj-mgmt/epic-2-gamification.md) · **Reproduce**: `CONNECT_PUZZLES=100 npx vitest run --config docs/research/experiments/vitest.research.config.ts connectAllBalance` (~3 min; writes [`results/connect-all-balance.json`](experiments/results/connect-all-balance.json))
 
 ## 1. Question
 
@@ -57,3 +57,67 @@ The owner's idea is a board of loose words where you add words until every word 
 * Par is greedy, not optimal; a beam search could lower it (Task 2.10.2 follow-up). The solver currently is the par, so "+0" is by construction.
 * 100 puzzles give 14 in the hard band. The plan's "≥ 50 per band" needs about 400 puzzles or more hard templates (for example 2 pairs + 5 loose).
 * The bots aren't people; the real test is the owner finding a puzzle fun (play-test after the UI).
+* *(Both limitations above were addressed on 2026-10-11, §6.)*
+
+## 6. Beam-search par and a template per band (2026-10-11)
+
+**Question.** Can a beam search tighten par, and which templates give at least 50 puzzles per band in 200 (the exit criterion)? Greedy par puts many puzzles one move too high, and only 14 of 100 puzzles were hard.
+
+**Method.**
+* **`solveBeam`** (`src/game/connectAll.ts`):
+  * It keeps the 4 boards with the fewest missing connections at each move, and tries each board's 4 best moves (greedy's ranking).
+  * The first solved board is par. Greedy's solution is the fallback, so par is never longer than greedy's.
+* **Candidate pool:** a move must lift a word that has fewer than two connections, so the search only scores vocabulary words linked to such a word (`SimColumns.linked`). It's a pure speed-up: the unit test and all 440 experiment puzzles give identical results.
+* **Experiments:**
+  * per-template stats over 40 seeds × 11 templates ([`connectAllPar.experiment.ts`](experiments/connectAllPar.experiment.ts), [results](experiments/results/connect-all-par.json));
+  * then the balance harness on 200 puzzles with the chosen mix and beam par (`CONNECT_RULES=base CONNECT_PUZZLES=200`, [results](experiments/results/connect-all-balance-base-200.json)).
+
+**Findings: par and speed.**
+
+| Template | Solvable (greedy / beam) | Mean par (greedy → beam) | Beam shorter | Bands by beam par (E/M/H) | ms: greedy / beam / beam + pool |
+|---|---|---|---|---|---|
+| 3+0 | 39 / 39 | 2.85 → 2.85 | 0 | 39 / 0 / 0 | 46 / 75 / 54 |
+| 3+1 | 37 / 39 | 4.43 → 4.38 | 2 | 2 / 37 / 0 | 88 / 188 / 104 |
+| 2+2 | 32 / 33 | 4.72 → 4.63 | 2 | 0 / 33 / 0 | 81 / 182 / 97 |
+| 3+2 | 32 / 36 | 5.81 → 5.69 | 4 | 0 / 28 / 8 | 116 / 277 / 132 |
+| 2+4 | 28 / 31 | 7.04 → 6.93 | 3 | 0 / 10 / 21 | 135 / 352 / 149 |
+| 2+5 | 34 / 35 | 8.09 → 8.00 | 3 | 0 / 0 / 35 | 165 / 437 / 173 |
+| 3+4 | 37 / 37 | 8.08 → 7.92 | 6 | 0 / 4 / 33 | 179 / 464 / 185 |
+| 1+6 | 29 / 32 | 8.38 → 8.24 | 4 | 0 / 1 / 31 | 155 / 432 / 166 |
+| 1+4, 0+5, 0+6 | 21–27 / 24–31 | 6.0–7.6 | 3–4 | mixed medium/hard | ≈ 100–130 pooled |
+
+(40 seeds each; node, desktop.)
+
+* **Beam trims par by one move** on up to 6 of 40 puzzles per template (mean −0.05 to −0.16).
+* **Beam solves 1–4 more puzzles per template** than greedy, so fewer seeds are skipped.
+* **With the pool, beam costs about what greedy did.**
+* **Bands follow the template:** 3+0 is always easy; 3+1 and 2+2 are medium; 2+5, 3+4 and 1+6 are hard.
+
+**Findings: the chosen mix** (3+0, 3+1, 2+5, 3+0, 2+2, 3+4, interleaved) on 200 puzzles:
+
+| | Value |
+|---|---|
+| Solvable | 185 / 200 |
+| Bands (easy / medium / hard) | **70 / 63 / 52** |
+| Mean par | 5.01 |
+| Greedy bot | 96% solved, **+0.58** moves over beam par (par is now tighter than the old solver plays) |
+| Nearest-neighbour bot | 85%, +4.8 |
+| Hub bot | 1% |
+| Random bot | 0% |
+
+**Deal time in the browser** (e2e bundle, "Next puzzle" until the new puzzle is dealt, 12 puzzles):
+
+| CPU | Time |
+|---|---|
+| Desktop | 46–134 ms |
+| 4× throttled (phone-like) | 168–1,125 ms; the slowest are hard puzzles |
+
+**Decision.**
+* Par is now beam search with the candidate pool.
+* The templates are the six-template mix above.
+* Puzzle numbers deal different boards from before 2026-10-11 (the mix changed). Saved bests are keyed by the board's words, so an old result never counts for a new board.
+
+**Limitations.**
+* **Beam isn't optimal either:** width 4, branch 4. A wider beam was not tried.
+* **Slow on phones:** on a slow phone, dealing a hard puzzle can stall the page for about a second. Roadmap: compute the next puzzle ahead of time, in idle time or a worker (Epic 2 · Task 2.10.6).
+* **The exit criterion "no strategy beats the others by more than 20%"** was written for strategies that compete. Here the cheap ones lose badly (hub 1%, random 0%), which is the balance the plan wanted.

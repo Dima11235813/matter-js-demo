@@ -2,6 +2,7 @@ import deps from "../matterJsComp/Deps";
 import { RootStore } from "../stores/RootStore";
 import { connectionStats, isLegalMove } from "../game/connectAll";
 import { makePuzzle } from "../game/connectPuzzles";
+import { PuzzlePlayPayload, puzzleMoveCount } from "../game/puzzleResults";
 import { semanticEngine } from "./semanticEngine";
 
 /**
@@ -37,6 +38,16 @@ export function startPuzzle(stores: RootStore, seed: number = savedSeed()): void
     stores.menuStore.clearBoardAnalogies();
     puzzle.words.forEach(word => deps.pendingWordSpawns.push({ word }));
     refreshPuzzleStats(stores);
+    void loadPuzzleBest(stores);
+}
+
+/** The best earlier result on the current board (shown in the HUD), from the play log. */
+async function loadPuzzleBest(stores: RootStore, lastWasBest = false): Promise<void> {
+    const puzzle = stores.gameStore.puzzle;
+    if (!puzzle) return;
+    const best = await semanticEngine.bestPuzzleResult(puzzle.words);
+    // Another puzzle may have been dealt meanwhile.
+    if (stores.gameStore.puzzle?.seed === puzzle.seed) stores.gameStore.setPuzzleBest(best ?? null, lastWasBest);
 }
 
 /** The next puzzle number (after a win or a skip). */
@@ -67,12 +78,39 @@ export function playPuzzleMove(stores: RootStore, word: string): string | undefi
     if (!isLegalMove(node, semanticEngine.connectRules(), board)) return `"${word}" is on the board already, or shares a stem with a board word`;
     stores.gameStore.addPuzzleMove(word);
     const stats = refreshPuzzleStats(stores);
-    if (stats?.solved) {
-        stores.gameStore.setPuzzleSolved();
-        void semanticEngine.logPlay("puzzle", { view: "puzzle", dimension: stores.gameStore.dimension, hintMode: stores.gameStore.hintMode },
-            { seed: puzzle.seed, band: puzzle.band, par: puzzle.par, moves: [...puzzle.moves, word] });
-    }
+    if (stats?.solved) void finishPuzzle(stores);
     return undefined;
+}
+
+/**
+ * Takes one of the player's own words back off the board (Task 2.10.5). It counts as a move, like adding
+ * it did. Puzzle words can't be removed (deleting the hard ones would skip the puzzle).
+ */
+export function removePuzzleWord(stores: RootStore, word: string): string | undefined {
+    const { puzzle } = stores.gameStore;
+    if (!puzzle) return "No puzzle on the board";
+    if (puzzle.solved) return "Solved! Start the next puzzle";
+    if (!puzzle.moves.includes(word)) return `"${word}" is a puzzle word: only your own words can be removed`;
+    stores.gameStore.removePuzzleMove(word);
+    deps.activeWorld?.removeWords([word]);
+    deps.pendingWordSpawns = deps.pendingWordSpawns.filter(request => request.word !== word);
+    const stats = refreshPuzzleStats(stores);
+    if (stats?.solved) void finishPuzzle(stores);
+    return undefined;
+}
+
+/** Solved: record the result in the play log, compare with the best, and light up the whole board. */
+async function finishPuzzle(stores: RootStore): Promise<void> {
+    const puzzle = stores.gameStore.puzzle;
+    if (!puzzle) return;
+    stores.gameStore.setPuzzleSolved();
+    const moveCount = puzzleMoveCount(puzzle);
+    const previous = stores.gameStore.puzzleBest;
+    const payload: PuzzlePlayPayload = { seed: puzzle.seed, band: puzzle.band, par: puzzle.par, words: puzzle.words, moves: puzzle.moves, removed: puzzle.removed ?? [], moveCount };
+    await semanticEngine.logPlay("puzzle", { view: "puzzle", dimension: stores.gameStore.dimension, hintMode: stores.gameStore.hintMode }, { ...payload });
+    await loadPuzzleBest(stores, !previous || moveCount < previous.moves);
+    // Completion burst: every word on the board glows (3D) or pulses (2D), once the last word has landed.
+    setTimeout(() => deps.activeWorld?.focusWords([...puzzle.words, ...puzzle.moves]), 400);
 }
 
 /** Recomputes degrees from the puzzle's words and moves (the rules decide, not the physics). */

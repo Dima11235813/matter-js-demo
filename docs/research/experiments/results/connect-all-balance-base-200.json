@@ -1,0 +1,69 @@
+{
+  "p99": 0.2297,
+  "templates": [
+    {
+      "pairs": 3,
+      "loose": 0
+    },
+    {
+      "pairs": 3,
+      "loose": 1
+    },
+    {
+      "pairs": 2,
+      "loose": 5
+    },
+    {
+      "pairs": 3,
+      "loose": 0
+    },
+    {
+      "pairs": 2,
+      "loose": 2
+    },
+    {
+      "pairs": 3,
+      "loose": 4
+    }
+  ],
+  "maxMoves": 15,
+  "failMoves": 20,
+  "candidates": 7948,
+  "results": {
+    "base": {
+      "rules": {
+        "link": 0.2297,
+        "hubRank": 0,
+        "hubLink": 0.23,
+        "bannedTopN": 0,
+        "maxLinksPerMove": null
+      },
+      "solvable": 185,
+      "puzzles": 200,
+      "bands": {
+        "easy": 70,
+        "medium": 63,
+        "hard": 52
+      },
+      "meanPar": 5.01,
+      "byBot": {
+        "solver": {
+          "solveRate": 0.96,
+          "meanOverPar": 0.58
+        },
+        "hub": {
+          "solveRate": 0.01,
+          "meanOverPar": 14.88
+        },
+        "nearest": {
+          "solveRate": 0.85,
+          "meanOverPar": 4.79
+        },
+        "random": {
+          "solveRate": 0,
+          "meanOverPar": 14.99
+        }
+      }
+    }
+  }
+}

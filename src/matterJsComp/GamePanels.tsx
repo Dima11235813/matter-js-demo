@@ -4,7 +4,8 @@ import { GameStore } from "../stores/GameStore";
 import { RootStore } from "../stores/RootStore";
 import { nextRewardAt } from "../game/timedGame";
 import { startTimedRound } from "../services/timedGameController";
-import { nextPuzzle } from "../services/connectPuzzle";
+import { nextPuzzle, removePuzzleWord } from "../services/connectPuzzle";
+import { puzzleMoveCount } from "../game/puzzleResults";
 import { focusWords } from "../services/playground";
 import { stores as rootStores } from "../stores";
 import { categoryLabel } from "../game/relationPairs";
@@ -175,7 +176,8 @@ export const PuzzleHud = observer(({ gameStore }: { gameStore: GameStore }) => {
   const { puzzle, puzzleStats } = gameStore;
   if (!puzzle || !puzzleStats) return <div className={styles.Status}>Dealing a puzzle...</div>;
   const percent = Math.round(puzzleStats.ratio * 100);
-  const moves = puzzle.moves.length;
+  const moves = puzzleMoveCount(puzzle);
+  const best = gameStore.puzzleBest;
   return (
     <div className={styles.GameHud} data-testid="puzzle-hud">
       <div className={styles.TimerTrack}>
@@ -184,10 +186,23 @@ export const PuzzleHud = observer(({ gameStore }: { gameStore: GameStore }) => {
       <div className={styles.HudRow}>
         <span title="Seeded: the same number is the same puzzle">Puzzle #{puzzle.seed} · {puzzle.band}</span>
         <span data-testid="puzzle-progress"><strong>{puzzleStats.connected} of {puzzleStats.total}</strong> connected ({percent}%)</span>
-        <span data-testid="puzzle-moves" title="Each word you add is a move; par is what our solver needs">moves {moves} · par {puzzle.par}</span>
+        <span data-testid="puzzle-moves" title="Each word you add or remove is a move; par is the fewest our solver found">moves {moves} · par {puzzle.par}</span>
+        {best && <span data-testid="puzzle-best" title="Your best on this puzzle (from your play log)">best {best.moves}</span>}
       </div>
+      {puzzle.moves.length > 0 && !puzzle.solved && (
+        <div className={styles.Verdict} data-testid="puzzle-own-words">
+          <span>Your words: </span>
+          {puzzle.moves.map(word => (
+            <span key={word}>
+              <button type="button" className={styles.WordLink} onClick={() => focusWords([word])} title={`Focus on "${word}"`}>{word}</button>
+              <button type="button" className={styles.WordLink} style={{ pointerEvents: "auto" }} data-testid={`remove-${word}`} onClick={() => removePuzzleWord(rootStores, word)} title={`Remove "${word}" (costs a move)`} aria-label={`Remove ${word}`}>✕</button>{" "}
+            </span>
+          ))}
+        </div>
+      )}
       {puzzle.solved ? (
-        <div className={styles.Verdict} data-testid="puzzle-solved">
+        <div className={`${styles.Verdict} ${styles.SolvedBurst}`} data-testid="puzzle-solved">
+          {gameStore.lastPuzzleWasBest && <strong data-testid="puzzle-new-best">New best! </strong>}
           <span className={styles.VerdictGood}>Solved in {moves} {moves === 1 ? "move" : "moves"} ({moves <= puzzle.par ? (moves < puzzle.par ? "under par!" : "par") : `par ${puzzle.par}`}) · </span>
           {/* The dashboard lets clicks through to the canvas; its controls opt back in. */}
           <button type="button" className={styles.WordButton} style={{ pointerEvents: "auto" }} onClick={() => nextPuzzle(rootStores)}>Next puzzle</button>

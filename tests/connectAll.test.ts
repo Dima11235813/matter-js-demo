@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { BASE_RULES, ConnectNode, ConnectRules, connectionStats, dot, isLegalMove, solveGreedy } from '../src/game/connectAll';
+import { BASE_RULES, ConnectNode, ConnectRules, connectionStats, deficit, dot, isLegalMove, solveBeam, solveGreedy } from '../src/game/connectAll';
+import { lcg } from '../src/game/connectPuzzles';
 
 const unit = (...xs: number[]) => { const n = Math.hypot(...xs); return Float32Array.from(xs.map(x => x / n)); };
 const node = (word: string, vector: Float32Array, rank = 5000, added = false): ConnectNode => ({ word, vector, rank, added });
@@ -63,5 +64,61 @@ describe('Connect-All: greedy solver (par)', () => {
     const candidates = [node('noise', unit(0, 0, 1))];
     const result = solveGreedy(board, candidates, rules, (i, b) => b.map(x => dot(candidates[i].vector, x.vector)));
     expect(result).toEqual({ moves: [], solved: false });
+  });
+});
+
+describe('Connect-All: beam search par (Task 2.10.2)', () => {
+  /** Seeded synthetic puzzles: sparse vectors in 12 dimensions, so words link only through shared axes. */
+  const synthetic = (seed: number) => {
+    const next = lcg(seed);
+    const sparse = (k: number) => {
+      const v = new Array(12).fill(0);
+      for (let i = 0; i < k; i++) v[Math.floor(next() * 12)] += 0.5 + next();
+      return unit(...v);
+    };
+    const puzzle = Array.from({ length: 6 }, (_, i) => node(`p${i}`, sparse(1)));
+    const candidates = Array.from({ length: 60 }, (_, i) => node(`c${i}`, sparse(2 + Math.floor(next() * 3)), 1000 + i));
+    return { puzzle, candidates };
+  };
+  const simsOf = (candidates: ConnectNode[]) => (c: number, board: readonly ConnectNode[]) => board.map(b => dot(candidates[c].vector, b.vector));
+  const replay = (puzzle: ConnectNode[], candidates: ConnectNode[], moves: string[]) =>
+    connectionStats([...puzzle, ...moves.map(m => ({ ...candidates.find(c => c.word === m)!, added: true }))], rules);
+
+  it('never needs more moves than greedy, its solutions really solve the board, and it beats greedy somewhere', () => {
+    let shorter = 0, solvedBoards = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const { puzzle, candidates } = synthetic(seed);
+      const greedy = solveGreedy(puzzle, candidates, rules, simsOf(candidates), 12);
+      const beam = solveBeam(puzzle, candidates, rules, simsOf(candidates), { maxMoves: 12 });
+      if (greedy.solved) {
+        expect(beam.solved).toBe(true);
+        expect(beam.moves.length).toBeLessThanOrEqual(greedy.moves.length);
+      }
+      if (beam.solved) {
+        solvedBoards++;
+        expect(replay(puzzle, candidates, beam.moves).solved).toBe(true);
+        if (greedy.solved && beam.moves.length < greedy.moves.length) shorter++;
+      }
+    }
+    expect(solvedBoards).toBeGreaterThan(10);
+    expect(shorter).toBeGreaterThan(0);
+  });
+
+  it('the candidate pool (words linked to a needy word) is a pure speed-up: same moves with and without it', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { puzzle, candidates } = synthetic(seed);
+      const pool = (needy: readonly ConnectNode[]) => candidates.flatMap((c, i) => (needy.some(n => dot(c.vector, n.vector) >= rules.link) ? [i] : []));
+      expect(solveGreedy(puzzle, candidates, rules, simsOf(candidates), 12, pool)).toEqual(solveGreedy(puzzle, candidates, rules, simsOf(candidates), 12));
+      expect(solveBeam(puzzle, candidates, rules, simsOf(candidates), { pool })).toEqual(solveBeam(puzzle, candidates, rules, simsOf(candidates)));
+    }
+  });
+
+  it('is deterministic (par must be the same for every player)', () => {
+    const { puzzle, candidates } = synthetic(7);
+    expect(solveBeam(puzzle, candidates, rules, simsOf(candidates))).toEqual(solveBeam(puzzle, candidates, rules, simsOf(candidates)));
+  });
+
+  it('counts missing connections', () => {
+    expect(deficit([0, 1, 2, 5])).toBe(3);
   });
 });

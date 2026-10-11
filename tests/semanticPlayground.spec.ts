@@ -722,6 +722,52 @@ test('3D: + mode taps add words and keep the view still; hand mode drags rotate 
   expect(Math.abs((await azimuth()) - beforeHand)).toBeGreaterThan(0.2);
 });
 
+test('Connect: removing your word costs a move; a solve lights up the board and records a best (Task 2.10.5)', async ({ page }) => {
+  test.setTimeout(120_000);
+  type PuzzleHandle = { puzzle: { state(): { seed: number; words: string[]; par: number; solution: string[]; moves: string[] } | null } };
+  const puzzle = () => page.evaluate(() => (window.__lexical as unknown as PuzzleHandle).puzzle.state()!);
+  const openConnect = async () => {
+    await openSandbox(page, '2d');
+    await page.bringToFront();
+    await page.locator('#puzzle-toggle').click();
+    await expect(page.getByTestId('puzzle-hud')).toBeVisible({ timeout: 20_000 });
+    const state = await puzzle();
+    await expect.poll(async () => (await boardWords(page)).sort(), { timeout: 20_000 }).toEqual([...state.words].sort());
+    return state;
+  };
+  const play = async (word: string) => {
+    await wordBox(page).fill(word);
+    await wordBox(page).press('Enter');
+  };
+  const start = await openConnect();
+
+  // Add a word, then take it back: two moves, and it leaves the board.
+  const [first] = start.solution;
+  await play(first);
+  await expect(page.getByTestId('puzzle-moves')).toContainText('moves 1');
+  await expect.poll(() => boardWords(page)).toContain(first);
+  await page.getByTestId(`remove-${first}`).click();
+  await expect(page.getByTestId('puzzle-moves')).toContainText('moves 2');
+  await expect.poll(() => boardWords(page)).not.toContain(first);
+  expect((await puzzle()).moves).toEqual([]);
+
+  // Solve it: par + 2 moves. First solve of this board is a new best, and every word lights up.
+  for (const word of start.solution) await play(word);
+  const total = start.par + 2;
+  await expect(page.getByTestId('puzzle-solved')).toContainText(`Solved in ${total}`);
+  await expect(page.getByTestId('puzzle-new-best')).toBeVisible();
+  await expect.poll(async () => (await focused(page)).length, { timeout: 5_000 }).toBe(start.words.length + start.solution.length);
+
+  // Back to the same puzzle after a reload: the HUD shows the best; solving at par beats it.
+  const again = await openConnect();
+  expect(again.seed).toBe(start.seed);
+  await expect(page.getByTestId('puzzle-best')).toHaveText(`best ${total}`);
+  for (const word of again.solution) await play(word);
+  await expect(page.getByTestId('puzzle-solved')).toContainText(`Solved in ${again.par}`);
+  await expect(page.getByTestId('puzzle-new-best')).toBeVisible();
+  await expect(page.getByTestId('puzzle-best')).toHaveText(`best ${again.par}`);
+});
+
 test('a molecule built in 2D holds together in 3D and comes back to 2D (Task 5.15.1)', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await openSandbox(page, '2d');

@@ -111,13 +111,18 @@ export interface SolveResult {
  * Greedy solver (par and hints): repeatedly plays the legal candidate that lifts the most
  * under-connected words while linking to at least two words itself (ties: the stronger links).
  * `simsOf(candidateIndex)` returns that candidate's similarities to the current board, in board order.
+ * `pool` (optional, a pure speed-up) lists, in ascending order, the candidates linked to any of the given
+ * under-connected words: a move must lift one of them, so no other candidate can be chosen.
  */
+export type CandidatePool = (needy: readonly ConnectNode[]) => number[];
+
 export function solveGreedy(
     puzzle: readonly ConnectNode[],
     candidates: readonly ConnectNode[],
     rules: ConnectRules,
     simsOf: (candidate: number, board: readonly ConnectNode[]) => number[],
-    maxMoves = 12
+    maxMoves = 12,
+    pool?: CandidatePool
 ): SolveResult {
     const board = [...puzzle];
     const moves: string[] = [];
@@ -126,7 +131,7 @@ export function solveGreedy(
         const stats = connectionStats(board, rules);
         if (stats.solved) return { moves, solved: true };
         let best = -1, bestGain = 0, bestStrength = -Infinity;
-        for (let c = 0; c < candidates.length; c++) {
+        for (const c of candidateIndices(candidates, board, stats.degree, pool)) {
             const cand = candidates[c];
             if (used.has(cand.word) || !isLegalMove(cand, rules, board)) continue;
             const sims = simsOf(c, board);
@@ -141,4 +146,73 @@ export function solveGreedy(
         moves.push(candidates[best].word);
     }
     return { moves, solved: connectionStats(board, rules).solved };
+}
+
+/** Every candidate index, or only the pool's (candidates linked to an under-connected board word). */
+function candidateIndices(candidates: readonly ConnectNode[], board: readonly ConnectNode[], degree: readonly number[], pool?: CandidatePool): Iterable<number> {
+    if (!pool) return candidates.keys();
+    return pool(board.filter((_, i) => degree[i] < 2));
+}
+
+/** Missing connections: how far each word is from degree 2, summed (0 = solved). */
+export function deficit(degree: readonly number[]): number {
+    return degree.reduce((sum, d) => sum + Math.max(0, 2 - d), 0);
+}
+
+export interface BeamOptions {
+    /** Boards kept after each move. */
+    width: number;
+    /** Best moves tried from each board. */
+    branch: number;
+    maxMoves: number;
+    /** Optional speed-up; see `solveGreedy`. */
+    pool: CandidatePool;
+}
+
+/**
+ * Beam search for par (Task 2.10.2): level by level, each kept board tries its `branch` best moves (the
+ * greedy ranking: most under-connected words lifted, then link strength), and the `width` boards with the
+ * fewest missing connections go on. The first solved board is the shortest found; the greedy solution is
+ * the fallback, so the result is never longer than greedy's.
+ */
+export function solveBeam(
+    puzzle: readonly ConnectNode[],
+    candidates: readonly ConnectNode[],
+    rules: ConnectRules,
+    simsOf: (candidate: number, board: readonly ConnectNode[]) => number[],
+    { width = 4, branch = 4, maxMoves = 12, pool }: Partial<BeamOptions> = {}
+): SolveResult {
+    const greedy = solveGreedy(puzzle, candidates, rules, simsOf, maxMoves, pool);
+    // Nothing shorter than one move, and a beam can't beat greedy past greedy's own length.
+    const limit = greedy.solved ? greedy.moves.length - 1 : maxMoves;
+    type State = { board: ConnectNode[]; moves: string[]; degree: number[]; strength: number };
+    let level: State[] = [{ board: [...puzzle], moves: [], degree: connectionStats(puzzle, rules).degree, strength: 0 }];
+    for (let depth = 1; depth <= limit; depth++) {
+        const children = new Map<string, State>();
+        for (const state of level) {
+            const used = new Set(state.board.map(n => n.word));
+            const ranked: { c: number; gain: number; strength: number }[] = [];
+            for (const c of candidateIndices(candidates, state.board, state.degree, pool)) {
+                const cand = candidates[c];
+                if (used.has(cand.word) || !isLegalMove(cand, rules, state.board)) continue;
+                const sims = simsOf(c, state.board);
+                const { links, gain } = moveValue(cand, sims, state.board, state.degree, rules);
+                if (links.length < 2 || gain === 0) continue;
+                ranked.push({ c, gain, strength: links.reduce((s, j) => s + sims[j], 0) });
+            }
+            ranked.sort((a, b) => b.gain - a.gain || b.strength - a.strength);
+            for (const { c, strength } of ranked.slice(0, branch)) {
+                const moves = [...state.moves, candidates[c].word];
+                const key = [...moves].sort().join("|");
+                if (children.has(key)) continue;
+                const board = [...state.board, { ...candidates[c], added: true }];
+                const stats = connectionStats(board, rules);
+                if (stats.solved) return { moves, solved: true };
+                children.set(key, { board, moves, degree: stats.degree, strength: state.strength + strength });
+            }
+        }
+        if (children.size === 0) break;
+        level = [...children.values()].sort((a, b) => deficit(a.degree) - deficit(b.degree) || b.strength - a.strength).slice(0, width);
+    }
+    return greedy;
 }

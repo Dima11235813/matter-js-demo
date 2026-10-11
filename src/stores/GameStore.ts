@@ -7,6 +7,7 @@ import { loadColorHints } from '../services/colorHints';
 import { loadWordSize, WordSize } from '../physics/boardZoom';
 import { loadNextWordPreview } from '../services/nextUp';
 import type { Puzzle } from '../game/connectPuzzles';
+import type { PuzzleResult } from '../game/puzzleResults';
 import { RelationDeal } from '../game/relationPairs';
 
 /**
@@ -30,9 +31,15 @@ export class GameStore extends CommonStore {
     rating = 1000
     /** How much the last graded guess moved the rating. */
     lastRatingChange: number | null = null
-    /** Connect-All (Feature 2.10): the puzzle on the board, its moves, and whether it is solved. */
-    puzzle: (Puzzle & { moves: string[]; solved?: boolean }) | null = null
+    /**
+     * Connect-All (Feature 2.10): the puzzle on the board, the player's words on it (`moves`), the words they
+     * added and removed again (`removed`, each removal is a move too), and whether it is solved.
+     */
+    puzzle: (Puzzle & { moves: string[]; removed?: string[]; solved?: boolean }) | null = null
     puzzleStats: { connected: number; total: number; ratio: number; loose: string[]; solved: boolean } | null = null
+    /** Best earlier result on this puzzle's board (from the play log), and whether the last solve beat it. */
+    puzzleBest: PuzzleResult | null = null
+    lastPuzzleWasBest = false
     game: TimedGameState | null = null
     now = Date.now()
     bestScore = 0
@@ -64,7 +71,11 @@ export class GameStore extends CommonStore {
             puzzleStats: observable.ref,
             setPuzzle: action,
             addPuzzleMove: action,
+            removePuzzleMove: action,
             setPuzzleSolved: action,
+            puzzleBest: observable.ref,
+            lastPuzzleWasBest: observable,
+            setPuzzleBest: action,
             setPuzzleStats: action,
             spaceActive: computed,
             setDimension: action,
@@ -111,14 +122,24 @@ export class GameStore extends CommonStore {
         this.nextWord = word
     }
 
-    setPuzzle = (puzzle: (Puzzle & { moves: string[] }) | null) => {
+    setPuzzle = (puzzle: (Puzzle & { moves: string[]; removed?: string[] }) | null) => {
         this.puzzle = puzzle
+        this.puzzleBest = null
+        this.lastPuzzleWasBest = false
     }
     addPuzzleMove = (word: string) => {
         if (this.puzzle) this.puzzle = { ...this.puzzle, moves: [...this.puzzle.moves, word] }
     }
+    /** Takes one of the player's words back off the board (it still counted as a move, and so does this). */
+    removePuzzleMove = (word: string) => {
+        if (this.puzzle) this.puzzle = { ...this.puzzle, moves: this.puzzle.moves.filter(w => w !== word), removed: [...(this.puzzle.removed ?? []), word] }
+    }
     setPuzzleSolved = () => {
         if (this.puzzle) this.puzzle = { ...this.puzzle, solved: true }
+    }
+    setPuzzleBest = (best: PuzzleResult | null, lastWasBest = false) => {
+        this.puzzleBest = best
+        this.lastPuzzleWasBest = lastWasBest
     }
     setPuzzleStats = (stats: GameStore["puzzleStats"]) => {
         this.puzzleStats = stats

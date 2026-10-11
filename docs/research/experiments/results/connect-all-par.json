@@ -1,0 +1,294 @@
+{
+  "p99": 0.2297,
+  "seeds": 40,
+  "maxMoves": 15,
+  "candidates": 7948,
+  "rows": [
+    {
+      "template": "3+0",
+      "solvable": {
+        "greedy": 39,
+        "beam": 39,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 2.85,
+        "beam": 2.85
+      },
+      "beamShorter": 0,
+      "bands": {
+        "easy": 39,
+        "medium": 0,
+        "hard": 0
+      },
+      "ms": {
+        "greedy": 46,
+        "beam": 75,
+        "beamMax": 125,
+        "pooled": 54,
+        "pooledMax": 88
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "3+1",
+      "solvable": {
+        "greedy": 37,
+        "beam": 39,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 4.43,
+        "beam": 4.38
+      },
+      "beamShorter": 2,
+      "bands": {
+        "easy": 2,
+        "medium": 37,
+        "hard": 0
+      },
+      "ms": {
+        "greedy": 88,
+        "beam": 188,
+        "beamMax": 236,
+        "pooled": 104,
+        "pooledMax": 122
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "2+2",
+      "solvable": {
+        "greedy": 32,
+        "beam": 33,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 4.72,
+        "beam": 4.63
+      },
+      "beamShorter": 2,
+      "bands": {
+        "easy": 0,
+        "medium": 33,
+        "hard": 0
+      },
+      "ms": {
+        "greedy": 81,
+        "beam": 182,
+        "beamMax": 238,
+        "pooled": 97,
+        "pooledMax": 118
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "3+2",
+      "solvable": {
+        "greedy": 32,
+        "beam": 36,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 5.81,
+        "beam": 5.69
+      },
+      "beamShorter": 4,
+      "bands": {
+        "easy": 0,
+        "medium": 28,
+        "hard": 8
+      },
+      "ms": {
+        "greedy": 116,
+        "beam": 277,
+        "beamMax": 372,
+        "pooled": 132,
+        "pooledMax": 160
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "2+4",
+      "solvable": {
+        "greedy": 28,
+        "beam": 31,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 7.04,
+        "beam": 6.93
+      },
+      "beamShorter": 3,
+      "bands": {
+        "easy": 0,
+        "medium": 10,
+        "hard": 21
+      },
+      "ms": {
+        "greedy": 135,
+        "beam": 352,
+        "beamMax": 496,
+        "pooled": 149,
+        "pooledMax": 192
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "1+4",
+      "solvable": {
+        "greedy": 27,
+        "beam": 31,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 6,
+        "beam": 5.85
+      },
+      "beamShorter": 4,
+      "bands": {
+        "easy": 0,
+        "medium": 22,
+        "hard": 9
+      },
+      "ms": {
+        "greedy": 102,
+        "beam": 258,
+        "beamMax": 363,
+        "pooled": 118,
+        "pooledMax": 167
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "2+5",
+      "solvable": {
+        "greedy": 34,
+        "beam": 35,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 8.09,
+        "beam": 8
+      },
+      "beamShorter": 3,
+      "bands": {
+        "easy": 0,
+        "medium": 0,
+        "hard": 35
+      },
+      "ms": {
+        "greedy": 165,
+        "beam": 437,
+        "beamMax": 637,
+        "pooled": 173,
+        "pooledMax": 260
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "1+6",
+      "solvable": {
+        "greedy": 29,
+        "beam": 32,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 8.38,
+        "beam": 8.24
+      },
+      "beamShorter": 4,
+      "bands": {
+        "easy": 0,
+        "medium": 1,
+        "hard": 31
+      },
+      "ms": {
+        "greedy": 155,
+        "beam": 432,
+        "beamMax": 567,
+        "pooled": 166,
+        "pooledMax": 207
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "0+5",
+      "solvable": {
+        "greedy": 21,
+        "beam": 25,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 6.38,
+        "beam": 6.24
+      },
+      "beamShorter": 3,
+      "bands": {
+        "easy": 0,
+        "medium": 18,
+        "hard": 7
+      },
+      "ms": {
+        "greedy": 92,
+        "beam": 243,
+        "beamMax": 349,
+        "pooled": 108,
+        "pooledMax": 193
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "0+6",
+      "solvable": {
+        "greedy": 21,
+        "beam": 24,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 7.62,
+        "beam": 7.48
+      },
+      "beamShorter": 3,
+      "bands": {
+        "easy": 0,
+        "medium": 5,
+        "hard": 19
+      },
+      "ms": {
+        "greedy": 120,
+        "beam": 326,
+        "beamMax": 515,
+        "pooled": 131,
+        "pooledMax": 228
+      },
+      "pooledSame": 40
+    },
+    {
+      "template": "3+4",
+      "solvable": {
+        "greedy": 37,
+        "beam": 37,
+        "of": 40
+      },
+      "meanPar": {
+        "greedy": 8.08,
+        "beam": 7.92
+      },
+      "beamShorter": 6,
+      "bands": {
+        "easy": 0,
+        "medium": 4,
+        "hard": 33
+      },
+      "ms": {
+        "greedy": 179,
+        "beam": 464,
+        "beamMax": 736,
+        "pooled": 185,
+        "pooledMax": 270
+      },
+      "pooledSame": 40
+    }
+  ]
+}

@@ -4,8 +4,8 @@ import path from 'node:path';
 import { decodeVocabBinary, VocabManifest } from '../../../src/embeddings/vocabAsset';
 import { VectorIndex } from '../../../src/embeddings/VectorIndex';
 import { sharesStem } from '../../../src/embeddings/analogy';
-import { BASE_RULES, ConnectNode, ConnectRules, connectionStats, dot, isLegalMove, linkThreshold, moveValue, solveGreedy } from '../../../src/game/connectAll';
-import { generatePuzzle as generateTemplatePuzzle, lcg, TEMPLATES } from '../../../src/game/connectPuzzles';
+import { BASE_RULES, ConnectNode, ConnectRules, connectionStats, dot, isLegalMove, linkThreshold, moveValue, solveBeam } from '../../../src/game/connectAll';
+import { generatePuzzle as generateTemplatePuzzle, lcg, SimColumns, TEMPLATES } from '../../../src/game/connectPuzzles';
 
 /**
  * Connect-All balance harness (docs/research/connect-all-balance.md, Epic 2 · Task 2.10.3).
@@ -134,11 +134,14 @@ const RULE_SETS: Record<string, ConnectRules> = {
 it('Connect-All balance: rule sets x bots x generated puzzles', () => {
   const results: Record<string, unknown> = {};
   const summary: Record<string, Record<string, string | number>> = {};
-  for (const [name, rules] of Object.entries(RULE_SETS)) {
+  // CONNECT_RULES=base runs one rule set (the template re-check of 2026-10-11 only needed the chosen rules).
+  const only = process.env.CONNECT_RULES?.split(',');
+  for (const [name, rules] of Object.entries(RULE_SETS).filter(([n]) => !only || only.includes(n))) {
     const puzzles = [...Array(PUZZLES).keys()].map(i => generatePuzzle(1000 + i));
+    // Par as the game computes it (makePuzzle): beam search with the candidate pool (2026-10-11; greedy before).
     const pars = puzzles.map(p => {
-      const cache = new SimCache(p);
-      const solved = solveGreedy(p, candidates, rules, (c, board) => cache.row(c, board), MAX_MOVES);
+      const columns = new SimColumns(candidates);
+      const solved = solveBeam(p, candidates, rules, (c, board) => columns.row(c, board), { maxMoves: MAX_MOVES, pool: needy => columns.linked(needy, rules.link) });
       return solved.solved ? solved.moves.length : FAIL_MOVES;
     });
     const solvable = puzzles.map((_, i) => i).filter(i => pars[i] < FAIL_MOVES && pars[i] > 0);
@@ -156,5 +159,7 @@ it('Connect-All balance: rule sets x bots x generated puzzles', () => {
   }
   console.table(summary);
   // Pilots (CONNECT_PUZZLES < 100) only print; the committed results come from a full run.
-  if (PUZZLES >= 100) fs.writeFileSync(path.join(ROOT, 'docs/research/experiments/results/connect-all-balance.json'), JSON.stringify({ p99: P99, templates: TEMPLATES, maxMoves: MAX_MOVES, failMoves: FAIL_MOVES, candidates: candidates.length, results }, null, 2));
+  // A filtered run gets its own file, so it never replaces the full comparison.
+  const file = only ? `connect-all-balance-${only.join('-')}-${PUZZLES}.json` : 'connect-all-balance.json';
+  if (PUZZLES >= 100) fs.writeFileSync(path.join(ROOT, 'docs/research/experiments/results', file), JSON.stringify({ p99: P99, templates: TEMPLATES, maxMoves: MAX_MOVES, failMoves: FAIL_MOVES, candidates: candidates.length, results }, null, 2));
 }, 3_600_000);
