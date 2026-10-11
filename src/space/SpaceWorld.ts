@@ -5,6 +5,7 @@ import { focusTargets, WordProbe, WordWorld } from "../matterJsComp/wordWorld";
 import { SpaceSimulation } from "../physics/spaceSimulation";
 import { Layout3d, layout3dConfig, layoutScale3d, viewAspect } from "../physics/layoutPresets";
 import { semanticEngine } from "../services/semanticEngine";
+import { takeNextWord } from "../services/nextUp";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { AppModes } from "../matterJsComp/models/appMode";
 import { stores } from "../stores";
@@ -224,8 +225,10 @@ export class SpaceWorld implements WordWorld {
         const normal = this.camera.getWorldDirection(new THREE.Vector3());
         const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, this.controls.target);
         const point = this.raycaster.ray.intersectPlane(plane, new THREE.Vector3());
-        const [word] = semanticEngine.randomWords(1);
-        if (!point || !word || this.sim.bodies.some(b => b.word === word)) return;
+        if (!point) return;
+        // The next-up word (Feature 2.16): exactly what the "next" chip showed, never one already here.
+        const word = takeNextWord(stores);
+        if (!word || this.sim.bodies.some(b => b.word === word)) return;
         const vector = semanticEngine.lookup(word);
         if (!vector) return;
         const body = this.sim.add(word, vector, semanticEngine.rankOf(word), [point.x, point.y, point.z]);

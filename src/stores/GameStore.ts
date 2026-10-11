@@ -5,6 +5,7 @@ import { defaultTimedRules, remainingMs, TimedGameRules, TimedGameState } from '
 import { Layout3d, loadLayout3d } from '../physics/layoutPresets';
 import { loadColorHints } from '../services/colorHints';
 import { loadWordSize, WordSize } from '../physics/boardZoom';
+import { loadNextWordPreview } from '../services/nextUp';
 import type { Puzzle } from '../game/connectPuzzles';
 import { RelationDeal } from '../game/relationPairs';
 
@@ -21,6 +22,10 @@ export class GameStore extends CommonStore {
     colorHints: boolean = loadColorHints()
     /** 2D word size on small and crowded boards (Task 5.7.0): small / medium (default) / large. Per device. */
     wordSize: WordSize = loadWordSize()
+    /** Next-up preview (Feature 2.16): show the word Discovery's next + tap drops. Per device. */
+    nextWordPreview: boolean = loadNextWordPreview()
+    /** The word the next + tap drops (services/nextUp.ts keeps it current). */
+    nextWord: string | undefined = undefined
     /** Guess-mode skill rating (Feature 2.12): sets the relation each round deals. */
     rating = 1000
     /** How much the last graded guess moved the rating. */
@@ -48,6 +53,10 @@ export class GameStore extends CommonStore {
             setColorHints: action,
             wordSize: observable,
             setWordSize: action,
+            nextWordPreview: observable,
+            setNextWordPreview: action,
+            nextWord: observable,
+            setNextWord: action,
             rating: observable,
             lastRatingChange: observable,
             setRating: action,
@@ -94,6 +103,12 @@ export class GameStore extends CommonStore {
     }
     setWordSize = (size: WordSize) => {
         this.wordSize = size
+    }
+    setNextWordPreview = (on: boolean) => {
+        this.nextWordPreview = on
+    }
+    setNextWord = (word: string | undefined) => {
+        this.nextWord = word
     }
 
     setPuzzle = (puzzle: (Puzzle & { moves: string[] }) | null) => {

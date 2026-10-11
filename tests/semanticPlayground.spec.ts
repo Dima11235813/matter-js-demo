@@ -722,6 +722,58 @@ test('3D: + mode taps add words and keep the view still; hand mode drags rotate 
   expect(Math.abs((await azimuth()) - beforeHand)).toBeGreaterThan(0.2);
 });
 
+test('next-up preview: the chip shows the word the next + tap drops, in 2D and 3D, and stays on after a reload (Feature 2.16)', async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await openSandbox(page, '2d');
+  await page.bringToFront();
+  const chip = page.getByTestId('next-word-chip');
+  const next = page.getByTestId('next-word');
+  await expect(chip).toHaveText('Next');
+  await chip.click();
+  await expect(chip).toHaveAttribute('aria-pressed', 'true');
+  await expect(next).not.toHaveText('…', { timeout: 10_000 });
+
+  // A + tap on open canvas (not on a word, not under the dashboard) drops a word.
+  const tapEmpty = async (spots: number[][]) => {
+    const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
+    const before = (await boardWords(page)).length;
+    for (const [fx, fy] of spots) {
+      const [x, y] = [canvas.x + canvas.width * fx, canvas.y + canvas.height * fy];
+      if (await page.evaluate(([px, py]) => document.elementFromPoint(px, py)?.tagName, [x, y] as const) !== 'CANVAS') continue;
+      await page.mouse.click(x, y);
+      await page.waitForTimeout(300);
+      if ((await boardWords(page)).length > before) return;
+    }
+    throw new Error('no + tap landed a word');
+  };
+  const spots = [[0.15, 0.85], [0.85, 0.85], [0.15, 0.6], [0.85, 0.6], [0.5, 0.92], [0.3, 0.3], [0.7, 0.3]];
+
+  for (const dimension of ['2d', '3d'] as const) {
+    if (dimension === '3d') {
+      await page.evaluate(() => window.__lexical.stores.gameStore.setDimension('3d'));
+      await page.waitForFunction(() => window.__lexical.deps.activeWorld?.dimension === '3d' && window.__lexical.deps.activeWorld.wordTexts().length >= 8, null, { timeout: 20_000 });
+      await page.waitForTimeout(1_500);
+    }
+    const previewed = (await next.textContent())!;
+    expect(await boardWords(page)).not.toContain(previewed);
+    await tapEmpty(spots);
+    expect(await boardWords(page), `${dimension}: the previewed word landed`).toContain(previewed);
+    // The chip moves on to a word that is not on the board yet.
+    await expect(next).not.toHaveText(previewed);
+    expect(await boardWords(page)).not.toContain((await next.textContent())!);
+  }
+
+  // A per-device preference: still on after a reload. On a phone the chip fits and can be tapped.
+  await page.setViewportSize({ width: 375, height: 667 });
+  await openSandbox(page, '2d');
+  await expect(chip).toHaveAttribute('aria-pressed', 'true');
+  await expect(next).not.toHaveText('…', { timeout: 10_000 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  const box = (await chip.boundingBox())!;
+  expect(await page.evaluate(([x, y]) => document.querySelector('[data-testid="next-word-chip"]')!.contains(document.elementFromPoint(x, y)), [box.x + box.width / 2, box.y + box.height / 2] as const)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('next-up-phone.png') });
+});
+
 test('letters mode: drops are paced and spread out, and every letter is the same tile (owner, 2026-10-06)', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });

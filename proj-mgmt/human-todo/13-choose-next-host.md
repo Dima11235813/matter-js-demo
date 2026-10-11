@@ -2,6 +2,8 @@
 
 **Why**: nothing is deployed since SiteGround was dropped (2026-10-09). The research is done: [hosting-options.md](../../docs/research/hosting-options.md) §4b (round 2, 2026-10-10), with a cost table for 0, 1k, and 10k players on every path. Epic 7 · Task 7.6.3 waits on these answers.
 
+**Deferred (owner, 2026-10-11)**: "we're going to just work on local host only for now". Features are built and tested on localhost (ports 41940–41959, workspace resource rules), with users simulated by the dev sign-in personas. A published front end would run offline, since no API is deployed. Google sign-in and deployment come back after you set up the Firebase account (item 2); then answer the questions below.
+
 **Decide** (reply with the numbers, e.g. "H1 yes, H2 route B, H3 yes, H4 as recommended, H5 yes"):
 
 | # | Decision | Recommendation |

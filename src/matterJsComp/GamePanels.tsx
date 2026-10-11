@@ -9,6 +9,8 @@ import { focusWords } from "../services/playground";
 import { stores as rootStores } from "../stores";
 import { categoryLabel } from "../game/relationPairs";
 import { cycleWordSize, toggleDimension, toggleHintMode, toggleLayout3d } from "../services/playground";
+import { refreshNextWord, toggleNextWordPreview } from "../services/nextUp";
+import { semanticEngine } from "../services/semanticEngine";
 import styles from "./AnalogyDashboard.module.scss";
 
 export const HintToggle = observer(({ stores }: { stores: RootStore }) => {
@@ -80,6 +82,30 @@ export const WordSizeToggle = observer(({ stores }: { stores: RootStore }) => {
       title={`Word size: ${size}. Tap for ${size === "small" ? "medium" : size === "medium" ? "large" : "small"} (bigger words are easier to tap when they pile up)`}
     >
       {label}
+    </button>
+  );
+});
+
+/**
+ * Next-up preview (Feature 2.16), Discovery only: off, a "Next" pill turns it on; on, the pill shows the
+ * word the next + tap drops (2D and 3D share it), and tapping it turns the preview off.
+ */
+export const NextWordChip = observer(({ stores }: { stores: RootStore }) => {
+  const { nextWordPreview: on, nextWord } = stores.gameStore;
+  React.useEffect(() => {
+    if (on) void semanticEngine.start().then(() => refreshNextWord(stores));
+  }, [on, stores]);
+  if (stores.menuStore.view !== "fountain") return null;
+  return (
+    <button
+      type="button"
+      className={on ? styles.HintOn : styles.HintOff}
+      data-testid="next-word-chip"
+      onClick={() => toggleNextWordPreview(stores)}
+      aria-pressed={on}
+      title={on ? "The word your next + tap drops. Tap to hide the preview." : "Preview the word your next + tap drops"}
+    >
+      {on ? <>next: <strong data-testid="next-word">{nextWord ?? "…"}</strong></> : "Next"}
     </button>
   );
 });

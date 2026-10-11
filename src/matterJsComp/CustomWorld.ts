@@ -9,6 +9,7 @@ import { CollisionHandler } from "./CollisionHandler";
 import { stores } from "../stores";
 import { AppModes } from "./models/appMode";
 import { semanticEngine } from "../services/semanticEngine";
+import { takeNextWord } from "../services/nextUp";
 import { colorHintPainter } from "../services/colorHints";
 import { boardLayout, boardZoom, layoutNeed } from "../physics/boardZoom";
 import { canDrop, DropState, LETTER_DROPS } from "../game/letterDrops";
@@ -333,8 +334,9 @@ export class CustomWorld implements WordWorld {
         if (view === "game" || view === "puzzle") return
         if (view === "fountain") {
             if (!semanticEngine.isReady) return
-            const [randomWord] = semanticEngine.randomWords(1)
-            if (randomWord) this.shapesFac.createWordBox(randomWord, mx, my)
+            // The next-up word (Feature 2.16): exactly what the "next" chip showed.
+            const word = takeNextWord(stores)
+            if (word) this.shapesFac.createWordBox(word, mx, my)
         } else {
             const previewTopBarHeight = 75
             if (my < previewTopBarHeight) return
