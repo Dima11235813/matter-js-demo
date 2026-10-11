@@ -10,6 +10,8 @@ interface Label {
 }
 
 const MAX_LINKS = 400;
+/** Molecules hold at most 5 words (4 bonds each); this covers any board. */
+const MAX_BONDS = 200;
 
 /**
  * three.js objects for the 3D hint view: camera-facing word labels, relation threads (brighter
@@ -24,6 +26,12 @@ export class SpaceScene {
     private readonly threadColors = new Float32Array(MAX_LINKS * 2 * 3);
     private readonly pills: THREE.Sprite[] = [];
     private readonly pillTextures = new Map<string, THREE.Texture>();
+    /** Molecule halos by member body id (Task 5.15.1), drawn behind the labels. */
+    private readonly halos = new Map<number, THREE.Sprite>();
+    private haloTexture: THREE.Texture | undefined;
+    private readonly bonds: THREE.LineSegments;
+    private readonly bondPositions = new Float32Array(MAX_BONDS * 2 * 3);
+    private readonly bondColors = new Float32Array(MAX_BONDS * 2 * 3);
     private theme: ThemeName | undefined;
 
     constructor() {
@@ -33,6 +41,12 @@ export class SpaceScene {
         this.threads = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ vertexColors: true, fog: true }));
         this.threads.frustumCulled = false;
         this.scene.add(this.threads);
+        const bondGeometry = new THREE.BufferGeometry();
+        bondGeometry.setAttribute("position", new THREE.BufferAttribute(this.bondPositions, 3));
+        bondGeometry.setAttribute("color", new THREE.BufferAttribute(this.bondColors, 3));
+        this.bonds = new THREE.LineSegments(bondGeometry, new THREE.LineBasicMaterial({ vertexColors: true, fog: true }));
+        this.bonds.frustumCulled = false;
+        this.scene.add(this.bonds);
         this.scene.fog = new THREE.Fog(0x000000, 500, 2500);
     }
 
@@ -146,12 +160,83 @@ export class SpaceScene {
         });
     }
 
+    /**
+     * A halo behind every molecule member and a line along each bond, in the molecule's own hue (golden-angle
+     * spacing by id, as the 2D overlay does), so a molecule reads as one unit from any angle, even when its
+     * members sit at different depths. `scale` matches the labels'.
+     */
+    syncMoleculeHalos(bodies: readonly SpaceBody[], molecules: ReadonlyArray<{ id: number; members: readonly number[]; bonds: ReadonlyArray<readonly [number, number]> }>, scale = 1): void {
+        const light = this.theme === "light";
+        const byId = new Map(bodies.map(b => [b.id, b]));
+        const alive = new Set<number>();
+        let bondCount = 0;
+        for (const { id, members, bonds } of molecules) {
+            const color = new THREE.Color().setHSL(((id * 137.508) % 360) / 360, 0.7, light ? 0.6 : 0.5);
+            for (const [a, b] of bonds) {
+                const [from, to] = [byId.get(a), byId.get(b)];
+                if (!from || !to || bondCount >= MAX_BONDS) continue;
+                [from, to].forEach((body, end) => {
+                    this.bondPositions.set(body.position, (bondCount * 2 + end) * 3);
+                    this.bondColors.set([color.r, color.g, color.b], (bondCount * 2 + end) * 3);
+                });
+                bondCount++;
+            }
+            for (const member of members) {
+                const body = byId.get(member);
+                if (!body) continue;
+                alive.add(member);
+                let halo = this.halos.get(member);
+                if (!halo) {
+                    halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.halo(), transparent: true, depthWrite: false, fog: true, opacity: light ? 0.85 : 0.7 }));
+                    halo.renderOrder = -1;
+                    this.scene.add(halo);
+                    this.halos.set(member, halo);
+                }
+                halo.material.color.copy(color);
+                halo.position.set(body.position[0], body.position[1], body.position[2]);
+                const [w, h] = labelSize(body.word);
+                halo.scale.set(w * scale * 1.35, h * scale * 2.2, 1);
+            }
+        }
+        for (const [member, halo] of this.halos) {
+            if (alive.has(member)) continue;
+            this.scene.remove(halo);
+            halo.material.dispose();
+            this.halos.delete(member);
+        }
+        const geometry = this.bonds.geometry;
+        geometry.setDrawRange(0, bondCount * 2);
+        geometry.attributes.position.needsUpdate = true;
+        geometry.attributes.color.needsUpdate = true;
+    }
+
+    /** A white radial glow, tinted per molecule by the sprite color. */
+    private halo(): THREE.Texture {
+        if (!this.haloTexture) {
+            const canvas = document.createElement("canvas");
+            canvas.width = canvas.height = 64;
+            const g = canvas.getContext("2d")!;
+            const gradient = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, "rgba(255,255,255,1)");
+            gradient.addColorStop(0.55, "rgba(255,255,255,0.85)");
+            gradient.addColorStop(1, "rgba(255,255,255,0)");
+            g.fillStyle = gradient;
+            g.fillRect(0, 0, 64, 64);
+            this.haloTexture = new THREE.CanvasTexture(canvas);
+        }
+        return this.haloTexture;
+    }
+
     pickables(): THREE.Object3D[] {
         return [...this.labels.values()].map(l => l.sprite);
     }
 
     dispose(): void {
         for (const [id, label] of this.labels) this.removeLabel(id, label);
+        this.syncMoleculeHalos([], []);
+        this.haloTexture?.dispose();
+        this.bonds.geometry.dispose();
+        (this.bonds.material as THREE.Material).dispose();
         this.pills.forEach(p => p.material.dispose());
         this.pillTextures.forEach(t => t.dispose());
         this.threads.geometry.dispose();

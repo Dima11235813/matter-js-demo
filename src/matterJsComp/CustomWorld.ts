@@ -15,6 +15,7 @@ import { boardLayout, boardZoom, layoutNeed } from "../physics/boardZoom";
 import { canDrop, DropState, LETTER_DROPS } from "../game/letterDrops";
 import { selectWordForAnalogy, startWordBoard, takeBoardTransfer } from "../services/playground";
 import { focusTargets, LetterSnapshot, WordProbe, WordWorld } from "./wordWorld";
+import { moleculesToRestore } from "../space/handoff";
 import { isWordView } from "../stores/MenuStore";
 import { SemanticPhysics } from "./SemanticPhysics";
 import { SemanticOverlay } from "./SemanticOverlay";
@@ -90,7 +91,10 @@ export class CustomWorld implements WordWorld {
             // A 3D world of the same view hands over its whole board; another view (letters, Discovery,
             // Guess) carries its words over. Both keep their on-screen positions.
             const transfer = takeBoardTransfer(view)
-            if (transfer?.kind === "continue") transfer.queue.forEach(request => deps.pendingWordSpawns.push(request))
+            if (transfer?.kind === "continue") {
+                transfer.queue.forEach(request => deps.pendingWordSpawns.push(request))
+                this.pendingMolecules = transfer.molecules ?? []
+            }
             stores.menuStore.clearWordSelection()
             // StrictMode mounts twice; only the world whose engine is still live may seed words.
             semanticEngine.start()
@@ -243,6 +247,7 @@ export class CustomWorld implements WordWorld {
     /** Removes every word box (used when a timed round restarts in the same world). */
     clearWordBoxes = () => {
         deps.pendingWordSpawns = []
+        this.pendingMolecules = []
         this.shapesFac.boxes
             .filter(b => b.embedding !== undefined && b.body)
             .forEach(b => this.collisionHandler.removeBody(b.body!, false, b.matterId))
@@ -265,6 +270,15 @@ export class CustomWorld implements WordWorld {
         const focus = focusTargets(batch)
         if (focus.length > 0) this.focusWords(focus)
     }
+    /** Molecules handed over from 3D, bonded again once their words are on the board (Task 5.15.1). */
+    private pendingMolecules: string[][] = []
+    restoreMolecules = () => {
+        if (this.pendingMolecules.length === 0) return
+        const { now, later } = moleculesToRestore(this.pendingMolecules, new Set(this.wordTexts()), deps.pendingWordSpawns.length === 0)
+        this.pendingMolecules = later
+        now.forEach(words => this.semanticPhysics.bondWords(words))
+    }
+    moleculeWords = (): string[][] => this.semanticPhysics.moleculeWords()
     /** 2D focus: the words pulse for a few seconds (no camera to move until 2D zoom, Task 5.7.1). */
     focusWords = (words: readonly string[]) => {
         const wanted = new Set(words)
@@ -367,6 +381,7 @@ export class CustomWorld implements WordWorld {
             if (isWordView(view)) {
                 this.healBrokenBodies()
                 this.spawnQueuedWords()
+                this.restoreMolecules()
                 this.applyColorHints()
                 this.updateZoom()
                 this.semanticOverlay.drawThreads(p)

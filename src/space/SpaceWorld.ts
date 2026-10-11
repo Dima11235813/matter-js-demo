@@ -12,7 +12,7 @@ import { stores } from "../stores";
 import { getRandomColor } from "../utils/colorUtils";
 import { colorHintPainter } from "../services/colorHints";
 import { CameraDirector, FOV } from "./CameraDirector";
-import { canvasToSpace, ndcToCanvas, pixelMatchedDistance, Size } from "./handoff";
+import { canvasToSpace, moleculesToRestore, ndcToCanvas, pixelMatchedDistance, Size } from "./handoff";
 import { SpaceScene } from "./SpaceScene";
 import { LABEL_HEIGHT } from "./labelTexture";
 import { labelScale, minLabelPx } from "./viewFit";
@@ -80,6 +80,21 @@ export class SpaceWorld implements WordWorld {
         return this.sim.bodies.map(b => b.word);
     }
 
+    moleculeWords(): string[][] {
+        return this.sim.moleculeWords();
+    }
+
+    /** Molecules handed over from 2D, bonded again once their words are on the board (Task 5.15.1). */
+    private pendingMolecules: string[][] = [];
+
+    private restoreMolecules(): void {
+        if (this.pendingMolecules.length === 0) return;
+        const { now, later } = moleculesToRestore(this.pendingMolecules, new Set(this.wordTexts()), deps.pendingWordSpawns.length === 0);
+        this.pendingMolecules = later;
+        const idOf = new Map(this.sim.bodies.map(b => [b.word, b.id]));
+        for (const [first, ...rest] of now) rest.forEach(word => this.sim.bond(idOf.get(first)!, idOf.get(word)!));
+    }
+
     removeWords(words: readonly string[]): void {
         const gone = new Set(words);
         this.sim.bodies.filter(b => gone.has(b.word)).forEach(b => {
@@ -90,6 +105,7 @@ export class SpaceWorld implements WordWorld {
 
     clearWordBoxes(): void {
         deps.pendingWordSpawns = [];
+        this.pendingMolecules = [];
         this.sim.clear();
         this.colors.clear();
     }
@@ -134,6 +150,7 @@ export class SpaceWorld implements WordWorld {
         const transfer = takeBoardTransfer(stores.menuStore.view);
         if (transfer?.kind === "continue") {
             transfer.queue.forEach(request => deps.pendingWordSpawns.push(request));
+            this.pendingMolecules = transfer.molecules ?? [];
         } else {
             startWordBoard(stores, transfer?.words ?? [], INITIAL_WORDS);
         }
@@ -146,10 +163,13 @@ export class SpaceWorld implements WordWorld {
             this.director.reset(); // the layout changes size and shape: re-frame it (and orient, for shape)
         }
         this.spawnQueuedWords();
+        this.restoreMolecules();
         this.sim.step();
         if (this.view.applyTheme(stores.menuStore.theme)) this.renderer.setClearColor(this.view.scene.background as THREE.Color);
         const selected = new Set(stores.menuStore.selectedWordIds);
-        const hinted = stores.gameStore.colorHints ? colorHintPainter.colorsFor(this.sim.bodies.map(b => b.word)) : undefined;
+        const molecules = this.sim.moleculeWords();
+        // Molecule members share a hue, as in 2D.
+        const hinted = stores.gameStore.colorHints ? colorHintPainter.colorsFor(this.sim.bodies.map(b => b.word), molecules) : undefined;
         const wordOf = new Map(this.sim.bodies.map(b => [b.id, b.word]));
         const glowing = this.director.glowing(this.sim.bodies);
         // Connect-All: loose words (fewer than two connections) glow until they are bridged.
@@ -159,6 +179,7 @@ export class SpaceWorld implements WordWorld {
         const minPx = minLabelPx(this.size[0], stores.gameStore.wordSize);
         const scale = labelScale(this.camera.position.distanceTo(this.controls.target), this.size[1], FOV, LABEL_HEIGHT, minPx);
         this.view.syncLabels(this.sim.bodies, id => hinted?.get(wordOf.get(id)!) ?? this.colors.get(id)!, selected, glowing, scale);
+        this.view.syncMoleculeHalos(this.sim.bodies, this.sim.molecules.all().map(m => ({ id: m.id, members: [...m.offsets.keys()], bonds: m.bonds })), scale);
         // Shape layout: draw the nearest-neighbour skeleton so lines, rings, and stars are readable.
         const threads = this.layout === "shape" ? this.sim.skeleton(2) : this.sim.links;
         this.view.syncThreads(this.sim.bodies, threads, this.hovered);

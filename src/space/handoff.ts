@@ -22,6 +22,27 @@ export interface BoardHandoff {
     view: string;
     words: WordHandoff[];
     pending: SpawnRequest[];
+    /** Word molecules on the board, as their words (Task 5.15.1): they survive a 2D <-> 3D switch. */
+    molecules?: string[][];
+}
+
+/**
+ * Handed-over molecules to bond now: those whose words have all arrived on the board. Once the spawn
+ * queue is empty, words that never arrived (no vector, removed) are dropped and the rest bond, if at
+ * least two remain. `later` waits for more words.
+ */
+export function moleculesToRestore(pending: readonly string[][], onBoard: ReadonlySet<string>, queueEmpty: boolean): { now: string[][]; later: string[][] } {
+    const now: string[][] = [];
+    const later: string[][] = [];
+    for (const words of pending) {
+        const present = words.filter(word => onBoard.has(word));
+        if (present.length === words.length || queueEmpty) {
+            if (present.length >= 2) now.push(present);
+        } else {
+            later.push(words);
+        }
+    }
+    return { now, later };
 }
 
 /**
@@ -98,14 +119,16 @@ export function boundingSphere(points: ReadonlyArray<{ position: number[]; radiu
  * Undefined when there is nothing to adopt or the new view does not show words (letters mode).
  */
 export type BoardTransfer =
-    | { kind: "continue"; queue: SpawnRequest[] }
+    | { kind: "continue"; queue: SpawnRequest[]; molecules?: string[][] }
     | { kind: "carry"; words: SpawnRequest[] };
 
 export function boardTransfer(handoff: BoardHandoff | undefined, view: string, showsWords: boolean): BoardTransfer | undefined {
     if (!handoff || !showsWords) return undefined;
     if (handoff.view === view) {
         const queue = handoffQueue(handoff, view);
-        return queue ? { kind: "continue", queue } : undefined;
+        // Molecules stay together across a 2D <-> 3D switch; another view (below) only carries words.
+        const molecules = handoff.molecules?.filter(words => words.length >= 2);
+        return queue ? { kind: "continue", queue, ...(molecules?.length ? { molecules } : {}) } : undefined;
     }
     const seen = new Set<string>();
     const words = handoff.words

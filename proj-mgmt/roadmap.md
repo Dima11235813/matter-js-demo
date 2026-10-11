@@ -90,8 +90,9 @@ graph TD
 ### Status snapshot (2026-10-11)
 * **Owner decision**: local host only for now. Features are built and played on localhost (workspace ports 41940–41959, resource rules), users simulated with dev sign-in personas; hosting and Google sign-in resume after the owner's Firebase setup (Epic 7 · Task 7.6.3, human-todo 13).
 * **Shipped**: next-up preview (Epic 2 · Feature 2.16): a "next" pill in Discovery shows the word the next + tap drops, in 2D and 3D (letters mode already had its next-letter box). The workspace ports (Epic 7 · Task 7.7.1) are in `develop`.
-* **Tests**: 334 unit, 33 e2e (CI mode, no file watcher).
-* **Next candidates**: molecules in 3D (5.15.1); sync of ratings and sessions, tried locally with personas (2.12.3, 2.15.4); Connect follow-ups (2.10); Vite upgrade (4.5.5); next-up follow-ups after the owner plays with it (2.16.4).
+* **Shipped**: molecules in 3D (Epic 5 · Task 5.15.1): molecules built in 2D carry into 3D (rigid, haloed, bond lines, gravity) and back; 3D forms no new bonds, because research showed they were layout accidents that broke the shape preset ([molecules-3d.md](../docs/research/molecules-3d.md)). 3D accretion waits for a way to move words in 3D (5.15.5).
+* **Tests**: 345 unit, 34 e2e (CI mode, no file watcher).
+* **Next candidates**: sync of ratings and sessions, tried locally with personas (2.12.3, 2.15.4); Connect follow-ups (2.10); Vite upgrade (4.5.5); molecule visuals (5.15.4); next-up follow-ups after the owner plays with it (2.16.4).
 
 ### Status snapshot (2026-10-10)
 * **Shipped on `feature/hosting-3d-zoom`**: 3D on phones (labels at the 2D word size, 6 → 28 px; framing by projected extent; tall layouts on portrait screens; + taps add a glowing word in Discovery only; Epic 5 · Task 5.7.3); 2D spacing zoom (boxes and layout lengths zoom out as words are added; Task 5.7.4); molecule gravity in 2D (Feature 5.15, +15% gap between unrelated molecules); p5 replaced by a Canvas2D sketch (2D world 1,191 → 130 KB, first canvas 1.5 → 1.0 s on a throttled phone; Epic 4 · Task 4.5.7).

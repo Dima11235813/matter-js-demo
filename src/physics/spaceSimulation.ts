@@ -4,6 +4,7 @@ import {
     defaultGroupThreshold, defaultOrbitalTuning, findLinks, neighborSkeleton, orbitalAccelerations, OrbitalBody, OrbitalLink, OrbitalTuning, Point, similarityGroups,
     similarityMatrix,
 } from "./orbitalForces";
+import { MoleculeGraph, relaxSphereOffsets } from "./molecules";
 
 /**
  * Renderer-agnostic 3D simulation for the hint view (Epic 5, Phase 2). Matter.js is 2D only, and
@@ -12,6 +13,7 @@ import {
  *   forces      the same all-pairs orbital model as 2D (physics/orbitalForces.ts), in 3D
  *   collisions  soft spheres sized by label, pushed apart in proportion to overlap
  *   bounds      a spherical container that pulls strays back in
+ *   molecules   related words (a p99 link) that touch bond into rigid molecules, as in 2D (Task 5.15.1)
  *   integrator  damped Verlet-style: v = v * (1 - damping) + a;  p += v   (matches Matter's air friction)
  *
  * Deterministic: no randomness inside; orbit axes and depth jitter derive from each word's text.
@@ -45,6 +47,12 @@ export interface SpaceConfig {
     boundsPull: number;
     collisionPush: number;
     maxSpeed: number;
+    /**
+     * Word molecules (Task 5.15.1): two linked words bond when their centres come closer than this share
+     * of their summed radii (soft spheres overlap a little all the time, so 1 would bond on any graze).
+     * 0 or undefined: no new bonds (molecules handed over from 2D still hold).
+     */
+    bondContact?: number;
 }
 
 export const defaultSpaceConfig: SpaceConfig = {
@@ -54,6 +62,10 @@ export const defaultSpaceConfig: SpaceConfig = {
     boundsPull: 0.004,
     collisionPush: 0.08,
     maxSpeed: 8,
+    // No new bonds in 3D (docs/research/molecules-3d.md): players can't push words together there, so every
+    // 3D bond is an accident of the layout settling, and on tight sets (days, numbers) the frozen chunks broke
+    // the shape preset's lines and rings (fidelity -0.90 -> -0.69). Molecules built in 2D still carry over.
+    bondContact: 0,
 };
 
 /** FNV-1a: small, fast, stable string hash for deterministic per-word geometry. */
@@ -83,6 +95,8 @@ export function labelRadius(length: number): number {
 
 export class SpaceSimulation {
     readonly bodies: SpaceBody[] = [];
+    /** Rigid word molecules, keyed by body id (the same model as 2D, physics/molecules.ts). */
+    readonly molecules = new MoleculeGraph();
     private nextId = 1;
     private simsKey = "";
     private sims: Float32Array = new Float32Array(0);
@@ -158,10 +172,32 @@ export class SpaceSimulation {
     remove(id: number): void {
         const index = this.bodies.findIndex(b => b.id === id);
         if (index >= 0) this.bodies.splice(index, 1);
+        this.molecules.remove(id);
     }
 
     clear(): void {
         this.bodies.length = 0;
+        this.molecules.clear();
+    }
+
+    /**
+     * Bonds two bodies into one molecule (merging molecules), freezing their arrangement with overlapping
+     * members pushed apart until they touch. Used on contact and to restore molecules handed over from the
+     * other dimension. False when already bonded, over the size cap, or either body is unknown.
+     */
+    bond(a: number, b: number): boolean {
+        const byId = new Map(this.bodies.map(body => [body.id, body]));
+        if (!byId.has(a) || !byId.has(b)) return false;
+        if (!this.molecules.bond(a, b, id => byId.get(id)!.position, id => byId.get(id)!.rank)) return false;
+        const molecule = this.molecules.moleculeOf(a)!;
+        relaxSphereOffsets(molecule.offsets, molecule.anchor, id => byId.get(id)!.radius);
+        return true;
+    }
+
+    /** The words of each molecule (hand-off to the other dimension, colors, tests). */
+    moleculeWords(): string[][] {
+        const wordOf = new Map(this.bodies.map(b => [b.id, b.word]));
+        return this.molecules.all().map(m => [...m.offsets.keys()].map(id => wordOf.get(id)!).filter(Boolean));
     }
 
     /**
@@ -176,6 +212,10 @@ export class SpaceSimulation {
             body.position = [center[0] + offset[0], center[1] + offset[1], center[2] + offset[2]];
             body.velocity = turn(body.velocity);
             body.orbitAxis = turn(body.orbitAxis);
+        }
+        // Molecule offsets are in world axes: turn them too, or the rigid snap would undo the turn.
+        for (const molecule of this.molecules.all()) {
+            for (const [id, offset] of molecule.offsets) molecule.offsets.set(id, turn(offset as Point3));
         }
     }
 
@@ -198,10 +238,45 @@ export class SpaceSimulation {
         const sims = this.similarities();
         const { tuning } = this.config;
         this.currentLinks = findLinks(orbital, this.cal, tuning, sims);
-        const acc = orbitalAccelerations(orbital, this.currentLinks, [0, 0, 0], this.cal, tuning, sims);
-        this.addCollisions(acc);
+        const ids = this.bodies.map(b => b.id);
+        const groups = this.molecules.count > 0 ? this.molecules.groups(ids) : undefined;
+        let acc = orbitalAccelerations(orbital, this.currentLinks, [0, 0, 0], this.cal, tuning, sims, groups);
+        const contacts = this.addCollisions(acc, groups);
         this.addBounds(acc);
+        // Members move as one: the molecule's mass-weighted (label size) mean acceleration.
+        if (groups) acc = this.molecules.shareAccelerations(ids, acc, this.bodies.map(b => b.radius));
         this.integrate(acc);
+        this.bondContacts(contacts, sims);
+        this.snapMolecules();
+    }
+
+    /** Linked words (p99) that touched closely enough this step bond, as in 2D. */
+    private bondContacts(contacts: Array<[number, number, number]>, sims: Float32Array): void {
+        const { bondContact } = this.config;
+        if (!bondContact) return;
+        const n = this.bodies.length;
+        for (const [i, j, closeness] of contacts) {
+            if (closeness < 1 / bondContact || sims[i * n + j] <= this.cal.p99) continue;
+            this.bond(this.bodies[i].id, this.bodies[j].id);
+        }
+    }
+
+    /** Puts members back at their offsets from the anchor, moving at the anchor's velocity (rigid molecules). */
+    private snapMolecules(): void {
+        if (this.molecules.count === 0) return;
+        const byId = new Map(this.bodies.map(b => [b.id, b]));
+        const targets = this.molecules.rigidTargets(id => byId.get(id)!.position);
+        for (const molecule of this.molecules.all()) {
+            const anchor = byId.get(molecule.anchor);
+            if (!anchor) continue;
+            for (const id of molecule.offsets.keys()) {
+                const body = byId.get(id);
+                const target = targets.get(id);
+                if (!body || !target) continue;
+                body.position = target as Point3;
+                body.velocity = [...anchor.velocity];
+            }
+        }
     }
 
     private similarities(): Float32Array {
@@ -213,16 +288,23 @@ export class SpaceSimulation {
         return this.sims;
     }
 
-    /** Soft spheres: overlapping bodies push apart in proportion to how deeply they overlap. */
-    private addCollisions(acc: Point[]): void {
+    /**
+     * Soft spheres: overlapping bodies push apart in proportion to how deeply they overlap. Members of one
+     * molecule don't collide with each other. Returns the overlapping pairs as [i, j, closeness], where
+     * closeness = summed radii / distance (above 1 = overlapping), for bonding.
+     */
+    private addCollisions(acc: Point[], groups?: readonly number[]): Array<[number, number, number]> {
         const { collisionPush } = this.config;
+        const contacts: Array<[number, number, number]> = [];
         for (let i = 0; i < this.bodies.length; i++) {
             for (let j = i + 1; j < this.bodies.length; j++) {
+                if (groups && groups[i] >= 0 && groups[i] === groups[j]) continue;
                 const a = this.bodies[i], b = this.bodies[j];
                 const d = [b.position[0] - a.position[0], b.position[1] - a.position[1], b.position[2] - a.position[2]];
                 const dist = Math.hypot(d[0], d[1], d[2]);
                 const overlap = a.radius + b.radius - dist;
                 if (overlap <= 0) continue;
+                contacts.push([i, j, (a.radius + b.radius) / Math.max(dist, 1e-6)]);
                 // Coincident bodies: separate along a deterministic axis instead of dividing by zero.
                 const unit = dist > 1e-6 ? d.map(v => v / dist) : orbitAxisFor(`${a.word}|${b.word}`);
                 for (let k = 0; k < 3; k++) {
@@ -231,6 +313,7 @@ export class SpaceSimulation {
                 }
             }
         }
+        return contacts;
     }
 
     /** Spherical (or upright ellipsoid) container: bodies beyond it are pulled back toward the centre. */

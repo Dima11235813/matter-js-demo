@@ -722,6 +722,41 @@ test('3D: + mode taps add words and keep the view still; hand mode drags rotate 
   expect(Math.abs((await azimuth()) - beforeHand)).toBeGreaterThan(0.2);
 });
 
+test('a molecule built in 2D holds together in 3D and comes back to 2D (Task 5.15.1)', async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await openSandbox(page, '2d');
+  await page.bringToFront();
+  type Molecular = { moleculeWords(): string[][]; semanticPhysics?: { bondWords(words: string[]): void } };
+  const molecules = () => page.evaluate(() => ((window.__lexical.deps.activeWorld as unknown as Molecular | undefined)?.moleculeWords() ?? []).map(m => [...m].sort()));
+  // Setup through the dev handle (a player would drag two related words into contact).
+  const pair = (await boardWords(page)).slice(0, 2).sort();
+  await page.evaluate(words => (window.__lexical.deps.activeWorld as unknown as Molecular).semanticPhysics!.bondWords(words), pair);
+  expect(await molecules()).toContainEqual(pair);
+
+  // The real dimension toggle: 2D -> 3D. The molecule arrives whole and stays rigid while the layout moves.
+  await page.getByRole('button', { name: '2D', exact: true }).click();
+  await page.waitForFunction(() => window.__lexical.deps.activeWorld?.dimension === '3d', null, { timeout: 20_000 });
+  await expect.poll(molecules, { timeout: 15_000 }).toContainEqual(pair);
+  type Space = { sim: { bodies: Array<{ word: string; position: number[] }> } };
+  const gap = (words: string[]) => page.evaluate(ws => {
+    const bodies = (window.__lexical.deps.activeWorld as unknown as Space).sim.bodies;
+    const [a, b] = ws.map(w => bodies.find(body => body.word === w)!.position);
+    return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  }, words);
+  const first = await gap(pair);
+  await page.waitForTimeout(1_500);
+  expect(Math.abs((await gap(pair)) - first)).toBeLessThan(0.01);
+  // Evidence: fly to the pair and capture its halo.
+  await page.evaluate(words => (window.__lexical.deps.activeWorld as unknown as { focusWords(w: string[]): void }).focusWords(words), pair);
+  await page.waitForTimeout(3_000);
+  await page.screenshot({ path: testInfo.outputPath('molecule-3d.png') });
+
+  // 3D -> 2D: still one molecule.
+  await page.getByRole('button', { name: '3D', exact: true }).click();
+  await page.waitForFunction(() => window.__lexical.deps.activeWorld?.dimension === '2d', null, { timeout: 20_000 });
+  await expect.poll(molecules, { timeout: 15_000 }).toContainEqual(pair);
+});
+
 test('next-up preview: the chip shows the word the next + tap drops, in 2D and 3D, and stays on after a reload (Feature 2.16)', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await openSandbox(page, '2d');

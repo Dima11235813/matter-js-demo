@@ -56,6 +56,36 @@ export function relaxOffsets(offsets: Map<number, Point>, anchor: number, halfSi
     }
 }
 
+/**
+ * The 3D counterpart of `relaxOffsets` (Task 5.15.1): members are spheres, so overlapping pairs move
+ * apart along the line between their centres until they just touch. The anchor stays fixed.
+ */
+export function relaxSphereOffsets(offsets: Map<number, Point>, anchor: number, radiusOf: (id: number) => number, passes = 8): void {
+    const ids = [...offsets.keys()];
+    for (let pass = 0; pass < passes; pass++) {
+        let moved = false;
+        for (let a = 0; a < ids.length; a++) {
+            for (let b = a + 1; b < ids.length; b++) {
+                const [ia, ib] = [ids[a], ids[b]];
+                const pa = offsets.get(ia)!, pb = offsets.get(ib)!;
+                const d = pb.map((v, k) => v - pa[k]);
+                const dist = Math.hypot(...d);
+                const depth = radiusOf(ia) + radiusOf(ib) - dist;
+                if (depth <= 1e-6) continue;
+                // Coincident members: separate along a fixed axis instead of dividing by zero.
+                const unit = dist > 1e-6 ? d.map(v => v / dist) : d.map((_, k) => (k === 0 ? 1 : 0));
+                const shareA = ia === anchor ? 0 : ib === anchor ? 1 : 0.5;
+                for (let k = 0; k < pa.length; k++) {
+                    pa[k] -= unit[k] * depth * shareA;
+                    pb[k] += unit[k] * depth * (1 - shareA);
+                }
+                moved = true;
+            }
+        }
+        if (!moved) return;
+    }
+}
+
 export class MoleculeGraph {
     private readonly molecules = new Map<number, Molecule>();
     private readonly memberOf = new Map<number, number>();

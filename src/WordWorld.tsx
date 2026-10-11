@@ -22,6 +22,7 @@ function captureHandoff(view: string) {
     view,
     words: probes.map(({ text, x, y, color }) => ({ word: text, x, y, color })),
     pending: [...deps.pendingWordSpawns],
+    molecules: deps.activeWorld?.moleculeWords() ?? [],
   };
 }
 

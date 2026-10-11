@@ -32,6 +32,8 @@ export interface WordWorld {
     /** Letters mode only: replaces the board with saved boxes (loading a session). */
     replaceLetterBoard?(snapshots: readonly LetterSnapshot[]): void;
     wordTexts(): string[];
+    /** Word molecules on the board, as their words (hand-off across a 2D <-> 3D switch, tests). */
+    moleculeWords(): string[][];
     clearWordBoxes(): void;
     /** Removes these words from the board (a solved Guess analogy makes room). */
     removeWords(words: readonly string[]): void;

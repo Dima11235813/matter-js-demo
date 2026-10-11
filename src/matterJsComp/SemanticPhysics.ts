@@ -68,21 +68,43 @@ export class SemanticPhysics {
             const a = byBody.get(bodyA.id)
             const b = byBody.get(bodyB.id)
             if (!a || !b || dot(a.embedding!, b.embedding!) <= threshold) continue
-            // A molecule member that left the board (solved, removed, healed) can't be laid out: skip.
-            const members = [a, b].flatMap(box => [...(this.molecules.moleculeOf(box.body!.id)?.offsets.keys() ?? [])])
-            if (members.some(id => !byBody.has(id))) continue
-            const bonded = this.molecules.bond(
-                a.body!.id,
-                b.body!.id,
-                id => this.positionOf(byBody, id),
-                id => semanticEngine.rankOf(byBody.get(id)!.text),
-                id => halfSize(byBody.get(id)!)
-            )
-            if (bonded) {
-                const molecule = this.molecules.moleculeOf(a.body!.id)!
-                for (const member of molecule.offsets.keys()) byBody.get(member)!.body!.collisionFilter.group = -molecule.id
-            }
+            this.bondBoxes(byBody, a, b)
         }
+    }
+
+    private bondBoxes(byBody: Map<number, Box>, a: Box, b: Box): boolean {
+        // A molecule member that left the board (solved, removed, healed) can't be laid out: skip.
+        const members = [a, b].flatMap(box => [...(this.molecules.moleculeOf(box.body!.id)?.offsets.keys() ?? [])])
+        if (members.some(id => !byBody.has(id))) return false
+        const bonded = this.molecules.bond(
+            a.body!.id,
+            b.body!.id,
+            id => this.positionOf(byBody, id),
+            id => semanticEngine.rankOf(byBody.get(id)!.text),
+            id => halfSize(byBody.get(id)!)
+        )
+        if (bonded) {
+            const molecule = this.molecules.moleculeOf(a.body!.id)!
+            for (const member of molecule.offsets.keys()) byBody.get(member)!.body!.collisionFilter.group = -molecule.id
+        }
+        return bonded
+    }
+
+    /**
+     * Restores a molecule handed over from 3D (Task 5.15.1): bonds these words into one molecule where they
+     * stand (overlapping members are pushed apart). Words not on the board are skipped.
+     */
+    bondWords(words: readonly string[]): void {
+        if (!this.hintActive) return
+        const byBody = new Map(this.shapesFac.boxes.filter(b => b.embedding !== undefined && b.body).map(box => [box.body!.id, box]))
+        const boxes = words.map(word => [...byBody.values()].find(box => box.text === word)).filter((box): box is Box => box !== undefined)
+        for (const other of boxes.slice(1)) this.bondBoxes(byBody, boxes[0], other)
+    }
+
+    /** The words of each molecule on the board. */
+    moleculeWords(): string[][] {
+        const textOf = new Map(this.shapesFac.boxes.filter(b => b.body).map(box => [box.body!.id, box.text]))
+        return this.molecules.all().map(m => [...m.offsets.keys()].map(id => textOf.get(id)).filter((t): t is string => t !== undefined))
     }
 
     /**
