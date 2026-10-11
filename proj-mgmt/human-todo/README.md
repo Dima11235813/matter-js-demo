@@ -18,5 +18,6 @@ Things only the owner can do: creating accounts, pasting values into `.env.local
 | 10 | [Housekeeping: old `master` branch, git stash, skill copy](10-housekeeping.md) | tidy repo | 5 min | ☐ |
 | 11 | [Approve workspace rule additions (AGENTS.md)](11-approve-workspace-rules.md) | the same habits in every project and agent | 5 min | ☐ |
 | 12 | [SiteGround: superseded 2026-10-09 — pause its auto-deploy](12-siteground-node-hosting.md) | pushes to `main` stop deploying to SiteGround | 2 min | ☐ |
+| 13 | [Choose the next host (decisions H1–H5)](13-choose-next-host.md) | the Phase 1 deploy, then items 4–5 | 10 min | ☐ |
 
 After finishing an item, tell the agent (or tick it here); the agent then continues the work it unblocks (e.g. after 5: watch the first deploy; after 2: an end-to-end Google sign-in check).

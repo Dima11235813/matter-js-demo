@@ -9,6 +9,11 @@
 6. **Regression protection:** Every user-facing feature keeps an automated test of its outcome, not only a screenshot. Refactors and performance work keep those tests green.
 7. **Remote play-testing:** When a milestone is ready to try, share the dev server's network address (LAN IP), not `localhost`. The owner often follows sessions from a phone.
 
+**Harness feedback** (2026-10-10, for whoever maintains `D:\GDrive\proj-mgmt\inventory\scripts\preflight-resources.ps1`):
+
+8. **Preflight exit code:** the "Real-time AV engines" row is a standing machine setting, but it counts as a breach, so the script exits 1 on every run and "non-zero = wait" can never pass. Report it as a warning (or fix the AV setup: three real-time engines inspect every file touch), so agents can trust the exit code. Until then this project reads the individual rows (repo `CLAUDE.md` § Lessons).
+9. **Watchers:** the ≤ 2 watchers ceiling on `D:` is shared by all projects: four other projects' dev servers (Maze Lab 41920, gov-data-buddy 41801, mirror-chess 41961, one unlabelled Vite) kept this project's e2e check waiting on 2026-10-10 (the preflight was watched for 30 min without a pass). Consider a rule for stopping idle long-running servers, or a per-project share.
+
 **Unblocks**: the same habits in other projects and other agents (Antigravity, Codex).
 
 **Done when**: you've approved or declined each rule, and the approved ones are in `AGENTS.md`.

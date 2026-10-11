@@ -26,7 +26,8 @@ export default defineConfig({
     port: PORTS.dev,
     strictPort: true,
     host: LOCAL_HOST,
-    open: true,
+    // Open `localhost` (the address Firebase sign-in authorizes), not the bound 127.0.0.1.
+    open: `http://localhost:${PORTS.dev}/`,
     // Same-origin API in dev, as in production (the Worker's /api/* route): run `yarn dev:server`.
     proxy: {
       '/api': api,

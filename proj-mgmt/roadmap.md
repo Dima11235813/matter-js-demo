@@ -91,6 +91,7 @@ graph TD
 * **Shipped on `feature/hosting-3d-zoom`**: 3D on phones (labels at the 2D word size, 6 → 28 px; framing by projected extent; tall layouts on portrait screens; + taps add a glowing word in Discovery only; Epic 5 · Task 5.7.3); 2D spacing zoom (boxes and layout lengths zoom out as words are added; Task 5.7.4); molecule gravity in 2D (Feature 5.15, +15% gap between unrelated molecules); p5 replaced by a Canvas2D sketch (2D world 1,191 → 130 KB, first canvas 1.5 → 1.0 s on a throttled phone; Epic 4 · Task 4.5.7).
 * **Hosting**: research done in two rounds ([hosting-options.md](../docs/research/hosting-options.md)); recommendation Cloudflare Workers static now ($0), API in the Worker + Neon for sign-in later; owner decisions H1–H5 (Epic 7 · Task 7.6.3). New roadmap item: change-driven sync (7.6.4).
 * **Tests**: 328 unit, 32 e2e (new: 3D on a phone).
+* **Workspace harness** (afternoon): ports moved from 3000/8787 on every interface to the claimed block 41940–41959 on loopback; preflight before servers and heavy jobs (Epic 7 · Task 7.7.1). On branch `chore/workspace-ports`, not yet in `develop`: one dev-server e2e spec waits for `D:` watchers to drop to 2. Owner: choose the host (human-todo 13), harness feedback (human-todo 11).
 * **Next candidates**: owner's host decision, then Phase 1 deploy; next-up preview (Epic 2 · Feature 2.16, owner: "after this batch"); molecules in 3D (5.15.1); sync of ratings and sessions; Connect follow-ups; Vite upgrade (4.5.5).
 
 ### Status snapshot (2026-10-09)
