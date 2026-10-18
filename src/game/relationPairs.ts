@@ -32,6 +32,25 @@ export function parseRelationBank(text: string): RelationBank {
     return bank;
 }
 
+/**
+ * The pairs a Guess pick is graded against (Feature 2.17, Task 2.17.4): the dealt pairs plus every bank pair
+ * whose two words are on the board, without duplicates. A real analogy the player spots among the board's words
+ * scores even if its pairs weren't dealt together (16% of fresh boards hold one; the simulation in
+ * docs/research/analogy-recognition.md §8 found no knowledge-free strategy gains).
+ */
+export function pairsOnBoard(bank: RelationBank, words: Iterable<string>, dealt: readonly RelationPair[] = []): RelationPair[] {
+    const on = new Set([...words].map(w => w.toLowerCase()));
+    const seen = new Set<string>();
+    const out: RelationPair[] = [];
+    const add = (p: RelationPair) => {
+        const key = `${p.category}|${p.x}|${p.y}`;
+        if (!seen.has(key)) { seen.add(key); out.push(p); }
+    };
+    dealt.forEach(add);
+    for (const pairs of bank.values()) for (const p of pairs) if (on.has(p.x) && on.has(p.y)) add(p);
+    return out;
+}
+
 /** Friendly names for the HUD ("Relation: capitals"). */
 export function categoryLabel(category: string): string {
     const labels: Record<string, string> = {

@@ -95,7 +95,12 @@ graph TD
 
   Tried locally with personas against the local API.
 * **Correction**: Connect bests do not sync (the play log never does); roadmapped as 2.10.7.
-* **Pivot (owner)**: analogy recognition for real analogies (Epic 2 · Feature 2.17). The research shows today's solver is good on capitals, family, and grammar (66%), but right only 15% of the time on everyday lexical analogies (11% with no analogy at all). Recommendation: a relation bank with everyday relations, bank-first answers, and Guess accepting any bank analogy. Owner decision pending.
+* **Pivot (owner)**: analogy recognition for real analogies (Epic 2 · Feature 2.17). The research showed the vectors are right 66% of the time on capitals, family, and grammar, but only 15% on everyday analogies (11% with no analogy at all). Owner chose "relation bank first". Shipped:
+  * 10 everyday relations in the bank;
+  * Discovery answers from the bank first and labels vector guesses ("the model's guess"); the known-good set goes 16 → 21 of 30;
+  * Guess accepts any bank analogy on the board (simulated: no knowledge-free strategy gains).
+
+  Next: owner review of the new pairs; BATS measurement (2.17.5); watch the most-similar-pairs heuristic in real play (2.17.6).
 * **Shipped (low-resource phones)**: Connect puzzles are made in a Web Worker, the next one ahead of time (Epic 2 · Task 2.10.6). At 4× CPU throttle, "Next puzzle" deals in 12–56 ms (was 174–987 ms), and the board no longer freezes (longest frame gap 50 ms, was 1,017 ms).
 * **Environment**: this repo's `node_modules` was swept around 2026-10-16 with ~770k other non-durable files. Owner decision 2026-10-18: dependencies now live on `C:\dev-deps\matter-js-demo` behind junctions (`CLAUDE.md`).
 * **Tests**: 361 unit, 36 e2e (CI mode).

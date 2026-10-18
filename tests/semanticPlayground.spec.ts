@@ -1,5 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { deltaE } from '../src/theme/semanticColors';
+import { CATEGORY_DIFFICULTY } from '../src/game/rating';
 
 /**
  * End-to-end tests for the embedding playground's word features, in 2D and 3D:
@@ -609,9 +610,10 @@ test('personas have their own skill rating, and each is dealt relations of its l
     await expect(page.getByTestId('round-relation')).toBeVisible({ timeout: 20_000 });
     return page.evaluate(() => (window.__lexical.stores.gameStore as unknown as { relationDeal: { category: string } }).relationDeal.category);
   };
-  // Effective difficulty eases relations made of obvious pairs (comparatives ~615, opposites ~550).
-  const easy = ['family', 'gram2-opposite', 'gram3-comparative', 'gram4-superlative', 'gram5-present-participle', 'gram7-past-tense'];
-  const hard = ['city-in-state', 'capital-world', 'capital-common-countries', 'gram6-nationality-adjective'];
+  // By prior, not by name (everyday relations joined at 800–1000 in Feature 2.17); effective difficulty also
+  // eases relations made of obvious pairs (comparatives ~615, opposites ~550).
+  const easy = Object.keys(CATEGORY_DIFFICULTY).filter(c => CATEGORY_DIFFICULTY[c] <= 1000);
+  const hard = Object.keys(CATEGORY_DIFFICULTY).filter(c => CATEGORY_DIFFICULTY[c] >= 1150);
   await openSandbox(page, '2d');
 
   await signInAs(page, novice);
@@ -805,6 +807,68 @@ test('Connect: removing your word costs a move; a solve lights up the board and 
   await expect(page.getByTestId('puzzle-solved')).toContainText(`Solved in ${again.par}`);
   await expect(page.getByTestId('puzzle-new-best')).toBeVisible();
   await expect(page.getByTestId('puzzle-best')).toHaveText(`best ${again.par}`);
+});
+
+test('Guess scores a real bank analogy on the board even when its pairs were not dealt together (Task 2.17.4)', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/');
+  await page.waitForFunction(() => window.__lexical?.stores.menuStore.engineStatus === 'ready', null, { timeout: 30_000 });
+  await page.bringToFront();
+  await page.evaluate(() => { window.__lexical.stores.gameStore.setHintMode(true); window.__lexical.stores.gameStore.setDimension('2d'); });
+  await page.locator('#game-toggle').click();
+  await expect(page.getByTestId('round-relation')).toBeVisible({ timeout: 20_000 });
+  await page.waitForFunction(() => (window.__lexical.deps.activeWorld?.wordTexts().length ?? 0) >= 10, null, { timeout: 20_000 });
+  type GuessState = { gameStore: { relationDeal: { pairs: { category: string }[] }; game: { analogies: number } }; menuStore: { selectedWordTexts: string[]; lastPlay: Record<string, unknown> | null } };
+
+  // Two bank pairs of a relation this round didn't deal, put on the board (setup through the dev handle).
+  // Several candidates: the board carried from Discovery holds common words (dog, school…), and the deal has two relations.
+  const candidates = [
+    { category: 'animal-young', words: ['dog', 'puppy', 'cat', 'kitten'] },
+    { category: 'worker-place', words: ['doctor', 'hospital', 'teacher', 'school'] },
+    { category: 'animal-sound', words: ['cow', 'moo', 'lion', 'roar'] },
+    { category: 'thing-color', words: ['grass', 'green', 'snow', 'white'] },
+    { category: 'hypernym', words: ['rose', 'flower', 'oak', 'tree'] },
+    { category: 'antonym', words: ['tall', 'short', 'rich', 'poor'] },
+    { category: 'worker-tool', words: ['painter', 'brush', 'tailor', 'needle'] },
+    { category: 'part-whole', words: ['page', 'book', 'wing', 'bird'] },
+  ];
+  const board = await boardWords(page);
+  const dealt = await page.evaluate(() => (window.__lexical.stores as unknown as GuessState).gameStore.relationDeal.pairs.map(p => p.category));
+  const chosen = candidates.find(c => !dealt.includes(c.category) && c.words.every(w => !board.includes(w)))!;
+  expect(chosen, `no usable candidate; board ${board.join(' ')}; dealt ${dealt.join(' ')}`).toBeDefined();
+  await page.evaluate(words => {
+    const { deps } = window.__lexical as unknown as { deps: { pendingWordSpawns: { word: string; x: number; y: number }[]; browserInfo: { width: number; height: number } } };
+    const { width, height } = deps.browserInfo;
+    words.forEach((word, i) => deps.pendingWordSpawns.push({ word, x: width * (0.25 + 0.15 * i), y: height * 0.8 }));
+  }, chosen.words);
+  await expect.poll(() => boardWords(page), { timeout: 15_000 }).toEqual(expect.arrayContaining(chosen.words));
+
+  const canvas = (await page.locator('#worldContainter canvas').first().boundingBox())!;
+  const boxes = () => page.evaluate(() => (window.__lexical as unknown as { wordBoxes(): { text: string; x: number; y: number }[] }).wordBoxes());
+  await expect.poll(async () => {
+    const all = await boxes();
+    return page.evaluate(([words, left, top, all]) => words.every(word => {
+      const box = all.find(b => b.text === word);
+      return !!box && document.elementFromPoint(left + box.x, top + box.y)?.tagName === 'CANVAS';
+    }), [chosen.words, canvas.x, canvas.y, all] as const);
+  }, { timeout: 20_000 }).toBe(true);
+  const state = () => page.evaluate(() => { const s = window.__lexical.stores as unknown as GuessState; return { selected: [...s.menuStore.selectedWordTexts], analogies: s.gameStore.game.analogies }; });
+  for (const word of chosen.words) {
+    const before = await state();
+    await expect.poll(async () => {
+      const box = (await boxes()).find(b => b.text === word)!;
+      await page.mouse.move(canvas.x + box.x, canvas.y + box.y);
+      await page.mouse.down();
+      await page.mouse.up();
+      await page.waitForTimeout(250);
+      const now = await state();
+      return now.selected.includes(word) || now.analogies > before.analogies;
+    }, { timeout: 10_000 }).toBe(true);
+  }
+  const [a, b, c, d] = chosen.words;
+  await expect.poll(() => page.evaluate(() => (window.__lexical.stores as unknown as GuessState).menuStore.lastPlay))
+    .toMatchObject({ a, b, c, answer: d, points: 100, verdict: 'full', guess: true });
+  await expect(page.getByTestId('play-verdict')).toContainText('✓ a real analogy');
 });
 
 test('Discovery answers everyday analogies from the relation bank and labels a vector guess as such (Feature 2.17)', async ({ page }) => {

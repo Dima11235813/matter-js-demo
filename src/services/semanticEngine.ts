@@ -16,7 +16,7 @@ import { extractKeywords, KeywordResult } from "../game/keywords";
 import { expressionAsAnalogy, ExpressionTerm } from "../game/wordEntry";
 import stopwordsText from "../../data/vocab/stopwords.txt?raw";
 import relationPairsText from "../../data/vocab/relation-pairs.txt?raw";
-import { dealRelationPairs, DealRelationOptions, obviousPair, parseRelationBank, RelationBank, RelationDeal } from "../game/relationPairs";
+import { dealRelationPairs, DealRelationOptions, obviousPair, pairsOnBoard, parseRelationBank, RelationBank, RelationDeal, RelationPair } from "../game/relationPairs";
 import { SourcedAnalogy, solveWithBank } from "../game/relationAnswers";
 import { RelationStats } from "../game/relationHint";
 import { difficultyOf, NEW_RATING, Rating, RATING_RULES, rateGuess, relationDifficulty } from "../game/rating";
@@ -322,6 +322,11 @@ export class SemanticEngine {
         const pairs = RELATION_BANK.get(category) ?? [];
         const share = pairs.length ? pairs.filter(p => obviousPair(p.x, p.y)).length / pairs.length : 0;
         return relationDifficulty(category, share);
+    }
+
+    /** The pairs a Guess pick is graded against: the dealt ones plus every bank pair on the board (Task 2.17.4). */
+    gradedPairs(boardWords: Iterable<string>, dealt: readonly RelationPair[]): RelationPair[] {
+        return pairsOnBoard(RELATION_BANK, boardWords, dealt);
     }
 
     /** Relation pairs for a timed round (designed questions); only words the index knows and allows. */

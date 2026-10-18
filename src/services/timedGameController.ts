@@ -63,14 +63,16 @@ export function recordRoundAnalogy(stores: RootStore, result: AnalogyResult): (P
 }
 
 /**
- * Guess mode (Epic 2 · Feature 2.13): grades four picked board words against the dealt pairs and
- * scores them through the round rules (a repeated guess scores 0, rewards deal more pairs).
+ * Guess mode (Epic 2 · Feature 2.13): grades four picked board words against the dealt pairs and every bank
+ * pair on the board (Feature 2.17: a real analogy counts even if its pairs weren't dealt together), and scores
+ * them through the round rules (a repeated guess scores 0, rewards deal more pairs).
  */
 export function recordRoundGuess(stores: RootStore, a: string, b: string, c: string, d: string): (PlayOutcome & GuessGrade) | undefined {
     const { gameStore } = stores;
     const deal = gameStore.relationDeal;
     if (!gameStore.game || !deal) return undefined;
-    const grade = gradeGuess(deal.pairs, a, b, c, d);
+    const pairs = semanticEngine.gradedPairs(deps.activeWorld?.wordTexts() ?? [], deal.pairs);
+    const grade = gradeGuess(pairs, a, b, c, d);
     const outcome = applyPlay(gameStore.game, `${analogyKey(a, b, c)}:${d.toLowerCase()}`, grade.points, Date.now(), gameStore.rules);
     settlePlay(stores, outcome);
     return { ...outcome, ...grade, points: outcome.points };

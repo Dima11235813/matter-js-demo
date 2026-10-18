@@ -189,7 +189,7 @@ export async function playGuess(stores: RootStore, a: string, b: string, c: stri
         ranked, input: "click", stats, hint, verdict: lastPlay.verdict,
         designed: round.correct, points: round.points, duplicate: round.duplicate, guess: true, rating: stores.gameStore.rating, nearMiss: round.nearMiss,
     }));
-    menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${d}: ${round.correct ? `a real analogy (+${round.points} pts)` : "not an analogy from this round"}`);
+    menuStore.setLastAnalogy(`${a} is to ${b} as ${c} is to ${d}: ${round.correct ? `a real analogy (+${round.points} pts)` : "not a known analogy on this board"}`);
     await refreshStats(menuStore);
 }
 

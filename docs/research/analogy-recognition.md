@@ -1,6 +1,6 @@
 # Analogy Recognition on Real Analogies
 
-**Status**: research done 2026-10-18; owner chose "relation bank first"; bank and Discovery answers built and measured (§6), Guess acceptance next · **Drives**: [Epic 2 · Feature 2.17](../../proj-mgmt/epic-2-gamification.md) · **Reproduce**: `npx vitest run --config docs/research/experiments/vitest.research.config.ts analogyRecognition` (~20 min; writes [`results/analogy-recognition.json`](experiments/results/analogy-recognition.json); `ANALOGY_QUESTIONS=10` for a pilot in the OS temp folder)
+**Status**: research done 2026-10-18; owner chose "relation bank first"; bank and Discovery answers built and measured (§6); Guess accepts any bank analogy on the board (§8) · **Drives**: [Epic 2 · Feature 2.17](../../proj-mgmt/epic-2-gamification.md) · **Reproduce**: `npx vitest run --config docs/research/experiments/vitest.research.config.ts analogyRecognition` (~20 min; writes [`results/analogy-recognition.json`](experiments/results/analogy-recognition.json); `ANALOGY_QUESTIONS=10` for a pilot in the OS temp folder)
 
 ## 1. Question
 
@@ -137,6 +137,30 @@ Top-1 accuracy per category:
 * **Broke:** hot : cold :: summer → *spring* (was winter). The antonym relation's average offset, applied to summer, lands on spring; for this question the vectors' own offset was right. On the 900-question benchmark, 3CosAvg is still better than 3CosAdd and than a half-and-half blend (full run: google top 1 72.9% vs 70.9% blend vs 66.2% add; lexical top 5 48.7% vs 46.8% vs 39.4%), so it stays. Adding hot → cold, summer → winter to the bank would fix this one exactly.
 * **Overlap disclosed:** 8 of the 18 bank answers come from pairs this work added (dog → puppy, finger → hand, …). For those, a right answer is by construction. The fair claim is that the bank answers exactly what it knows, and is honest about what it doesn't.
 * **Still wrong, labelled "the model's guess":** day : night :: sun (solar), pen : write :: knife (knives), bird : fly :: fish (flew), eye : see :: ear (hearing), car : road :: train (railway), winter : snow :: summer (spring). These relations (function, habitat, perception) are candidates for the bank.
+
+## 8. Guess accepts any bank analogy on the board (Task 2.17.4, 2026-10-18)
+
+**Question.** If a Guess pick scores whenever its four words are two bank pairs of one relation on the board (not only two pairs dealt together), can a player without knowledge gain?
+
+**Method** ([`guessAcceptance.experiment.ts`](experiments/guessAcceptance.experiment.ts), [results](experiments/results/guess-acceptance.json)):
+* **Boards:** 400 real deals from the shipped bank (3 main + 2 other pairs). Fresh boards, and boards that also carry 8 Discovery words (frequency ranks 300–6,000), where coincidental bank pairs are likeliest.
+* **Grading:** the real grader, `gradeGuess`, run against the dealt pairs (shipped) and against the dealt pairs plus every bank pair on the board (proposed). 20 guesses per strategy per board.
+
+**Findings (mean points per guess):**
+
+| Strategy | Fresh: dealt only | Fresh: board bank | +8 carried: dealt only | +8 carried: board bank |
+|---|---|---|---|---|
+| skilled (a dealt analogy) | 100 | 100 | 100 | 100 |
+| bank expert (any bank analogy on the board) | 99.4 | **100** | 99.8 | **100** |
+| random four words | 0.9 | 0.9 | 0.1 | 0.1 |
+| vector player (3CosAdd picks the fourth) | 5.1 | 5.1 | 0.7 | 0.7 |
+| the two most similar word pairs | 41.7 | 42.3 | 38.4 | 38.5 |
+
+* **No knowledge-free strategy gains**: random and the vector player are unchanged, and the most-similar heuristic gains at most +0.6.
+* **What it buys:** 16% of fresh boards (12% with carried words) hold real analogies the old rule refused, 1.7 extra on average where there are any.
+* **Already true before this change, and not changed by it:** the two most similar word pairs on a board form a real analogy 35% of the time, because dealt pairs are related by design. The simulation repeats that one guess 20 times per board, but the game scores a repeated guess 0 within a round, so in play it is worth one guess per board state. Finding strongly related pairs is also part of the skill. Watch it in real play logs (Epic 2 · Task 2.17.6).
+
+**Decision.** Shipped. `recordRoundGuess` grades against `pairsOnBoard(bank, board words, dealt pairs)`, and the wrong-guess line reads "not a known analogy on this board".
 
 ## 7. Limitations
 

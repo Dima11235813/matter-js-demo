@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  categoryLabel, dealRelationPairs, designedAnswer, DESIGNED_POINTS, gradeGuess, GUESS_POINTS, NEAR_MISS_POINTS, obviousPair, parseRelationBank, RelationPair, scoreDesignedPlay,
+  categoryLabel, dealRelationPairs, designedAnswer, DESIGNED_POINTS, gradeGuess, GUESS_POINTS, NEAR_MISS_POINTS, obviousPair, pairsOnBoard, parseRelationBank, RelationPair, scoreDesignedPlay,
 } from '../src/game/relationPairs';
 import { relationHint } from '../src/game/relationHint';
 import { CATEGORY_DIFFICULTY } from '../src/game/rating';
@@ -52,6 +52,23 @@ describe('relation bank', () => {
       const words = new Set((JSON.parse(fs.readFileSync(vocabFile, 'utf8')) as VocabManifest).words);
       expect(pairs.filter(p => !words.has(p.x) || !words.has(p.y))).toEqual([]);
     }
+  });
+});
+
+describe('pairsOnBoard (Task 2.17.4)', () => {
+  const small = parseRelationBank(': animal-young\ndog puppy\ncat kitten\ncow calf\n: family\nking queen\nman woman\n');
+  const dealt: RelationPair[] = [{ x: 'king', y: 'queen', category: 'family' }, { x: 'man', y: 'woman', category: 'family' }];
+
+  it('adds every bank pair whose two words are on the board, without duplicating dealt pairs', () => {
+    const pairs = pairsOnBoard(small, ['king', 'queen', 'man', 'woman', 'Dog', 'puppy', 'cat', 'kitten', 'cow'], dealt);
+    expect(pairs.map(p => `${p.x}-${p.y}`).sort()).toEqual(['cat-kitten', 'dog-puppy', 'king-queen', 'man-woman']); // cow without calf: no
+  });
+
+  it('a real analogy among the board words scores even though its pairs were not dealt', () => {
+    const pairs = pairsOnBoard(small, ['king', 'queen', 'man', 'woman', 'dog', 'puppy', 'cat', 'kitten'], dealt);
+    expect(gradeGuess(dealt, 'dog', 'puppy', 'cat', 'kitten').points).toBe(0); // the old rule
+    expect(gradeGuess(pairs, 'dog', 'puppy', 'cat', 'kitten')).toMatchObject({ correct: true, category: 'animal-young', points: GUESS_POINTS });
+    expect(gradeGuess(pairs, 'dog', 'kitten', 'cat', 'puppy').points).toBe(0); // still only real pairs
   });
 });
 

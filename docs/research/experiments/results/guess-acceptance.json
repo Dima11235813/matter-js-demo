@@ -1,0 +1,109 @@
+{
+  "boards": 400,
+  "guessesPerStrategy": 20,
+  "bankPairs": 433,
+  "results": {
+    "carried0": {
+      "boards": 400,
+      "boardsWithExtraAnalogies": 0.163,
+      "meanExtraQuads": 1.7,
+      "byRule": {
+        "dealtOnly": {
+          "skilled": {
+            "meanPoints": 100,
+            "correct": 1
+          },
+          "bankExpert": {
+            "meanPoints": 99.4,
+            "correct": 0.994
+          },
+          "random": {
+            "meanPoints": 0.9,
+            "correct": 0.006
+          },
+          "mostSimilar": {
+            "meanPoints": 41.7,
+            "correct": 0.357
+          },
+          "vectorPlayer": {
+            "meanPoints": 5.1,
+            "correct": 0.043
+          }
+        },
+        "boardBank": {
+          "skilled": {
+            "meanPoints": 100,
+            "correct": 1
+          },
+          "bankExpert": {
+            "meanPoints": 100,
+            "correct": 1
+          },
+          "random": {
+            "meanPoints": 0.9,
+            "correct": 0.007
+          },
+          "mostSimilar": {
+            "meanPoints": 42.3,
+            "correct": 0.362
+          },
+          "vectorPlayer": {
+            "meanPoints": 5.1,
+            "correct": 0.043
+          }
+        }
+      }
+    },
+    "carried8": {
+      "boards": 400,
+      "boardsWithExtraAnalogies": 0.12,
+      "meanExtraQuads": 1.1,
+      "byRule": {
+        "dealtOnly": {
+          "skilled": {
+            "meanPoints": 100,
+            "correct": 1
+          },
+          "bankExpert": {
+            "meanPoints": 99.8,
+            "correct": 0.998
+          },
+          "random": {
+            "meanPoints": 0.1,
+            "correct": 0.001
+          },
+          "mostSimilar": {
+            "meanPoints": 38.4,
+            "correct": 0.335
+          },
+          "vectorPlayer": {
+            "meanPoints": 0.7,
+            "correct": 0.006
+          }
+        },
+        "boardBank": {
+          "skilled": {
+            "meanPoints": 100,
+            "correct": 1
+          },
+          "bankExpert": {
+            "meanPoints": 100,
+            "correct": 1
+          },
+          "random": {
+            "meanPoints": 0.1,
+            "correct": 0.001
+          },
+          "mostSimilar": {
+            "meanPoints": 38.5,
+            "correct": 0.335
+          },
+          "vectorPlayer": {
+            "meanPoints": 0.7,
+            "correct": 0.006
+          }
+        }
+      }
+    }
+  }
+}
