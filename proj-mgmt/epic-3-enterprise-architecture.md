@@ -169,6 +169,13 @@ Refactor the codebase from a single client-side project containing all vocabular
     * e2e: two browser contexts sign in (dev tokens) and converge through the API, which Playwright now starts; 21/21 against the dev server and 21/21 against the e2e bundle.
   * The Firebase SDK is code-split (not in the main bundle); zod adds about 130 KB to the main bundle (follow-up: `zod/mini`).
 * [ ] **Task 3.8.4**: Increment 4: Cloud Run + Cloud SQL deploy.
+* [x] **Task 3.8.5** (2026-10-18, for Epic 2 · Tasks 2.12.3 and 2.15.4): the contract grows without a new schema version (the new fields and collection are optional or additive):
+  * the profile gets an optional `rating` (the newest `at` wins);
+  * a fifth collection, `sessions` (newest copy wins, with `deleted` tombstones);
+  * the server checks that a session's key is a UUID;
+  * pushes and pull pages are bounded by size as well as count (`MAX_SYNC_BYTES`).
+
+  The play log and device meta still never sync.
 * **Exit criteria**:
   * one schema definition per DTO (no duplicate types in `src/` or `server/`);
   * two devices converge with no lost points (property tests + e2e);

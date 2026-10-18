@@ -56,7 +56,18 @@ export interface ProfileRecord extends SyncStamp {
     hintMode?: boolean;
     /** Hint view dimension; undefined means 2D. */
     dimension?: "2d" | "3d";
+    /**
+     * Guess skill rating (Epic 2 · Feature 2.12), synced with the profile since 2026-10-18 (the newest `at`
+     * wins). Older databases kept it in device meta, which is read as a fallback.
+     */
+    rating?: { value: number; plays: number; at: number };
 }
+
+/**
+ * A saved board as stored (Feature 2.15), synced since v6: sync stamps, and `deleted` as a tombstone so a
+ * delete reaches the other devices. Tombstones keep only the id and the stamps' meaning; lists skip them.
+ */
+export type SessionRecord = SavedSession & { updatedAt?: number; syncState?: SyncState; deviceId?: string; deleted?: boolean };
 
 export interface GameRecord extends SyncStamp {
     id: string;
@@ -127,7 +138,7 @@ export interface MetaRecord {
     consentPromptDismissedAt?: number;
     /** The server's opaque pull cursor for this device's account (Epic 3 · Feature 3.8). */
     syncCursor?: string;
-    /** Guess-mode skill rating (Epic 2 · Feature 2.12); per account database, so per persona. Not synced yet. */
+    /** Legacy (before 2026-10-18): the Guess rating, now in the synced profile; read only as a fallback. */
     rating?: { value: number; plays: number };
 }
 
@@ -138,14 +149,14 @@ export interface LexicalSchema extends DBSchema {
     games: { key: string; value: GameRecord; indexes: { bySyncState: SyncState; byScore: number } };
     playEvents: { key: string; value: PlayEventRecord; indexes: { bySyncState: SyncState; byAt: number } };
     meta: { key: string; value: MetaRecord };
-    /** Saved boards (owner, 2026-10-05); local to this account database, not synced. */
-    sessions: { key: string; value: SavedSession; indexes: { bySavedAt: number } };
+    /** Saved boards (owner, 2026-10-05); per account database, synced since v6 (Task 2.15.4). */
+    sessions: { key: string; value: SessionRecord; indexes: { bySavedAt: number; bySyncState: SyncState } };
 }
 
 export type LexicalDb = IDBPDatabase<LexicalSchema>;
 
 export const DEFAULT_DB_NAME = "lexical-fountain";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 export function openLexicalDb(name: string = DEFAULT_DB_NAME): Promise<LexicalDb> {
     return openDB<LexicalSchema>(name, DB_VERSION, {
@@ -178,8 +189,23 @@ export function openLexicalDb(name: string = DEFAULT_DB_NAME): Promise<LexicalDb
                 const sessions = db.createObjectStore("sessions", { keyPath: "id" });
                 sessions.createIndex("bySavedAt", "savedAt");
             }
+            if (oldVersion < 6) {
+                transaction.objectStore("sessions").createIndex("bySyncState", "syncState");
+                // Sessions saved before sessions synced become pending, so the next sync uploads them.
+                if (oldVersion >= 5) void stampSessionsForSync(transaction);
+            }
         },
     });
+}
+
+/** v6: existing sessions get sync stamps (pending, last changed when saved, this device's id). */
+async function stampSessionsForSync(transaction: UpgradeTransaction): Promise<void> {
+    const profile = await transaction.objectStore("profile").get("local");
+    const sessions = transaction.objectStore("sessions");
+    for (const session of await sessions.getAll()) {
+        if (session.syncState) continue;
+        await sessions.put({ ...session, updatedAt: session.savedAt, syncState: "pending", ...(profile ? { deviceId: profile.deviceId } : {}) });
+    }
 }
 
 type UpgradeTransaction = IDBPTransaction<LexicalSchema, StoreNames<LexicalSchema>[], "versionchange">;

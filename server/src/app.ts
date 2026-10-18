@@ -4,7 +4,7 @@ import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import { $ZodError } from "zod/v4/core";
 import {
-    AccountExport, analogyKey, ClaimRequest, ClaimResponse, DeleteResponse, MAX_PULL_RECORDS, mergeRecords, PullResponse,
+    AccountExport, analogyKey, ClaimRequest, ClaimResponse, DeleteResponse, MAX_PULL_RECORDS, MAX_SYNC_BYTES, mergeRecords, PullResponse,
     PushRequest, PushResponse, sameRecord, SyncRecord, wordKey,
 } from "@lexical/shared";
 import type { Db, Queryable } from "./db";
@@ -108,12 +108,19 @@ export function createApp({ db, verifier }: { db: Db; verifier: Verifier }) {
         const rows = (await db.query<{ record: SyncRecord; server_seq: string }>(
             "SELECT record, server_seq FROM sync_records WHERE user_id = $1 AND server_seq > $2 ORDER BY server_seq LIMIT $3",
             [userId, since, limit + 1])).rows;
-        const page = rows.slice(0, limit);
+        // A page also stops at about MAX_SYNC_BYTES of records (saved sessions are large); always at least one.
+        const page: typeof rows = [];
+        let bytes = 0;
+        for (const row of rows.slice(0, limit)) {
+            bytes += JSON.stringify(row.record).length;
+            if (page.length > 0 && bytes > MAX_SYNC_BYTES) break;
+            page.push(row);
+        }
         const last = page.length > 0 ? Number(page[page.length - 1].server_seq) : since;
         return c.json(PullResponse.parse({
             changes: page.map(r => ({ serverSeq: Number(r.server_seq), record: r.record })),
             nextCursor: String(last),
-            hasMore: rows.length > limit,
+            hasMore: rows.length > page.length,
         }));
     });
 
@@ -167,14 +174,17 @@ async function requireDevice(db: Db, userId: string, deviceId: string): Promise<
     if (!row || row.user_id !== userId) throw new HttpError(403, "device-not-claimed", "Claim this device before syncing");
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Keys must be the canonical ones, so the same record from two devices always lands on one row. */
 function checkKey(record: SyncRecord): void {
     const expected =
         record.collection === "profile" ? "profile"
             : record.collection === "words" ? wordKey(record.payload.word, record.payload.model, record.payload.dtype)
                 : record.collection === "analogies" ? analogyKey(record.payload.a, record.payload.b, record.payload.c)
-                    : record.key; // games: a client-generated id
+                    : record.key; // games and sessions: a client-generated id
     if (record.key !== expected) throw new HttpError(400, "non-canonical-key", `Expected key "${expected}" for ${record.collection}, got "${record.key}"`);
+    if (record.collection === "sessions" && !UUID.test(record.key)) throw new HttpError(400, "non-canonical-key", "A session's key is its id (a UUID)");
 }
 
 async function nextSeq(tx: Queryable): Promise<number> {

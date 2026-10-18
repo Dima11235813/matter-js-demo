@@ -1,6 +1,7 @@
 import deps from "../matterJsComp/Deps";
 import { RootStore } from "../stores/RootStore";
 import { semanticEngine } from "./semanticEngine";
+import { syncSoon } from "./account";
 import { isWordView } from "../stores/MenuStore";
 import {
     addedWords, defaultSessionName, parsePlayLogFile, parseSessionFile, SavedAnalogy, SavedSession, SESSION_SCHEMA, sessionFile,
@@ -9,7 +10,8 @@ import {
 /**
  * Saved sessions and uploads (owner, 2026-10-05). A session is the board as it is: its words where they
  * sit, its analogies, and in letters mode the letter board. Sessions live in this account's database
- * (each persona has its own), can be downloaded as files, and files can be uploaded on any device.
+ * (each persona has its own), sync to the account's other devices when signed in (Task 2.15.4; deletes
+ * too), can be downloaded as files, and files can be uploaded on any device.
  */
 
 /** Saves the board on screen; returns the new session. */
@@ -33,6 +35,7 @@ export async function saveCurrentSession(stores: RootStore, name?: string): Prom
     await semanticEngine.saveSession(session);
     menuStore.setSessionsMessage(`Saved "${session.name}"`);
     await refreshSessions(stores);
+    syncSoon(); // signed in: the session reaches the account's other devices (Task 2.15.4)
     return session;
 }
 
@@ -76,6 +79,7 @@ export async function loadSession(stores: RootStore, id: string): Promise<void> 
 export async function deleteSession(stores: RootStore, id: string): Promise<void> {
     await semanticEngine.deleteSession(id);
     await refreshSessions(stores);
+    syncSoon();
 }
 
 export async function downloadSession(id: string): Promise<void> {
@@ -92,6 +96,7 @@ export async function uploadSessionFile(stores: RootStore, file: File): Promise<
     const session: SavedSession = { ...parsed.value, id: crypto.randomUUID() };
     await semanticEngine.saveSession(session);
     await refreshSessions(stores);
+    syncSoon();
     stores.menuStore.setSessionsMessage(`Added "${session.name}"${parsed.dropped ? ` · ${parsed.dropped} invalid entries skipped` : ""}`);
 }
 

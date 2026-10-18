@@ -1,14 +1,28 @@
 import { AnalogyResult } from "../embeddings/analogy";
-import { AgeBand, AnalogyRecord, ConsentState, GameRecord, LexicalDb, MetaRecord, PLAY_EVENT_SCHEMA, PlayEventRecord, PlayerWordRecord, ProfileRecord, SyncStamp } from "./db";
+import { AgeBand, AnalogyRecord, ConsentState, GameRecord, LexicalDb, MetaRecord, PLAY_EVENT_SCHEMA, PlayEventRecord, PlayerWordRecord, ProfileRecord, SessionRecord, SyncStamp } from "./db";
 import { counterTotal, incrementCounter } from "./counters";
 import { analogyKey } from "./keys";
 import { mergeRecords, sameRecord, type SyncRecord } from "@lexical/shared";
 import type { SavedSession, UploadedPlayEvent } from "../game/sessions";
 import {
-    analogyFromSync, analogyToSync, gameFromSync, gameToSync, profileFromSync, profileToSync, wordFromSync, wordToSync,
+    analogyFromSync, analogyToSync, gameFromSync, gameToSync, profileFromSync, profileToSync, sessionFromSync, sessionToSync, wordFromSync, wordToSync,
 } from "./syncRecords";
 
 export type GameResult = Omit<GameRecord, keyof SyncStamp | "id">;
+
+/**
+ * A change time later than `previous` (the record's last change, possibly from another device whose clock
+ * runs ahead): last-writer-wins merges must let this device's newest edit win.
+ */
+function after(previous: number | undefined): number {
+    return Math.max(Date.now(), (previous ?? 0) + 1);
+}
+
+/** Just the board (the stored record also carries sync stamps). */
+function asSession(record: SavedSession & Partial<SessionRecord>): SavedSession {
+    const { updatedAt: _u, syncState: _s, deviceId: _d, deleted: _x, ...session } = record;
+    return session;
+}
 
 export interface LocalDataExport {
     kind: "lexical-fountain-my-data";
@@ -122,8 +136,17 @@ export class LexicalRepository {
         return this.meta.syncCursor;
     }
 
+    /** The Guess rating: synced in the profile (2026-10-18); older databases kept it in device meta. */
     get rating(): { value: number; plays: number } | undefined {
-        return this.meta.rating;
+        const rating = this.profile.rating ?? this.meta.rating;
+        return rating ? { value: rating.value, plays: rating.plays } : undefined;
+    }
+
+    /** Stores a new Guess rating in the profile (pending, so it syncs; the newest `at` wins on merge). */
+    async setRating(rating: { value: number; plays: number }): Promise<void> {
+        const at = after(this.profile.rating?.at);
+        this.profile = { ...this.profile, rating: { ...rating, at }, ...this.touch(this.profile) };
+        await this.db.put("profile", this.profile);
     }
 
     async updateMeta(changes: Partial<Omit<MetaRecord, "id" | "deviceSecret">>): Promise<void> {
@@ -208,22 +231,31 @@ export class LexicalRepository {
         return { added, skipped: events.length - added };
     }
 
-    // --- saved sessions (boards), newest first; local only -------------------------------------------
+    // --- saved sessions (boards), newest first; synced since v6 (Task 2.15.4) ---------------------------
 
     async listSessions(): Promise<SavedSession[]> {
-        return (await this.db.getAllFromIndex("sessions", "bySavedAt")).reverse();
+        return (await this.db.getAllFromIndex("sessions", "bySavedAt")).reverse().filter(s => !s.deleted).map(asSession);
     }
 
+    /** Saves (or replaces) a session; pending, so the next sync shares it. */
     async saveSession(session: SavedSession): Promise<void> {
-        await this.db.put("sessions", session);
+        const existing = await this.db.get("sessions", session.id);
+        await this.db.put("sessions", { ...asSession(session), updatedAt: after(existing?.updatedAt), syncState: "pending", deviceId: this.deviceId });
     }
 
-    getSession(id: string): Promise<SavedSession | undefined> {
-        return this.db.get("sessions", id);
+    async getSession(id: string): Promise<SavedSession | undefined> {
+        const record = await this.db.get("sessions", id);
+        return record && !record.deleted ? asSession(record) : undefined;
     }
 
+    /** Deletes a session everywhere: an empty tombstone stays, so the delete syncs to the other devices. */
     async deleteSession(id: string): Promise<void> {
-        await this.db.delete("sessions", id);
+        const existing = await this.db.get("sessions", id);
+        if (!existing || existing.deleted) return;
+        await this.db.put("sessions", {
+            id, name: existing.name, savedAt: existing.savedAt, schema: existing.schema, view: existing.view, words: [], analogies: [],
+            deleted: true, updatedAt: after(existing.updatedAt), syncState: "pending", deviceId: this.deviceId,
+        });
     }
 
     /** Play events in time order, optionally only those at or after `since`. */
@@ -249,23 +281,30 @@ export class LexicalRepository {
 
     /** Every record waiting to be pushed (the play log and device meta are never synced). */
     async pendingSyncRecords(): Promise<SyncRecord[]> {
-        const [words, analogies, games] = await Promise.all([
+        const [words, analogies, games, sessions] = await Promise.all([
             this.db.getAllFromIndex("words", "bySyncState", "pending"),
             this.db.getAllFromIndex("analogies", "bySyncState", "pending"),
             this.db.getAllFromIndex("games", "bySyncState", "pending"),
+            this.db.getAllFromIndex("sessions", "bySyncState", "pending"),
         ]);
         return [
             ...(this.profile.syncState === "pending" ? [profileToSync(this.profile)] : []),
             ...words.map(wordToSync),
             ...analogies.map(analogyToSync),
             ...games.map(gameToSync),
+            ...sessions.map(s => sessionToSync(s, this.deviceId)),
         ];
     }
 
     /** Every syncable record (pending or not): what another local profile adopts (Epic 6 · Feature 6.7). */
     async allSyncRecords(): Promise<SyncRecord[]> {
-        const [words, analogies, games] = await Promise.all([this.db.getAll("words"), this.db.getAll("analogies"), this.db.getAll("games")]);
-        return [profileToSync(this.profile), ...words.map(wordToSync), ...analogies.map(analogyToSync), ...games.map(gameToSync)];
+        const [words, analogies, games, sessions] = await Promise.all([
+            this.db.getAll("words"), this.db.getAll("analogies"), this.db.getAll("games"), this.db.getAll("sessions"),
+        ]);
+        return [
+            profileToSync(this.profile), ...words.map(wordToSync), ...analogies.map(analogyToSync), ...games.map(gameToSync),
+            ...sessions.map(s => sessionToSync(s, this.deviceId)),
+        ];
     }
 
     /** Folds another local profile's record into this one with the shared merge rules; it stays pending (to sync). */
@@ -313,6 +352,10 @@ export class LexicalRepository {
                 const local = await this.db.get("games", record.key);
                 return local ? gameToSync(local) : undefined;
             }
+            case "sessions": {
+                const local = await this.db.get("sessions", record.key);
+                return local ? sessionToSync(local, this.deviceId) : undefined;
+            }
         }
     }
 
@@ -333,6 +376,9 @@ export class LexicalRepository {
                 return;
             case "games":
                 await this.db.put("games", gameFromSync(record, syncState));
+                return;
+            case "sessions":
+                await this.db.put("sessions", sessionFromSync(record, syncState));
                 return;
         }
     }
@@ -363,7 +409,7 @@ export class LexicalRepository {
             analogies,
             games,
             playEvents,
-            sessions,
+            sessions: sessions.filter(s => !s.deleted), // tombstones are sync bookkeeping, not the player's data
         };
     }
 

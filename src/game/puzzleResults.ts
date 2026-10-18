@@ -1,6 +1,7 @@
 /**
  * Connect-All results (Epic 2 · Task 2.10.5): the best result per puzzle, read from the play log, so
- * results persist, sync, export, and erase with it (no store of their own). A puzzle is identified by its
+ * results persist, export, and erase with it (no store of their own). The play log never syncs, so bests
+ * stay on the device (syncing them: Task 2.10.7). A puzzle is identified by its
  * words, not only its number: a generator or vocabulary change can deal a different board for the same
  * number, and a best from another board must not count.
  */

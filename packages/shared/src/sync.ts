@@ -11,6 +11,11 @@ import * as z from "zod/mini";
 export const SYNC_SCHEMA_VERSION = 1;
 export const MAX_PUSH_RECORDS = 200;
 export const MAX_PULL_RECORDS = 500;
+/**
+ * A push request stays under this many bytes of JSON (the server accepts 512 KB): saved sessions run to
+ * ~100 KB, so batches are cut by size as well as count. A pull page stops after about this much too.
+ */
+export const MAX_SYNC_BYTES = 400_000;
 
 const count = () => z.int().check(z.nonnegative());
 const counter = z.record(z.string(), count());
@@ -18,11 +23,22 @@ const epochMs = count();
 const deviceId = z.uuid();
 const text = (min: number, max: number) => z.string().check(z.minLength(min), z.maxLength(max));
 
-/** Settings plus the per-device lifetime score. */
+/**
+ * The Guess skill rating (Epic 2 · Feature 2.12): one estimate of the player, so the newest wins across devices
+ * (`at`), independently of the profile's settings.
+ */
+export const RatingPayload = z.object({
+    value: z.number().check(z.gte(0), z.lte(10_000)),
+    plays: count(),
+    at: epochMs,
+});
+
+/** Settings plus the per-device lifetime score, and the Guess rating. */
 export const ProfilePayload = z.object({
     hintMode: z.optional(z.boolean()),
     dimension: z.optional(z.enum(["2d", "3d"])),
     scoreByDevice: counter,
+    rating: z.optional(RatingPayload),
 });
 
 /** A word a player added: the model's raw vector, base64 of little-endian float32 (see vectors.ts). */
@@ -59,6 +75,29 @@ export const GamePayload = z.object({
     hintMode: z.boolean(),
 });
 
+const finite = () => z.number().check(z.gte(-1e6), z.lte(1e6));
+const hexColor = z.string().check(z.regex(/^#[0-9a-fA-F]{6}$/));
+
+/**
+ * A saved board (Epic 2 · Feature 2.15), the same limits as an uploaded session file (src/game/sessions.ts).
+ * `deleted` is a tombstone: deleting a session on one device removes it on the others (newest change wins).
+ */
+export const SessionPayload = z.object({
+    name: text(1, 200),
+    savedAt: epochMs,
+    schema: z.int(),
+    view: text(1, 32),
+    words: z.array(z.object({ word: text(1, 40), x: finite(), y: finite(), color: z.optional(hexColor) })).check(z.maxLength(400)),
+    analogies: z.array(z.object({
+        a: text(1, 40), b: text(1, 40), c: text(1, 40), answer: text(1, 40),
+        points: z.int(), similarity: z.number(), guess: z.optional(z.boolean()),
+    })).check(z.maxLength(300)),
+    letters: z.optional(z.array(z.object({
+        text: text(1, 40), x: finite(), y: finite(), angle: finite(), w: finite(), h: finite(), color: text(1, 32), type: z.int(),
+    })).check(z.maxLength(600))),
+    deleted: z.optional(z.boolean()),
+});
+
 const envelope = {
     key: text(1, 256),
     schemaVersion: z.int().check(z.gte(SYNC_SCHEMA_VERSION - 1), z.lte(SYNC_SCHEMA_VERSION)),
@@ -66,12 +105,13 @@ const envelope = {
     deviceId,
 };
 
-/** One synced record. The play log and device meta are never synced. */
+/** One synced record. The play log and device meta are never synced (so Connect-All bests stay on the device). */
 export const SyncRecord = z.discriminatedUnion("collection", [
     z.object({ collection: z.literal("profile"), ...envelope, payload: ProfilePayload }),
     z.object({ collection: z.literal("words"), ...envelope, payload: WordPayload }),
     z.object({ collection: z.literal("analogies"), ...envelope, payload: AnalogyPayload }),
     z.object({ collection: z.literal("games"), ...envelope, payload: GamePayload }),
+    z.object({ collection: z.literal("sessions"), ...envelope, payload: SessionPayload }),
 ]);
 export type SyncRecord = z.infer<typeof SyncRecord>;
 export type SyncCollection = SyncRecord["collection"];
@@ -84,7 +124,7 @@ export const PushRequest = z.object({
 export type PushRequest = z.infer<typeof PushRequest>;
 
 export const PushResult = z.object({
-    collection: z.enum(["profile", "words", "analogies", "games"]),
+    collection: z.enum(["profile", "words", "analogies", "games", "sessions"]),
     key: z.string(),
     /** applied: stored as sent; merged: combined with the server's copy (the merged record is returned). */
     status: z.enum(["applied", "merged"]),

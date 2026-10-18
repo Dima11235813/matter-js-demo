@@ -247,13 +247,13 @@ export class SemanticEngine {
     async rateGuess(category: string, outcome: boolean | number, obviousPairs: number = 0): Promise<Rating> {
         const { repo } = this.require();
         const next = rateGuess(this.rating, difficultyOf(category, obviousPairs), outcome);
-        await repo.updateMeta({ rating: next });
+        await repo.setRating(next); // in the profile, so it syncs to the account's other devices
         return next;
     }
 
     /** Dev and e2e: seed a persona's rating. */
     async setRating(value: number): Promise<void> {
-        await this.require().repo.updateMeta({ rating: { value, plays: RATING_RULES.provisionalPlays } });
+        await this.require().repo.setRating({ value, plays: RATING_RULES.provisionalPlays });
     }
 
     /** Connect-All moves and puzzle words: the 8,000 most frequent allowed plain words (cached). */

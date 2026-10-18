@@ -526,6 +526,44 @@ test('two devices sign in to the same account (no Google) and converge through t
   await Promise.all(devices.map(context => context.close()));
 });
 
+test('saved sessions and the Guess rating follow the account to another device; a delete does too (Tasks 2.12.3, 2.15.4)', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const subject = `e2e-sessions-${Date.now()}`;
+  const devices = await Promise.all([browser.newContext(), browser.newContext()]);
+  const [laptop, phone] = await Promise.all(devices.map(context => context.newPage()));
+  await openSandbox(laptop, '2d');
+  await openSandbox(phone, '2d');
+  await signInAs(laptop, subject);
+  await signInAs(phone, subject);
+  const syncNow = (page: Page) => page.evaluate(() => (window.__lexical as unknown as AccountHandle).account.syncNow());
+  type RatingHandle = { rating: { set(v: number): Promise<void> } };
+
+  // Laptop: save the board through the sessions panel; its rating changes (setup through the dev handle).
+  await laptop.locator('#sessions-toggle').click();
+  const laptopPanel = laptop.getByTestId('sessions-panel');
+  await laptopPanel.getByRole('textbox', { name: 'Session name' }).fill('travels with me');
+  await laptopPanel.getByRole('button', { name: 'Save this board' }).click();
+  await expect(laptopPanel.getByTestId('saved-session')).toHaveCount(1);
+  await laptop.evaluate(() => (window.__lexical as unknown as RatingHandle).rating.set(1234));
+  await syncNow(laptop);
+
+  // Phone: after a sync the session is in its panel and the rating is the laptop's.
+  await syncNow(phone);
+  await phone.locator('#sessions-toggle').click();
+  const phonePanel = phone.getByTestId('sessions-panel');
+  await expect(phonePanel.getByTestId('saved-session')).toHaveCount(1);
+  await expect(phonePanel.getByTestId('saved-session')).toContainText('travels with me');
+  await expect.poll(() => phone.evaluate(() => (window.__lexical.stores.gameStore as unknown as { rating: number }).rating)).toBe(1234);
+
+  // Phone deletes it; the laptop's panel empties after its next sync.
+  await phonePanel.getByRole('button', { name: 'Delete travels with me' }).click();
+  await expect(phonePanel.getByTestId('saved-session')).toHaveCount(0);
+  await syncNow(phone);
+  await syncNow(laptop);
+  await expect(laptopPanel.getByTestId('saved-session')).toHaveCount(0);
+  await Promise.all(devices.map(context => context.close()));
+});
+
 test('test personas are separate accounts on one device, each with its own progress', async ({ page }) => {
   test.setTimeout(120_000); // four account switches, each a reload
   const stamp = Date.now();

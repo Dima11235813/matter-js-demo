@@ -87,6 +87,18 @@ graph TD
     D -->|Production Release| E
 ```
 
+### Status snapshot (2026-10-18)
+* **Shipped**: sync of the Guess rating and saved sessions across a persona's devices (Epic 2 · Tasks 2.12.3, 2.15.4; Epic 3 · Task 3.8.5):
+  * the rating syncs in the profile, newest wins;
+  * sessions are a new collection, with deletes syncing as tombstones;
+  * pushes and pulls are bounded by size.
+
+  Tried locally with personas against the local API.
+* **Correction**: Connect bests do not sync (the play log never does); roadmapped as 2.10.7.
+* **Environment**: this repo's `node_modules` was swept around 2026-10-16 with ~770k other non-durable files. Owner decision 2026-10-18: dependencies now live on `C:\dev-deps\matter-js-demo` behind junctions (`CLAUDE.md`).
+* **Tests**: 361 unit, 36 e2e (CI mode).
+* **Next candidates**: Connect bests sync (2.10.7); faster deals on slow phones (2.10.6); Vite upgrade (4.5.5); molecule visuals (5.15.4); resume a Connect puzzle from a session (2.15.4); owner play-tests of next-up, Connect, and sync.
+
 ### Status snapshot (2026-10-11)
 * **Owner decision**: local host only for now. Features are built and played on localhost (workspace ports 41940–41959, resource rules), users simulated with dev sign-in personas; hosting and Google sign-in resume after the owner's Firebase setup (Epic 7 · Task 7.6.3, human-todo 13).
 * **Shipped**: next-up preview (Epic 2 · Feature 2.16): a "next" pill in Discovery shows the word the next + tap drops, in 2D and 3D (letters mode already had its next-letter box). The workspace ports (Epic 7 · Task 7.7.1) are in `develop`.

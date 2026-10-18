@@ -75,3 +75,64 @@ describe('merge rules', () => {
     expect(() => mergeRecords(profile(DEVICE_A, 1, {}), analogy(DEVICE_A, 1, {}))).toThrow();
   });
 });
+
+describe('merge rules: the Guess rating and saved sessions (Tasks 2.12.3, 2.15.4)', () => {
+  const SESSION = '33333333-3333-4333-8333-333333333333';
+  const rated = (deviceId: string, at: number, rating?: { value: number; plays: number; at: number }, hintMode = true): SyncRecord => ({
+    collection: 'profile', key: 'profile', schemaVersion: 1, clientUpdatedAt: at, deviceId, payload: { hintMode, scoreByDevice: {}, ...(rating ? { rating } : {}) },
+  });
+  const session = (deviceId: string, at: number, name: string, deleted = false): SyncRecord => ({
+    collection: 'sessions', key: SESSION, schemaVersion: 1, clientUpdatedAt: at, deviceId,
+    payload: { name, savedAt: 1, schema: 1, view: 'fountain', words: deleted ? [] : [{ word: 'dog', x: 1, y: 2, color: '#aabbcc' }], analogies: [], ...(deleted ? { deleted: true } : {}) },
+  });
+  const records = [
+    rated(DEVICE_A, 100, { value: 1100, plays: 12, at: 90 }),
+    rated(DEVICE_B, 200, { value: 950, plays: 30, at: 50 }, false),
+    rated(DEVICE_A, 150),
+    // Same rating time as the first (a tie: more plays wins). Distinct device/time from the others: one device
+    // never writes two different profiles in the same millisecond, the case LWW can't order.
+    rated(DEVICE_A, 250, { value: 1000, plays: 31, at: 90 }),
+  ];
+  const sessions = [session(DEVICE_A, 100, 'pets'), session(DEVICE_B, 200, 'pets, renamed'), session(DEVICE_A, 300, 'pets', true), session(DEVICE_B, 300, 'tie')];
+
+  it('stays commutative, idempotent, and associative with ratings and sessions', () => {
+    for (const set of [records, sessions]) {
+      for (const a of set) for (const b of set) {
+        expect(sameRecord(mergeRecords(a, b), mergeRecords(b, a))).toBe(true);
+        expect(sameRecord(mergeRecords(a, a), a)).toBe(true);
+      }
+      for (const a of set) for (const b of set) for (const c of set) {
+        expect(sameRecord(mergeRecords(mergeRecords(a, b), c), mergeRecords(a, mergeRecords(b, c)))).toBe(true);
+      }
+    }
+  });
+
+  it('keeps the newest rating, even when the other device changed its settings later', () => {
+    const merged = mergeRecords(records[0], records[1]);
+    if (merged.collection !== 'profile') throw new Error('unexpected');
+    expect(merged.payload.hintMode).toBe(false); // B's settings are newer
+    expect(merged.payload.rating).toEqual({ value: 1100, plays: 12, at: 90 }); // A's rating is newer
+    // A device that never rated doesn't erase the rating.
+    const kept = mergeRecords(records[0], records[2]);
+    if (kept.collection !== 'profile') throw new Error('unexpected');
+    expect(kept.payload.rating?.value).toBe(1100);
+  });
+
+  it('keeps the newest copy of a session, and a newer delete wins over an older edit', () => {
+    const renamed = mergeRecords(sessions[0], sessions[1]);
+    if (renamed.collection !== 'sessions') throw new Error('unexpected');
+    expect(renamed.payload.name).toBe('pets, renamed');
+    const gone = mergeRecords(sessions[1], sessions[2]);
+    if (gone.collection !== 'sessions') throw new Error('unexpected');
+    expect(gone.payload.deleted).toBe(true);
+  });
+
+  it('validates sessions against the contract limits', () => {
+    expect(SyncRecord.safeParse(session(DEVICE_A, 1, 'ok')).success).toBe(true);
+    const words = Array.from({ length: 401 }, () => ({ word: 'dog', x: 1, y: 2 }));
+    const tooBig = { ...session(DEVICE_A, 1, 'big'), payload: { ...(session(DEVICE_A, 1, 'big') as { payload: object }).payload, words } };
+    expect(SyncRecord.safeParse(tooBig).success).toBe(false);
+    const badColor = { ...session(DEVICE_A, 1, 'x'), payload: { ...(session(DEVICE_A, 1, 'x') as { payload: object }).payload, words: [{ word: 'dog', x: 1, y: 2, color: 'red' }] } };
+    expect(SyncRecord.safeParse(badColor).success).toBe(false);
+  });
+});

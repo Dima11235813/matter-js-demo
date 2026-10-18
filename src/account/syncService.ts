@@ -1,4 +1,4 @@
-import { MAX_PUSH_RECORDS, type SyncRecord } from "@lexical/shared";
+import { MAX_PUSH_RECORDS, MAX_SYNC_BYTES, type SyncRecord } from "@lexical/shared";
 import { ApiClient, ApiRequestError } from "./apiClient";
 
 /** What sync needs from local storage (the repository, via the semantic engine). */
@@ -22,9 +22,31 @@ export interface SyncReport {
 export class SyncConflictError extends Error {}
 
 /**
+ * Push pages: at most MAX_PUSH_RECORDS records and about MAX_SYNC_BYTES of JSON each (saved sessions are
+ * large; the server refuses bodies over 512 KB). A single record over the byte budget goes alone.
+ */
+export function pushBatches(records: readonly SyncRecord[], maxRecords = MAX_PUSH_RECORDS, maxBytes = MAX_SYNC_BYTES): SyncRecord[][] {
+    const batches: SyncRecord[][] = [];
+    let batch: SyncRecord[] = [];
+    let bytes = 0;
+    for (const record of records) {
+        const size = JSON.stringify(record).length;
+        if (batch.length > 0 && (batch.length >= maxRecords || bytes + size > maxBytes)) {
+            batches.push(batch);
+            batch = [];
+            bytes = 0;
+        }
+        batch.push(record);
+        bytes += size;
+    }
+    if (batch.length > 0) batches.push(batch);
+    return batches;
+}
+
+/**
  * One sync pass (Epic 3 · Features 3.7, 3.8; Epic 6 · Task 6.4.1.2):
  *   1. claim the device for this account on first sync (the device secret proves it is ours);
- *   2. push every pending record, in pages; the server merges with the shared rules;
+ *   2. push every pending record, in pages (by count and size); the server merges with the shared rules;
  *   3. pull everything after the stored cursor and fold it in with the same rules;
  *   4. save the cursor.
  * A device already linked to a different account is never merged silently.
@@ -47,8 +69,7 @@ export async function syncOnce(api: ApiClient, port: SyncPort, uid: string): Pro
 
     const report: SyncReport = { pushed: 0, pulled: 0, merged: 0 };
     const pending = await port.pendingSyncRecords();
-    for (let i = 0; i < pending.length; i += MAX_PUSH_RECORDS) {
-        const batch = pending.slice(i, i + MAX_PUSH_RECORDS);
+    for (const batch of pushBatches(pending)) {
         const { results } = await api.push({ deviceId: port.deviceId, records: batch });
         for (const [j, result] of results.entries()) {
             if (result.status === "merged" && result.record) {

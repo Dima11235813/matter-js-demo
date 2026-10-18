@@ -6,6 +6,7 @@ import { syncOnce, SyncConflictError } from "../account/syncService";
 import { activeAccount, applySwitch, knownAccounts, planSwitch, touchAccount, type KnownAccount } from "../account/profiles";
 import { canHaveAccount } from "../game/privacyRules";
 import { logger } from "../utils/logger";
+import { refreshSessions } from "./sessions";
 
 /**
  * Accounts and sync use cases (Epic 3 · Feature 3.8, Epic 6 · Features 6.4, 6.7).
@@ -154,6 +155,9 @@ export function syncNow(): Promise<void> {
             menuStore.setCorpusStats(await semanticEngine.stats());
             gameStore.setHintMode(semanticEngine.hintMode);
             gameStore.setBestScore(await semanticEngine.bestGameScore());
+            // The rating and saved sessions sync too (Tasks 2.12.3, 2.15.4): show what the other devices did.
+            gameStore.setRating(semanticEngine.rating.value);
+            await refreshSessions(stores);
             accountStore.setStatus("synced", report.pulled || report.merged ? `Updated from your other devices (${report.pulled + report.merged})` : "");
         } catch (error) {
             const message = error instanceof SyncConflictError ? error.message

@@ -10,6 +10,8 @@ import type { RecordOf, SyncRecord } from "./sync";
  *   words:     add-wins; a key (word + model + dtype) is immutable, the earlier createdAt is kept
  *   analogies: playsByDevice max-merge; answer fields last-writer-wins; createdAt = the minimum
  *   games:     immutable, the first copy stays (both copies are identical)
+ *   sessions:  last-writer-wins on the whole board; a delete is a tombstone (`deleted`), so it wins when newer
+ *   rating:    (inside profile) the newer `at` wins, independently of which copy's settings win
  */
 export function mergeRecords(a: SyncRecord, b: SyncRecord): SyncRecord {
     if (a.collection !== b.collection || a.key !== b.key) {
@@ -24,6 +26,8 @@ export function mergeRecords(a: SyncRecord, b: SyncRecord): SyncRecord {
             return mergeAnalogy(a, b as RecordOf<"analogies">);
         case "games":
             return newer(a, b) === a ? a : b; // identical by construction; pick deterministically
+        case "sessions":
+            return newer(a, b as RecordOf<"sessions">);
     }
 }
 
@@ -35,11 +39,23 @@ function newer<T extends SyncRecord>(a: T, b: T): T {
 
 function mergeProfile(a: RecordOf<"profile">, b: RecordOf<"profile">): RecordOf<"profile"> {
     const winner = newer(a, b);
+    const { rating: _rating, ...settings } = winner.payload;
+    const rating = newerRating(a.payload.rating, b.payload.rating);
     return {
         ...winner,
         clientUpdatedAt: Math.max(a.clientUpdatedAt, b.clientUpdatedAt),
-        payload: { ...winner.payload, scoreByDevice: mergeCounters(a.payload.scoreByDevice, b.payload.scoreByDevice) },
+        payload: { ...settings, scoreByDevice: mergeCounters(a.payload.scoreByDevice, b.payload.scoreByDevice), ...(rating ? { rating } : {}) },
     };
+}
+
+type Rating = NonNullable<RecordOf<"profile">["payload"]["rating"]>;
+
+/** The later rating (ties: more plays, then the higher value), so every device settles on the same one. */
+function newerRating(a: Rating | undefined, b: Rating | undefined): Rating | undefined {
+    if (!a || !b) return a ?? b;
+    if (a.at !== b.at) return a.at > b.at ? a : b;
+    if (a.plays !== b.plays) return a.plays > b.plays ? a : b;
+    return a.value >= b.value ? a : b;
 }
 
 function mergeWord(a: RecordOf<"words">, b: RecordOf<"words">): RecordOf<"words"> {
