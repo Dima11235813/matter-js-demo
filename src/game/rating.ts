@@ -31,6 +31,9 @@ export const CATEGORY_DIFFICULTY: Readonly<Record<string, number>> = {
     "worker-tool": 950,
     "animal-young": 1000, // kitten is easy, foal / fawn / joey are not
     "thing-material": 1000,
+    "thing-action": 850,
+    "vehicle-way": 900,
+    "season-weather": 900,
 };
 
 export const RATING_RULES = {

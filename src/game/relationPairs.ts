@@ -74,6 +74,9 @@ export function categoryLabel(category: string): string {
         "thing-material": "made of",
         hypernym: "kinds of things",
         synonym: "synonyms",
+        "thing-action": "what it does",
+        "vehicle-way": "where it travels",
+        "season-weather": "season → weather",
     };
     return labels[category] ?? category.replace(/^gram\d+-/, "").replace(/-/g, " ");
 }

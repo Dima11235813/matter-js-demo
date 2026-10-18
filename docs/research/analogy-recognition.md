@@ -138,6 +138,13 @@ Top-1 accuracy per category:
 * **Overlap disclosed:** 8 of the 18 bank answers come from pairs this work added (dog → puppy, finger → hand, …). For those, a right answer is by construction. The fair claim is that the bank answers exactly what it knows, and is honest about what it doesn't.
 * **Still wrong, labelled "the model's guess":** day : night :: sun (solar), pen : write :: knife (knives), bird : fly :: fish (flew), eye : see :: ear (hearing), car : road :: train (railway), winter : snow :: summer (spring). These relations (function, habitat, perception) are candidates for the bank.
 
+**Second round of bank additions (2026-10-18, Task 2.17.7).** Added for the analogies still wrong above:
+* in antonym: day → night, summer → winter, sun → moon, plus black → white, north → south, east → west;
+* three new categories: "what it does" (thing-action, 14 pairs: pen → write, bird → fly, eye → see …), "where it travels" (vehicle-way, 9 pairs: car → road, train → track …), and "season → weather" (3 pairs);
+* in colors: apple → red.
+
+The known-good set goes **21 → 29 of 30**. This is **by construction**: the pairs were chosen from the failures. The real gain is coverage of relations players use, and the research benchmark (§3) is left frozen, so it stays comparable. Still "wrong": chef : kitchen :: pilot answers *airport* from the bank's pilot → airport (the set expects cockpit; both are defensible, owner review).
+
 ## 8. Guess accepts any bank analogy on the board (Task 2.17.4, 2026-10-18)
 
 **Question.** If a Guess pick scores whenever its four words are two bank pairs of one relation on the board (not only two pairs dealt together), can a player without knowledge gain?
@@ -151,14 +158,14 @@ Top-1 accuracy per category:
 | Strategy | Fresh: dealt only | Fresh: board bank | +8 carried: dealt only | +8 carried: board bank |
 |---|---|---|---|---|
 | skilled (a dealt analogy) | 100 | 100 | 100 | 100 |
-| bank expert (any bank analogy on the board) | 99.4 | **100** | 99.8 | **100** |
-| random four words | 0.9 | 0.9 | 0.1 | 0.1 |
-| vector player (3CosAdd picks the fourth) | 5.1 | 5.1 | 0.7 | 0.7 |
-| the two most similar word pairs | 41.7 | 42.3 | 38.4 | 38.5 |
+| bank expert (any bank analogy on the board) | 99.3 | **100** | 99.7 | **100** |
+| random four words | 0.8 | 0.8 | 0.0 | 0.0 |
+| vector player (3CosAdd picks the fourth) | 5.0 | 5.0 | 0.6 | 0.6 |
+| the two most similar word pairs | 37.3 | 37.6 | 36.4 | 36.5 |
 
-* **No knowledge-free strategy gains**: random and the vector player are unchanged, and the most-similar heuristic gains at most +0.6.
-* **What it buys:** 16% of fresh boards (12% with carried words) hold real analogies the old rule refused, 1.7 extra on average where there are any.
-* **Already true before this change, and not changed by it:** the two most similar word pairs on a board form a real analogy 35% of the time, because dealt pairs are related by design. The simulation repeats that one guess 20 times per board, but the game scores a repeated guess 0 within a round, so in play it is worth one guess per board state. Finding strongly related pairs is also part of the skill. Watch it in real play logs (Epic 2 · Task 2.17.6).
+* **No knowledge-free strategy gains**: random and the vector player are unchanged, and the most-similar heuristic gains at most +0.3. These are the numbers on the 466-pair bank, after the additions below; the first run on the 450-pair bank gave the same picture (most-similar +0.6 at most).
+* **What it buys:** 14% of fresh boards (8% with carried words) hold real analogies the old rule refused, 1.6 extra on average where there are any.
+* **Already true before this change, and not changed by it:** the two most similar word pairs on a board form a real analogy about a third of the time, because dealt pairs are related by design. The simulation repeats that one guess 20 times per board, but the game scores a repeated guess 0 within a round, so in play it is worth one guess per board state. Finding strongly related pairs is also part of the skill. Watch it in real play logs (Epic 2 · Task 2.17.6).
 
 **Decision.** Shipped. `recordRoundGuess` grades against `pairsOnBoard(bank, board words, dealt pairs)`, and the wrong-guess line reads "not a known analogy on this board".
 

@@ -1,20 +1,20 @@
 {
   "questions": 30,
   "before": 16,
-  "after": 21,
+  "after": 29,
   "bySource": {
     "bank": {
-      "questions": 19,
-      "beforeRight": 12,
-      "afterRight": 18
+      "questions": 27,
+      "beforeRight": 13,
+      "afterRight": 26
     },
     "relation": {
-      "questions": 3,
-      "beforeRight": 2,
+      "questions": 1,
+      "beforeRight": 1,
       "afterRight": 1
     },
     "model": {
-      "questions": 8,
+      "questions": 2,
       "beforeRight": 2,
       "afterRight": 2
     }
@@ -51,14 +51,14 @@
       "afterRight": true
     },
     {
-      "question": "hot:cold::summer",
-      "expected": "winter",
-      "before": "winter",
-      "after": "spring",
-      "source": "relation",
+      "question": "day:night::sun",
+      "expected": "moon",
+      "before": "solar",
+      "after": "moon",
+      "source": "bank",
       "category": "antonym",
-      "beforeRight": true,
-      "afterRight": false
+      "beforeRight": false,
+      "afterRight": true
     },
     {
       "question": "cow:calf::sheep",
@@ -101,14 +101,64 @@
       "afterRight": false
     },
     {
+      "question": "pen:write::knife",
+      "expected": "cut",
+      "before": "knives",
+      "after": "cut",
+      "source": "bank",
+      "category": "thing-action",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "bird:fly::fish",
+      "expected": "swim",
+      "before": "flew",
+      "after": "swim",
+      "source": "bank",
+      "category": "thing-action",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "eye:see::ear",
+      "expected": "hear",
+      "before": "hearing",
+      "after": "hear",
+      "source": "bank",
+      "category": "thing-action",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
       "question": "banana:yellow::apple",
       "expected": "red",
       "before": "colored",
-      "after": "mac",
-      "source": "relation",
+      "after": "red",
+      "source": "bank",
       "category": "thing-color",
       "beforeRight": false,
-      "afterRight": false
+      "afterRight": true
+    },
+    {
+      "question": "car:road::train",
+      "expected": "track",
+      "before": "railway",
+      "after": "track",
+      "source": "bank",
+      "category": "vehicle-way",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "winter:snow::summer",
+      "expected": "sun",
+      "before": "spring",
+      "after": "sun",
+      "source": "bank",
+      "category": "season-weather",
+      "beforeRight": false,
+      "afterRight": true
     }
   ],
   "rows": [
@@ -246,20 +296,21 @@
       "question": "hot:cold::summer",
       "expected": "winter",
       "before": "winter",
-      "after": "spring",
-      "source": "relation",
+      "after": "winter",
+      "source": "bank",
       "category": "antonym",
       "beforeRight": true,
-      "afterRight": false
+      "afterRight": true
     },
     {
       "question": "day:night::sun",
       "expected": "moon",
       "before": "solar",
-      "after": "solar",
-      "source": "model",
+      "after": "moon",
+      "source": "bank",
+      "category": "antonym",
       "beforeRight": false,
-      "afterRight": false
+      "afterRight": true
     },
     {
       "question": "dog:puppy::cat",
@@ -325,38 +376,41 @@
       "question": "pen:write::knife",
       "expected": "cut",
       "before": "knives",
-      "after": "knives",
-      "source": "model",
+      "after": "cut",
+      "source": "bank",
+      "category": "thing-action",
       "beforeRight": false,
-      "afterRight": false
+      "afterRight": true
     },
     {
       "question": "bird:fly::fish",
       "expected": "swim",
       "before": "flew",
-      "after": "flew",
-      "source": "model",
+      "after": "swim",
+      "source": "bank",
+      "category": "thing-action",
       "beforeRight": false,
-      "afterRight": false
+      "afterRight": true
     },
     {
       "question": "eye:see::ear",
       "expected": "hear",
       "before": "hearing",
-      "after": "hearing",
-      "source": "model",
+      "after": "hear",
+      "source": "bank",
+      "category": "thing-action",
       "beforeRight": false,
-      "afterRight": false
+      "afterRight": true
     },
     {
       "question": "banana:yellow::apple",
       "expected": "red",
       "before": "colored",
-      "after": "mac",
-      "source": "relation",
+      "after": "red",
+      "source": "bank",
       "category": "thing-color",
       "beforeRight": false,
-      "afterRight": false
+      "afterRight": true
     },
     {
       "question": "water:drink::food",
@@ -390,19 +444,21 @@
       "question": "car:road::train",
       "expected": "track",
       "before": "railway",
-      "after": "railway",
-      "source": "model",
+      "after": "track",
+      "source": "bank",
+      "category": "vehicle-way",
       "beforeRight": false,
-      "afterRight": false
+      "afterRight": true
     },
     {
       "question": "winter:snow::summer",
       "expected": "sun",
       "before": "spring",
-      "after": "spring",
-      "source": "model",
+      "after": "sun",
+      "source": "bank",
+      "category": "season-weather",
       "beforeRight": false,
-      "afterRight": false
+      "afterRight": true
     }
   ]
 }

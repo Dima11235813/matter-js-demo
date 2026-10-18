@@ -6,6 +6,8 @@
 # https://github.com/tmikolov/word2vec, Mikolov et al. 2013, Apache License 2.0), pairs with both words in the vocabulary.
 # Everyday categories (antonym to synonym, 2026-10-18): written for this project, the relations players make analogies
 # with that the Google set leaves out (docs/research/experiments/data/lexical-analogy-pairs.txt, in-vocabulary pairs).
+# Added 2026-10-18 after the known-good set (analogy-scoring.md): day/night, summer/winter, sun/moon (and three
+# compass/colour opposites) in antonym, and the categories thing-action, vehicle-way, season-weather.
 # Format: ": category" headers, then "x y" pairs sharing that category's relation.
 : capital-common-countries
 athens greece
@@ -339,6 +341,12 @@ strong weak
 loud quiet
 clean dirty
 full empty
+day night
+summer winter
+sun moon
+black white
+north south
+east west
 : animal-young
 dog puppy
 cat kitten
@@ -416,6 +424,7 @@ banana yellow
 lemon yellow
 chocolate brown
 cherry red
+apple red
 ivory white
 ocean blue
 : thing-material
@@ -460,3 +469,32 @@ angry mad
 rich wealthy
 easy simple
 hard difficult
+: thing-action
+pen write
+knife cut
+bird fly
+fish swim
+eye see
+ear hear
+nose smell
+tongue taste
+oven bake
+broom sweep
+car drive
+boat sail
+phone call
+brain think
+: vehicle-way
+car road
+train track
+ship sea
+plane sky
+boat river
+subway tunnel
+bicycle path
+rocket space
+submarine ocean
+: season-weather
+winter snow
+summer sun
+spring rain

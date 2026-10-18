@@ -283,5 +283,14 @@ Turn the physics prototype into an engaging, addictive educational game. Players
   * **Simulated first** ([research §8](../docs/research/analogy-recognition.md), 400 real deals, fresh and with 8 carried words): no knowledge-free strategy gains (random 0.9 → 0.9 points per guess, vector player 5.1 → 5.1, most-similar pairs 41.7 → 42.3). 16% of fresh boards hold real analogies that the old rule refused.
   * The wrong-guess line now reads "not a known analogy on this board".
   * **Tests:** unit `pairsOnBoard` (undealt pairs accepted, no duplicates, wrong pairings still 0); e2e: two bank pairs of a relation that wasn't dealt are placed on the board and clicked, and score +100.
+* [x] **Task 2.17.7** (2026-10-18): bank additions for the known-good analogies still answered wrong:
+  * antonyms (day → night, summer → winter, sun → moon, black → white, north → south, east → west);
+  * new "what it does" (14 pairs), "where it travels" (9), and "season → weather" (3) relations;
+  * apple → red in colors.
+
+  The bank now has 23 relations and 466 pairs. Known-good set **21 → 29 of 30**, by construction (pairs chosen from the failures; the research benchmark stays frozen).
+  * The Guess acceptance simulation, re-run on the grown bank, still shows no knowledge-free gain (most-similar +0.3 at most).
+  * The e2e "model's guess" example moved to piano → music :: paint (pen → write and apple → red are now known).
+  * ⬜ Owner: pilot → airport or cockpit?
 * [ ] **Task 2.17.6** (roadmap, from the §8 simulation): "pick the two most similar word pairs" is a real analogy 35% of the time on a board, because dealt pairs are related by design (worth one guess per board state, since repeats score 0). Check real play logs before changing anything: does it show up, and does it feel like skill or like a trick?
 * [ ] **Task 2.17.5** (roadmap): measure on BATS (40 relations; CC BY-NC 4.0, so downloaded at experiment time and never committed).

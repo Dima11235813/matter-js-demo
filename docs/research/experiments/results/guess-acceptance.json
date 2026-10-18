@@ -1,12 +1,12 @@
 {
   "boards": 400,
   "guessesPerStrategy": 20,
-  "bankPairs": 433,
+  "bankPairs": 466,
   "results": {
     "carried0": {
       "boards": 400,
-      "boardsWithExtraAnalogies": 0.163,
-      "meanExtraQuads": 1.7,
+      "boardsWithExtraAnalogies": 0.138,
+      "meanExtraQuads": 1.6,
       "byRule": {
         "dealtOnly": {
           "skilled": {
@@ -14,20 +14,20 @@
             "correct": 1
           },
           "bankExpert": {
-            "meanPoints": 99.4,
-            "correct": 0.994
+            "meanPoints": 99.3,
+            "correct": 0.993
           },
           "random": {
-            "meanPoints": 0.9,
+            "meanPoints": 0.8,
             "correct": 0.006
           },
           "mostSimilar": {
-            "meanPoints": 41.7,
-            "correct": 0.357
+            "meanPoints": 37.3,
+            "correct": 0.325
           },
           "vectorPlayer": {
-            "meanPoints": 5.1,
-            "correct": 0.043
+            "meanPoints": 5,
+            "correct": 0.042
           }
         },
         "boardBank": {
@@ -40,24 +40,24 @@
             "correct": 1
           },
           "random": {
-            "meanPoints": 0.9,
-            "correct": 0.007
+            "meanPoints": 0.8,
+            "correct": 0.006
           },
           "mostSimilar": {
-            "meanPoints": 42.3,
-            "correct": 0.362
+            "meanPoints": 37.6,
+            "correct": 0.328
           },
           "vectorPlayer": {
-            "meanPoints": 5.1,
-            "correct": 0.043
+            "meanPoints": 5,
+            "correct": 0.042
           }
         }
       }
     },
     "carried8": {
       "boards": 400,
-      "boardsWithExtraAnalogies": 0.12,
-      "meanExtraQuads": 1.1,
+      "boardsWithExtraAnalogies": 0.075,
+      "meanExtraQuads": 0.6,
       "byRule": {
         "dealtOnly": {
           "skilled": {
@@ -65,20 +65,20 @@
             "correct": 1
           },
           "bankExpert": {
-            "meanPoints": 99.8,
-            "correct": 0.998
+            "meanPoints": 99.7,
+            "correct": 0.997
           },
           "random": {
-            "meanPoints": 0.1,
-            "correct": 0.001
+            "meanPoints": 0,
+            "correct": 0
           },
           "mostSimilar": {
-            "meanPoints": 38.4,
-            "correct": 0.335
+            "meanPoints": 36.4,
+            "correct": 0.32
           },
           "vectorPlayer": {
-            "meanPoints": 0.7,
-            "correct": 0.006
+            "meanPoints": 0.6,
+            "correct": 0.004
           }
         },
         "boardBank": {
@@ -91,16 +91,16 @@
             "correct": 1
           },
           "random": {
-            "meanPoints": 0.1,
-            "correct": 0.001
+            "meanPoints": 0,
+            "correct": 0
           },
           "mostSimilar": {
-            "meanPoints": 38.5,
-            "correct": 0.335
+            "meanPoints": 36.5,
+            "correct": 0.32
           },
           "vectorPlayer": {
-            "meanPoints": 0.7,
-            "correct": 0.006
+            "meanPoints": 0.6,
+            "correct": 0.004
           }
         }
       }

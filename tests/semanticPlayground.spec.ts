@@ -884,8 +884,9 @@ test('Discovery answers everyday analogies from the relation bank and labels a v
   // cow → calf with sheep: lamb (the vectors alone answered "calves").
   await play('calf - cow + sheep');
   await expect(page.getByTestId('last-play')).toContainText('lamb');
-  // A relation the bank doesn't know: the answer is labelled as the model's guess.
-  await play('write - pen + knife');
+  // A relation the bank doesn't know: the model's guess. piano → music and piano → paint are no bank pairs; if a
+  // bank change adds one, pick another example (apple → red and pen → write were used before and joined the bank).
+  await play('music - piano + paint');
   await expect(page.getByTestId('answer-source')).toHaveText("the model's guess · ");
   await expect.poll(() => boardWords(page)).toEqual(expect.arrayContaining(['kitten', 'lamb']));
 });

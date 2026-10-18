@@ -42,7 +42,7 @@ describe('relation bank', () => {
 
   it('ships a bank whose words are all in the vocabulary', () => {
     const shipped = parseRelationBank(fs.readFileSync(path.resolve(__dirname, '../data/vocab/relation-pairs.txt'), 'utf8'));
-    expect(shipped.size).toBe(20); // 10 Google categories + 10 everyday relations (Feature 2.17)
+    expect(shipped.size).toBe(23); // 10 Google categories + 13 everyday relations (Feature 2.17)
     const pairs = [...shipped.values()].flat();
     expect(pairs.length).toBeGreaterThan(400);
     // Every category has a difficulty prior (or Guess would deal it at the default 1000).
