@@ -95,9 +95,10 @@ graph TD
 
   Tried locally with personas against the local API.
 * **Correction**: Connect bests do not sync (the play log never does); roadmapped as 2.10.7.
+* **Shipped (low-resource phones)**: Connect puzzles are made in a Web Worker, the next one ahead of time (Epic 2 · Task 2.10.6). At 4× CPU throttle, "Next puzzle" deals in 12–56 ms (was 174–987 ms), and the board no longer freezes (longest frame gap 50 ms, was 1,017 ms).
 * **Environment**: this repo's `node_modules` was swept around 2026-10-16 with ~770k other non-durable files. Owner decision 2026-10-18: dependencies now live on `C:\dev-deps\matter-js-demo` behind junctions (`CLAUDE.md`).
 * **Tests**: 361 unit, 36 e2e (CI mode).
-* **Next candidates**: Connect bests sync (2.10.7); faster deals on slow phones (2.10.6); Vite upgrade (4.5.5); molecule visuals (5.15.4); resume a Connect puzzle from a session (2.15.4); owner play-tests of next-up, Connect, and sync.
+* **Next candidates**: Connect bests sync (2.10.7); other main-thread work on slow phones (measure first: the 3D view, 2D physics at 40 words, vocabulary load); Vite upgrade (4.5.5); molecule visuals (5.15.4); resume a Connect puzzle from a session (2.15.4); owner play-tests of next-up, Connect, and sync.
 
 ### Status snapshot (2026-10-11)
 * **Owner decision**: local host only for now. Features are built and played on localhost (workspace ports 41940–41959, resource rules), users simulated with dev sign-in personas; hosting and Google sign-in resume after the owner's Firebase setup (Epic 7 · Task 7.6.3, human-todo 13).

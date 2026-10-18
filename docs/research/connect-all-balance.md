@@ -119,5 +119,5 @@ The owner's idea is a board of loose words where you add words until every word 
 
 **Limitations.**
 * **Beam isn't optimal either:** width 4, branch 4. A wider beam was not tried.
-* **Slow on phones:** on a slow phone, dealing a hard puzzle can stall the page for about a second. Roadmap: compute the next puzzle ahead of time, in idle time or a worker (Epic 2 · Task 2.10.6).
+* **Slow on phones:** on a slow phone, dealing a hard puzzle can stall the page for about a second. Roadmap: compute the next puzzle ahead of time, in idle time or a worker (Epic 2 · Task 2.10.6). *Resolved 2026-10-18: puzzles are made in a Web Worker, the next one ahead of time. At 4× throttle, deals take 12–56 ms (was 174–987 ms), with no main-thread task over 50 ms (was up to 1,015 ms).*
 * **The exit criterion "no strategy beats the others by more than 20%"** was written for strategies that compete. Here the cheap ones lose badly (hub 1%, random 0%), which is the balance the plan wanted.

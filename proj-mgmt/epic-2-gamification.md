@@ -157,7 +157,21 @@ Turn the physics prototype into an engaging, addictive educational game. Players
 
   Original plan: Puzzle mode UI: HUD ratio, loose-word highlighting (2D and 3D), move counter vs par, win state, next puzzle; results persisted like timed games.
 * [ ] **Task 2.10.7** (roadmap, 2026-10-18): sync Connect-All bests across devices. They come from the play log, which never syncs. Either a small synced `puzzles` collection (one record per board key, the fewest moves wins on merge, commutative), or fold bests into the profile like the rating. Exit: a best set on one device shows as "best N" on the other after a sync.
-* [ ] **Task 2.10.6** (roadmap, from the 2026-10-11 deal-time measurement): deal without a stall on slow phones. Dealing a hard puzzle took up to 1.1 s at 4× CPU throttle. Compute the next puzzle ahead of time (idle time after a deal, or a worker with the candidate vectors). Exit: "Next puzzle" deals in under 100 ms at 4× throttle.
+* [x] **Task 2.10.6** (2026-10-18, owner: "important for this app to work well on low resource mobile devices"): deal without a stall on slow phones.
+  * **Worker:** puzzles are made in a Web Worker (`src/workers/connectPuzzle.worker.ts`, 5.65 KB). Its logic is in `src/game/connectDealer.ts`: `createDealerHandler`, a unit-tested message handler.
+  * **Prefetch:** `PuzzleDealer` keeps the next puzzle made ahead (at most 3 held), and doesn't cache failures.
+  * **Data transfer:** the candidate vocabulary goes to the worker once, as one transferred block (`packCandidates`, about 12 MB of vectors). Without Worker support, or if the worker fails, dealing runs in-thread after yielding.
+  * **Async deals:** `startPuzzle` is now asynchronous and applies a deal only if the player is still in Connect mode and it is the latest one asked for.
+  * **Measured** at 4× CPU throttle, 12 deals each, "Next puzzle" until dealt:
+
+    | | Deal time | Longest main-thread task | Longest frame gap |
+    |---|---|---|---|
+    | Before (`f18b2f8`) | 174–987 ms | 186–1,015 ms | 183–1,017 ms (board frozen up to 1 s) |
+    | After | **12–56 ms** | **none ≥ 50 ms** | **17–50 ms** |
+
+    Exit (under 100 ms) met.
+  * **Tests:** unit `tests/connectDealer.test.ts` (prefetch, retry after failure, eviction, packing round trip, the worker handler deals exactly the main thread's puzzle, the fallback yields); the Connect e2e tests run through the worker.
+  * **Cost:** the worker holds its own copy of the candidate vectors (~12 MB) while Connect is open.
 * **Exit criteria**: every generated puzzle is solvable within par by the solver; in the harness no strategy beats the others by more than 20% on moves-over-par across 200 puzzles; three difficulty bands with ≥ 50 puzzles each; play-test: the user finds a puzzle fun, not just solvable.
 
 ### Feature 2.11: Relation Scoring for the Timed Game (designed questions shipped 2026-09-25)

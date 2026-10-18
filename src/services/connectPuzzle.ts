@@ -1,14 +1,17 @@
 import deps from "../matterJsComp/Deps";
 import { RootStore } from "../stores/RootStore";
-import { connectionStats, isLegalMove } from "../game/connectAll";
-import { makePuzzle } from "../game/connectPuzzles";
+import { ConnectNode, ConnectRules, connectionStats, isLegalMove } from "../game/connectAll";
+import type { Puzzle } from "../game/connectPuzzles";
+import { DealerReply, DealerRequest, inThreadBackend, packCandidates, PuzzleBackend, PuzzleDealer } from "../game/connectDealer";
 import { PuzzlePlayPayload, puzzleMoveCount } from "../game/puzzleResults";
 import { semanticEngine } from "./semanticEngine";
+import { logger } from "../utils/logger";
 
 /**
  * Connect-All puzzle mode (Epic 2 · Task 2.10.5): deals a seeded puzzle, records each typed word as a
  * move, and keeps the HUD's counts current. Rules and par come from the balance research
- * (docs/research/connect-all-balance.md): p99 link, degree ≥ 2, greedy-solver par.
+ * (docs/research/connect-all-balance.md): p99 link, degree ≥ 2, beam-search par. Puzzles are made in a
+ * worker, the next one ahead of time (Task 2.10.6).
  */
 const SEED_KEY = "lexical-fountain.puzzleSeed";
 
@@ -28,10 +31,83 @@ function saveSeed(seed: number): void {
     }
 }
 
-/** Deals puzzle `seed` (default: where the player left off) onto a fresh board. */
-export function startPuzzle(stores: RootStore, seed: number = savedSeed()): void {
+let puzzleDealer: PuzzleDealer | undefined;
+/** Deals counted so far: a deal applies only if no newer one was asked for meanwhile. */
+let dealsAsked = 0;
+
+/**
+ * The dealer (Task 2.10.6): puzzles are made in a Web Worker and the next one ahead of time, so dealing never
+ * stalls the board on a slow phone. Without Worker support (or if it fails to start) it runs in-thread.
+ */
+function dealer(): PuzzleDealer {
+    if (!puzzleDealer) {
+        const candidates = semanticEngine.connectCandidates();
+        const rules = semanticEngine.connectRules();
+        puzzleDealer = new PuzzleDealer(workerBackend(candidates, rules) ?? inThreadBackend(candidates, rules));
+    }
+    return puzzleDealer;
+}
+
+function workerBackend(candidates: ConnectNode[], rules: ConnectRules): PuzzleBackend | undefined {
+    if (typeof Worker === "undefined") return undefined;
+    let worker: Worker;
+    try {
+        worker = new Worker(new URL("../workers/connectPuzzle.worker.ts", import.meta.url), { type: "module" });
+    } catch (error) {
+        logger.warn("Puzzle worker unavailable; dealing in-thread", error);
+        return undefined;
+    }
+    const pending = new Map<number, { resolve(p: Puzzle): void; reject(e: Error): void }>();
+    let nextId = 1;
+    let fallback: PuzzleBackend | undefined;
+    worker.onmessage = (event: MessageEvent<DealerReply>) => {
+        const reply = event.data;
+        const waiting = pending.get(reply.id);
+        pending.delete(reply.id);
+        if (reply.type === "puzzle") waiting?.resolve(reply.puzzle);
+        else waiting?.reject(new Error(reply.message));
+    };
+    worker.onerror = event => {
+        // The worker failed to load or crashed: finish what was asked in-thread, and keep going that way.
+        logger.warn("Puzzle worker failed; dealing in-thread", event.message);
+        fallback = inThreadBackend(candidates, rules);
+        const waiting = [...pending.entries()];
+        pending.clear();
+        waiting.forEach(([, w]) => w.reject(new Error("Puzzle worker failed")));
+        worker.terminate();
+    };
+    const packed = packCandidates(candidates);
+    const init: DealerRequest = { type: "init", candidates: packed, rules };
+    worker.postMessage(init, [packed.vectors.buffer, packed.ranks.buffer]);
+    return {
+        make: seed => {
+            if (fallback) return fallback.make(seed);
+            const id = nextId++;
+            return new Promise<Puzzle>((resolve, reject) => {
+                pending.set(id, { resolve, reject });
+                const request: DealerRequest = { type: "make", id, seed };
+                worker.postMessage(request);
+            }).catch(error => (fallback ? fallback.make(seed) : Promise.reject(error)));
+        },
+    };
+}
+
+/**
+ * Deals puzzle `seed` (default: where the player left off) onto a fresh board. Asynchronous: the puzzle comes
+ * from the worker (usually already made). Applied only if the player is still in Connect mode and this is the
+ * latest deal asked for.
+ */
+export async function startPuzzle(stores: RootStore, seed: number = savedSeed()): Promise<void> {
     if (!semanticEngine.isReady) return;
-    const puzzle = makePuzzle(seed, semanticEngine.connectCandidates(), semanticEngine.connectRules());
+    const deal = ++dealsAsked;
+    let puzzle: Puzzle;
+    try {
+        puzzle = await dealer().deal(seed);
+    } catch (error) {
+        logger.warn("Could not deal a puzzle", error);
+        return;
+    }
+    if (deal !== dealsAsked || stores.menuStore.view !== "puzzle") return;
     saveSeed(puzzle.seed);
     stores.gameStore.setPuzzle({ ...puzzle, moves: [] });
     deps.activeWorld?.clearWordBoxes();
@@ -53,13 +129,16 @@ async function loadPuzzleBest(stores: RootStore, lastWasBest = false): Promise<v
 /** The next puzzle number (after a win or a skip). */
 export function nextPuzzle(stores: RootStore): void {
     const current = stores.gameStore.puzzle;
-    startPuzzle(stores, (current?.seed ?? savedSeed()) + 1);
+    void startPuzzle(stores, (current?.seed ?? savedSeed()) + 1);
 }
 
 /** Respawns the current puzzle's board (a world started in Connect mode without a hand-off). */
 export function resumePuzzle(stores: RootStore): void {
     const { puzzle } = stores.gameStore;
-    if (!puzzle) return startPuzzle(stores);
+    if (!puzzle) {
+        void startPuzzle(stores);
+        return;
+    }
     [...puzzle.words, ...puzzle.moves].forEach(word => deps.pendingWordSpawns.push({ word }));
     refreshPuzzleStats(stores);
 }
