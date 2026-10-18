@@ -1,0 +1,258 @@
+{
+  "perCategory": 150,
+  "samples": 300,
+  "vocabulary": 20001,
+  "datasets": [
+    {
+      "name": "google",
+      "categories": 13,
+      "pairs": 349,
+      "questions": 1750,
+      "hardQuestions": 997,
+      "summary": {
+        "nearestC": {
+          "top1": 0.43,
+          "top5": 0.779,
+          "hardTop1": 0
+        },
+        "add": {
+          "top1": 0.662,
+          "top5": 0.866,
+          "hardTop1": 0.437
+        },
+        "mul": {
+          "top1": 0.67,
+          "top5": 0.858,
+          "hardTop1": 0.485
+        },
+        "avg": {
+          "top1": 0.729,
+          "top5": 0.892,
+          "hardTop1": 0.524
+        }
+      },
+      "byCategory": {
+        "capital-common-countries": {
+          "questions": 150,
+          "nearestC": 0.57,
+          "add": 0.85,
+          "mul": 0.83,
+          "avg": 0.89
+        },
+        "capital-world": {
+          "questions": 150,
+          "nearestC": 0.75,
+          "add": 0.92,
+          "mul": 0.88,
+          "avg": 0.96
+        },
+        "currency": {
+          "questions": 88,
+          "nearestC": 0,
+          "add": 0.17,
+          "mul": 0.18,
+          "avg": 0.27
+        },
+        "city-in-state": {
+          "questions": 150,
+          "nearestC": 0.7,
+          "add": 0.76,
+          "mul": 0.69,
+          "avg": 0.86
+        },
+        "family": {
+          "questions": 150,
+          "nearestC": 0.13,
+          "add": 0.69,
+          "mul": 0.69,
+          "avg": 0.92
+        },
+        "gram1-adjective-to-adverb": {
+          "questions": 150,
+          "nearestC": 0.2,
+          "add": 0.25,
+          "mul": 0.32,
+          "avg": 0.36
+        },
+        "gram2-opposite": {
+          "questions": 150,
+          "nearestC": 0.33,
+          "add": 0.43,
+          "mul": 0.41,
+          "avg": 0.4
+        },
+        "gram3-comparative": {
+          "questions": 150,
+          "nearestC": 0.47,
+          "add": 0.7,
+          "mul": 0.75,
+          "avg": 0.69
+        },
+        "gram4-superlative": {
+          "questions": 150,
+          "nearestC": 0.21,
+          "add": 0.63,
+          "mul": 0.71,
+          "avg": 0.63
+        },
+        "gram5-present-participle": {
+          "questions": 150,
+          "nearestC": 0.73,
+          "add": 0.8,
+          "mul": 0.81,
+          "avg": 0.83
+        },
+        "gram6-nationality-adjective": {
+          "questions": 150,
+          "nearestC": 0.45,
+          "add": 0.95,
+          "mul": 0.95,
+          "avg": 0.98
+        },
+        "gram7-past-tense": {
+          "questions": 150,
+          "nearestC": 0.45,
+          "add": 0.57,
+          "mul": 0.6,
+          "avg": 0.75
+        },
+        "gram8-plural": {
+          "questions": 12,
+          "nearestC": 0.25,
+          "add": 0.83,
+          "mul": 0.83,
+          "avg": 0.92
+        }
+      },
+      "recognition": {
+        "offsetCos": {
+          "vsCrossRelation": 0.926,
+          "vsReversedPair": 0.998,
+          "vsRandomWords": 0.947,
+          "recallAt5pctFalse": 0.51
+        },
+        "proposes": {
+          "vsCrossRelation": 0.684,
+          "vsReversedPair": 0.834,
+          "vsRandomWords": 0.992,
+          "recallAt5pctFalse": 0
+        }
+      }
+    },
+    {
+      "name": "lexical",
+      "categories": 10,
+      "pairs": 126,
+      "questions": 1340,
+      "hardQuestions": 1187,
+      "summary": {
+        "nearestC": {
+          "top1": 0.114,
+          "top5": 0.383,
+          "hardTop1": 0
+        },
+        "add": {
+          "top1": 0.149,
+          "top5": 0.394,
+          "hardTop1": 0.083
+        },
+        "mul": {
+          "top1": 0.132,
+          "top5": 0.381,
+          "hardTop1": 0.082
+        },
+        "avg": {
+          "top1": 0.181,
+          "top5": 0.487,
+          "hardTop1": 0.088
+        }
+      },
+      "byCategory": {
+        "antonym": {
+          "questions": 150,
+          "nearestC": 0.08,
+          "add": 0.14,
+          "mul": 0.13,
+          "avg": 0.15
+        },
+        "animal-young": {
+          "questions": 132,
+          "nearestC": 0.16,
+          "add": 0.18,
+          "mul": 0.11,
+          "avg": 0.23
+        },
+        "part-whole": {
+          "questions": 150,
+          "nearestC": 0.23,
+          "add": 0.17,
+          "mul": 0.13,
+          "avg": 0.28
+        },
+        "worker-tool": {
+          "questions": 132,
+          "nearestC": 0,
+          "add": 0.05,
+          "mul": 0.05,
+          "avg": 0
+        },
+        "worker-place": {
+          "questions": 150,
+          "nearestC": 0.15,
+          "add": 0.3,
+          "mul": 0.27,
+          "avg": 0.29
+        },
+        "animal-sound": {
+          "questions": 110,
+          "nearestC": 0,
+          "add": 0.01,
+          "mul": 0.01,
+          "avg": 0
+        },
+        "thing-color": {
+          "questions": 102,
+          "nearestC": 0,
+          "add": 0.04,
+          "mul": 0.02,
+          "avg": 0.09
+        },
+        "thing-material": {
+          "questions": 132,
+          "nearestC": 0,
+          "add": 0.08,
+          "mul": 0.07,
+          "avg": 0.17
+        },
+        "hypernym": {
+          "questions": 150,
+          "nearestC": 0.21,
+          "add": 0.21,
+          "mul": 0.24,
+          "avg": 0.27
+        },
+        "synonym": {
+          "questions": 132,
+          "nearestC": 0.25,
+          "add": 0.24,
+          "mul": 0.21,
+          "avg": 0.25
+        }
+      },
+      "recognition": {
+        "offsetCos": {
+          "vsCrossRelation": 0.723,
+          "vsReversedPair": 0.896,
+          "vsRandomWords": 0.715,
+          "recallAt5pctFalse": 0.35
+        },
+        "proposes": {
+          "vsCrossRelation": 0.601,
+          "vsReversedPair": 0.71,
+          "vsRandomWords": 0.972,
+          "recallAt5pctFalse": 0
+        }
+      }
+    }
+  ]
+}
