@@ -5,6 +5,7 @@ import {
   categoryLabel, dealRelationPairs, designedAnswer, DESIGNED_POINTS, gradeGuess, GUESS_POINTS, NEAR_MISS_POINTS, obviousPair, parseRelationBank, RelationPair, scoreDesignedPlay,
 } from '../src/game/relationPairs';
 import { relationHint } from '../src/game/relationHint';
+import { CATEGORY_DIFFICULTY } from '../src/game/rating';
 import { VocabManifest } from '../src/embeddings/vocabAsset';
 
 const BANK_TEXT = `# comment
@@ -34,13 +35,18 @@ describe('relation bank', () => {
     expect(categoryLabel('capital-world')).toBe('capitals');
     expect(categoryLabel('gram3-comparative')).toBe('comparatives');
     expect(categoryLabel('something-new')).toBe('something new');
+    expect(categoryLabel('part-whole')).toBe('part → whole');
+    expect(categoryLabel('animal-young')).toBe('young animals');
+    expect(categoryLabel('antonym')).toBe('antonyms'); // not "opposites": that's gram2 (un-, in-)
   });
 
   it('ships a bank whose words are all in the vocabulary', () => {
     const shipped = parseRelationBank(fs.readFileSync(path.resolve(__dirname, '../data/vocab/relation-pairs.txt'), 'utf8'));
-    expect(shipped.size).toBe(10);
+    expect(shipped.size).toBe(20); // 10 Google categories + 10 everyday relations (Feature 2.17)
     const pairs = [...shipped.values()].flat();
-    expect(pairs.length).toBeGreaterThan(250);
+    expect(pairs.length).toBeGreaterThan(400);
+    // Every category has a difficulty prior (or Guess would deal it at the default 1000).
+    for (const category of shipped.keys()) expect(CATEGORY_DIFFICULTY[category], category).toBeDefined();
     const vocabFile = path.resolve(__dirname, '../public/vocab/vocab.json');
     if (fs.existsSync(vocabFile)) {
       const words = new Set((JSON.parse(fs.readFileSync(vocabFile, 'utf8')) as VocabManifest).words);

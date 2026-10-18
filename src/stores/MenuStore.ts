@@ -18,6 +18,7 @@ export function isWordView(view: AppView): boolean {
 
 import type { RelationHint } from "../game/relationHint"
 import type { PlayVerdict } from "../game/relationPairs"
+import type { AnswerSource } from "../game/relationAnswers"
 
 export interface LastPlay {
     a: string
@@ -42,6 +43,13 @@ export interface LastPlay {
     easy?: boolean
     /** Guess mode: the right pairs of one relation, but one reversed (+25). */
     nearMiss?: boolean
+    /**
+     * Where the answer came from (Feature 2.17): the relation bank, the known relation's average offset, or the
+     * model's own guess (the vectors), so the HUD can say how far to trust it.
+     */
+    source?: AnswerSource
+    /** The known relation's name, for bank and relation answers ("young animals"). */
+    sourceRelation?: string
 }
 
 /** An analogy played on the current board (newest first in `boardAnalogies`). */

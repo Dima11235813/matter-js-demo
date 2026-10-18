@@ -2,7 +2,7 @@ import React, { useDeferredValue, useMemo, useState } from "react";
 import { observer } from "mobx-react";
 import { MenuStore } from "../stores/MenuStore";
 import { stores as rootStores } from "../stores";
-import { importKeywords, playExpression, submitPlayerWord } from "../services/playground";
+import { importKeywords, playExpression, submitPlayerWord, usesBank } from "../services/playground";
 import { semanticEngine } from "../services/semanticEngine";
 import { formatExpression, parseEntry, WordEntry } from "../game/wordEntry";
 import { Keyword } from "../game/keywords";
@@ -107,7 +107,8 @@ export const WordEntryForm = observer(({ store }: { store: MenuStore }) => {
 
 /** Live result while typing an expression; nothing is recorded until Play. */
 const ExpressionPreview = ({ entry }: { entry: Extract<WordEntry, { kind: "expression" }> }) => {
-  const outcome = useMemo(() => semanticEngine.evaluateExpression(entry.terms), [entry]);
+  const bank = usesBank(rootStores.menuStore);
+  const outcome = useMemo(() => semanticEngine.evaluateExpression(entry.terms, bank), [entry, bank]);
   const expression = (
     <span className={styles.Terms}>
       {entry.terms.map((t, i) => (

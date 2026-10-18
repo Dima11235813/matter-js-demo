@@ -17,6 +17,7 @@ import { expressionAsAnalogy, ExpressionTerm } from "../game/wordEntry";
 import stopwordsText from "../../data/vocab/stopwords.txt?raw";
 import relationPairsText from "../../data/vocab/relation-pairs.txt?raw";
 import { dealRelationPairs, DealRelationOptions, obviousPair, parseRelationBank, RelationBank, RelationDeal } from "../game/relationPairs";
+import { SourcedAnalogy, solveWithBank } from "../game/relationAnswers";
 import { RelationStats } from "../game/relationHint";
 import { difficultyOf, NEW_RATING, Rating, RATING_RULES, rateGuess, relationDifficulty } from "../game/rating";
 import { BASE_RULES, ConnectNode, ConnectRules } from "../game/connectAll";
@@ -31,7 +32,7 @@ export type AddWordOutcome =
 
 /** A Discovery play: the model's answer, recorded in the analogy collection. It earns no points (Feature 2.13). */
 export interface AnalogyPlay {
-    result: AnalogyResult;
+    result: SourcedAnalogy;
     record: AnalogyRecord;
     isNewQuestion: boolean;
 }
@@ -47,7 +48,7 @@ export interface CorpusStats {
 
 /** What an expression evaluates to, without recording anything (live preview and submit). */
 export type ExpressionOutcome =
-    | { kind: "analogy"; result: AnalogyResult }
+    | { kind: "analogy"; result: SourcedAnalogy }
     | { kind: "sum"; neighbors: Neighbor[] }
     | { kind: "unknown"; words: string[] }
     | { kind: "blocked"; words: string[] }
@@ -198,10 +199,23 @@ export class SemanticEngine {
         }
     }
 
+    /**
+     * Solves "a is to b as c is to ?" (Feature 2.17: from the relation bank first when `useBank`, then the
+     * relation's average offset, then the vectors), and records it. Guess rounds pass `useBank: false`: their
+     * scoring was simulated against the vector solver's top 3 (analogy-scoring.md §7).
+     */
+    solve(a: string, b: string, c: string, useBank = true): SourcedAnalogy | undefined {
+        const { index, policy } = this.require();
+        const [na, nb, nc] = [a, b, c].map(normalizeWord);
+        if (useBank) return solveWithBank(index, RELATION_BANK, na, nb, nc, policy.isAllowed);
+        const model = solveAnalogy(index, na, nb, nc, policy.isAllowed);
+        return model && { ...model, source: "model" };
+    }
+
     /** Solves, scores, and records "a is to b as c is to ?". */
-    async playAnalogy(a: string, b: string, c: string): Promise<AnalogyPlay | undefined> {
-        const { index, policy, repo, manifest } = this.require();
-        const result = solveAnalogy(index, normalizeWord(a), normalizeWord(b), normalizeWord(c), policy.isAllowed);
+    async playAnalogy(a: string, b: string, c: string, useBank = true): Promise<AnalogyPlay | undefined> {
+        const { repo, manifest } = this.require();
+        const result = this.solve(a, b, c, useBank);
         if (!result) return undefined;
         const record = await repo.recordAnalogy(result, manifest.version);
         return { result, record, isNewQuestion: record.timesPlayed === 1 };
@@ -223,7 +237,7 @@ export class SemanticEngine {
      * other signed sum as "nearest to the sum". Words the vocabulary lacks come back as "unknown" so
      * the caller can embed them first.
      */
-    evaluateExpression(terms: readonly ExpressionTerm[]): ExpressionOutcome {
+    evaluateExpression(terms: readonly ExpressionTerm[], useBank = true): ExpressionOutcome {
         const { index, policy } = this.require();
         const blocked = terms.map(t => t.word).filter(w => !policy.isAllowed(w));
         if (blocked.length > 0) return { kind: "blocked", words: blocked };
@@ -231,7 +245,7 @@ export class SemanticEngine {
         if (unknown.length > 0) return { kind: "unknown", words: unknown };
         const analogy = expressionAsAnalogy(terms);
         if (analogy) {
-            const result = solveAnalogy(index, analogy.a, analogy.b, analogy.c, policy.isAllowed);
+            const result = this.solve(analogy.a, analogy.b, analogy.c, useBank);
             return result ? { kind: "analogy", result } : { kind: "none" };
         }
         const neighbors = solveExpression(index, terms, policy.isAllowed);

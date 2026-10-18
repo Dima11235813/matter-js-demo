@@ -61,7 +61,7 @@ const WordLink = ({ word, strong = false }: { word: string; strong?: boolean }) 
 const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
   const { lastPlay } = store;
   if (!lastPlay) return null;
-  const { a, b, c, answer, similarity, points, isNewQuestion, alternatives, hint, verdict, modelAnswer, guess, relation, easy, nearMiss } = lastPlay;
+  const { a, b, c, answer, similarity, points, isNewQuestion, alternatives, hint, verdict, modelAnswer, guess, relation, easy, nearMiss, source, sourceRelation } = lastPlay;
   return (
     <div className={styles.LogCard} data-testid="last-play">
       <div className={styles.LogText}>
@@ -79,8 +79,12 @@ const LastPlayCard = observer(({ store }: { store: MenuStore }) => {
           ⌖
         </button>
       </div>
-      {(verdict || hint || guess) && (
+      {(verdict || hint || guess || source) && (
         <div className={styles.Verdict} data-testid="play-verdict">
+          {/* Discovery: where the answer came from (Feature 2.17), so a vector guess isn't shown as a fact. */}
+          {source === "bank" && <span className={styles.VerdictGood} data-testid="answer-source">✓ a known relation: {sourceRelation} · </span>}
+          {source === "relation" && <span data-testid="answer-source">≈ by the {sourceRelation} relation · </span>}
+          {source === "model" && <span data-testid="answer-source" title="No known relation matches; the answer comes from the word vectors, which are often wrong on everyday relations">the model's guess · </span>}
           {guess && verdict === "full" && <span className={styles.VerdictGood}>✓ a real analogy: both pairs are {relation}{easy ? " (an easy one: the words look alike)" : ""} · </span>}
           {guess && verdict === "none" && nearMiss && <span className={styles.VerdictGood}>≈ almost: both pairs are {relation}, but one is backwards · </span>}
           {guess && verdict === "none" && !nearMiss && <span>✗ not an analogy from this round's pairs{modelAnswer ? ` (the model would answer ${modelAnswer})` : ""} · </span>}

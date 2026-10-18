@@ -1,0 +1,408 @@
+{
+  "questions": 30,
+  "before": 16,
+  "after": 21,
+  "bySource": {
+    "bank": {
+      "questions": 19,
+      "beforeRight": 12,
+      "afterRight": 18
+    },
+    "relation": {
+      "questions": 3,
+      "beforeRight": 2,
+      "afterRight": 1
+    },
+    "model": {
+      "questions": 8,
+      "beforeRight": 2,
+      "afterRight": 2
+    }
+  },
+  "changed": [
+    {
+      "question": "son:daughter::nephew",
+      "expected": "niece",
+      "before": "granddaughter",
+      "after": "niece",
+      "source": "bank",
+      "category": "family",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "france:paris::italy",
+      "expected": "rome",
+      "before": "florence",
+      "after": "rome",
+      "source": "bank",
+      "category": "capital-common-countries",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "germany:berlin::spain",
+      "expected": "madrid",
+      "before": "seville",
+      "after": "madrid",
+      "source": "bank",
+      "category": "capital-common-countries",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "hot:cold::summer",
+      "expected": "winter",
+      "before": "winter",
+      "after": "spring",
+      "source": "relation",
+      "category": "antonym",
+      "beforeRight": true,
+      "afterRight": false
+    },
+    {
+      "question": "cow:calf::sheep",
+      "expected": "lamb",
+      "before": "calves",
+      "after": "lamb",
+      "source": "bank",
+      "category": "animal-young",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "horse:foal::cow",
+      "expected": "calf",
+      "before": "fowl",
+      "after": "calf",
+      "source": "bank",
+      "category": "animal-young",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "doctor:hospital::teacher",
+      "expected": "school",
+      "before": "classroom",
+      "after": "school",
+      "source": "bank",
+      "category": "worker-place",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "chef:kitchen::pilot",
+      "expected": "cockpit",
+      "before": "aviation",
+      "after": "airport",
+      "source": "bank",
+      "category": "worker-place",
+      "beforeRight": false,
+      "afterRight": false
+    },
+    {
+      "question": "banana:yellow::apple",
+      "expected": "red",
+      "before": "colored",
+      "after": "mac",
+      "source": "relation",
+      "category": "thing-color",
+      "beforeRight": false,
+      "afterRight": false
+    }
+  ],
+  "rows": [
+    {
+      "question": "man:king::woman",
+      "expected": "queen",
+      "before": "queen",
+      "after": "queen",
+      "source": "bank",
+      "category": "family",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "man:father::woman",
+      "expected": "mother",
+      "before": "mother",
+      "after": "mother",
+      "source": "bank",
+      "category": "family",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "boy:girl::brother",
+      "expected": "sister",
+      "before": "sister",
+      "after": "sister",
+      "source": "bank",
+      "category": "family",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "husband:wife::uncle",
+      "expected": "aunt",
+      "before": "aunt",
+      "after": "aunt",
+      "source": "bank",
+      "category": "family",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "prince:princess::actor",
+      "expected": "actress",
+      "before": "actress",
+      "after": "actress",
+      "source": "relation",
+      "category": "family",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "son:daughter::nephew",
+      "expected": "niece",
+      "before": "granddaughter",
+      "after": "niece",
+      "source": "bank",
+      "category": "family",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "france:paris::japan",
+      "expected": "tokyo",
+      "before": "tokyo",
+      "after": "tokyo",
+      "source": "bank",
+      "category": "capital-common-countries",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "france:paris::italy",
+      "expected": "rome",
+      "before": "florence",
+      "after": "rome",
+      "source": "bank",
+      "category": "capital-common-countries",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "germany:berlin::spain",
+      "expected": "madrid",
+      "before": "seville",
+      "after": "madrid",
+      "source": "bank",
+      "category": "capital-common-countries",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "russia:moscow::england",
+      "expected": "london",
+      "before": "london",
+      "after": "london",
+      "source": "bank",
+      "category": "capital-common-countries",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "good:better::bad",
+      "expected": "worse",
+      "before": "worse",
+      "after": "worse",
+      "source": "bank",
+      "category": "gram3-comparative",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "big:bigger::small",
+      "expected": "smaller",
+      "before": "smaller",
+      "after": "smaller",
+      "source": "bank",
+      "category": "gram3-comparative",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "fast:faster::slow",
+      "expected": "slower",
+      "before": "slower",
+      "after": "slower",
+      "source": "bank",
+      "category": "gram3-comparative",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "hot:cold::summer",
+      "expected": "winter",
+      "before": "winter",
+      "after": "spring",
+      "source": "relation",
+      "category": "antonym",
+      "beforeRight": true,
+      "afterRight": false
+    },
+    {
+      "question": "day:night::sun",
+      "expected": "moon",
+      "before": "solar",
+      "after": "solar",
+      "source": "model",
+      "beforeRight": false,
+      "afterRight": false
+    },
+    {
+      "question": "dog:puppy::cat",
+      "expected": "kitten",
+      "before": "kitten",
+      "after": "kitten",
+      "source": "bank",
+      "category": "animal-young",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "cow:calf::sheep",
+      "expected": "lamb",
+      "before": "calves",
+      "after": "lamb",
+      "source": "bank",
+      "category": "animal-young",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "horse:foal::cow",
+      "expected": "calf",
+      "before": "fowl",
+      "after": "calf",
+      "source": "bank",
+      "category": "animal-young",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "finger:hand::toe",
+      "expected": "foot",
+      "before": "foot",
+      "after": "foot",
+      "source": "bank",
+      "category": "part-whole",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "doctor:hospital::teacher",
+      "expected": "school",
+      "before": "classroom",
+      "after": "school",
+      "source": "bank",
+      "category": "worker-place",
+      "beforeRight": false,
+      "afterRight": true
+    },
+    {
+      "question": "chef:kitchen::pilot",
+      "expected": "cockpit",
+      "before": "aviation",
+      "after": "airport",
+      "source": "bank",
+      "category": "worker-place",
+      "beforeRight": false,
+      "afterRight": false
+    },
+    {
+      "question": "pen:write::knife",
+      "expected": "cut",
+      "before": "knives",
+      "after": "knives",
+      "source": "model",
+      "beforeRight": false,
+      "afterRight": false
+    },
+    {
+      "question": "bird:fly::fish",
+      "expected": "swim",
+      "before": "flew",
+      "after": "flew",
+      "source": "model",
+      "beforeRight": false,
+      "afterRight": false
+    },
+    {
+      "question": "eye:see::ear",
+      "expected": "hear",
+      "before": "hearing",
+      "after": "hearing",
+      "source": "model",
+      "beforeRight": false,
+      "afterRight": false
+    },
+    {
+      "question": "banana:yellow::apple",
+      "expected": "red",
+      "before": "colored",
+      "after": "mac",
+      "source": "relation",
+      "category": "thing-color",
+      "beforeRight": false,
+      "afterRight": false
+    },
+    {
+      "question": "water:drink::food",
+      "expected": "eat",
+      "before": "eat",
+      "after": "eat",
+      "source": "model",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "walk:walked::run",
+      "expected": "ran",
+      "before": "ran",
+      "after": "ran",
+      "source": "model",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "japan:japanese::france",
+      "expected": "french",
+      "before": "french",
+      "after": "french",
+      "source": "bank",
+      "category": "gram6-nationality-adjective",
+      "beforeRight": true,
+      "afterRight": true
+    },
+    {
+      "question": "car:road::train",
+      "expected": "track",
+      "before": "railway",
+      "after": "railway",
+      "source": "model",
+      "beforeRight": false,
+      "afterRight": false
+    },
+    {
+      "question": "winter:snow::summer",
+      "expected": "sun",
+      "before": "spring",
+      "after": "spring",
+      "source": "model",
+      "beforeRight": false,
+      "afterRight": false
+    }
+  ]
+}

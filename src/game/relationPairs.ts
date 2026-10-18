@@ -45,6 +45,16 @@ export function categoryLabel(category: string): string {
         "gram5-present-participle": "-ing forms",
         "gram6-nationality-adjective": "nationalities",
         "gram7-past-tense": "past tense",
+        antonym: "antonyms",
+        "animal-young": "young animals",
+        "part-whole": "part → whole",
+        "worker-tool": "tools of the trade",
+        "worker-place": "workplaces",
+        "animal-sound": "animal sounds",
+        "thing-color": "colors",
+        "thing-material": "made of",
+        hypernym: "kinds of things",
+        synonym: "synonyms",
     };
     return labels[category] ?? category.replace(/^gram\d+-/, "").replace(/-/g, " ");
 }

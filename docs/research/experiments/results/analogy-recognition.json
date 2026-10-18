@@ -29,6 +29,11 @@
           "top1": 0.729,
           "top5": 0.892,
           "hardTop1": 0.524
+        },
+        "blend": {
+          "top1": 0.709,
+          "top5": 0.886,
+          "hardTop1": 0.491
         }
       },
       "byCategory": {
@@ -37,91 +42,104 @@
           "nearestC": 0.57,
           "add": 0.85,
           "mul": 0.83,
-          "avg": 0.89
+          "avg": 0.89,
+          "blend": 0.89
         },
         "capital-world": {
           "questions": 150,
           "nearestC": 0.75,
           "add": 0.92,
           "mul": 0.88,
-          "avg": 0.96
+          "avg": 0.96,
+          "blend": 0.94
         },
         "currency": {
           "questions": 88,
           "nearestC": 0,
           "add": 0.17,
           "mul": 0.18,
-          "avg": 0.27
+          "avg": 0.27,
+          "blend": 0.26
         },
         "city-in-state": {
           "questions": 150,
           "nearestC": 0.7,
           "add": 0.76,
           "mul": 0.69,
-          "avg": 0.86
+          "avg": 0.86,
+          "blend": 0.85
         },
         "family": {
           "questions": 150,
           "nearestC": 0.13,
           "add": 0.69,
           "mul": 0.69,
-          "avg": 0.92
+          "avg": 0.92,
+          "blend": 0.83
         },
         "gram1-adjective-to-adverb": {
           "questions": 150,
           "nearestC": 0.2,
           "add": 0.25,
           "mul": 0.32,
-          "avg": 0.36
+          "avg": 0.36,
+          "blend": 0.34
         },
         "gram2-opposite": {
           "questions": 150,
           "nearestC": 0.33,
           "add": 0.43,
           "mul": 0.41,
-          "avg": 0.4
+          "avg": 0.4,
+          "blend": 0.43
         },
         "gram3-comparative": {
           "questions": 150,
           "nearestC": 0.47,
           "add": 0.7,
           "mul": 0.75,
-          "avg": 0.69
+          "avg": 0.69,
+          "blend": 0.7
         },
         "gram4-superlative": {
           "questions": 150,
           "nearestC": 0.21,
           "add": 0.63,
           "mul": 0.71,
-          "avg": 0.63
+          "avg": 0.63,
+          "blend": 0.63
         },
         "gram5-present-participle": {
           "questions": 150,
           "nearestC": 0.73,
           "add": 0.8,
           "mul": 0.81,
-          "avg": 0.83
+          "avg": 0.83,
+          "blend": 0.81
         },
         "gram6-nationality-adjective": {
           "questions": 150,
           "nearestC": 0.45,
           "add": 0.95,
           "mul": 0.95,
-          "avg": 0.98
+          "avg": 0.98,
+          "blend": 0.98
         },
         "gram7-past-tense": {
           "questions": 150,
           "nearestC": 0.45,
           "add": 0.57,
           "mul": 0.6,
-          "avg": 0.75
+          "avg": 0.75,
+          "blend": 0.65
         },
         "gram8-plural": {
           "questions": 12,
           "nearestC": 0.25,
           "add": 0.83,
           "mul": 0.83,
-          "avg": 0.92
+          "avg": 0.92,
+          "blend": 1
         }
       },
       "recognition": {
@@ -165,6 +183,11 @@
           "top1": 0.181,
           "top5": 0.487,
           "hardTop1": 0.088
+        },
+        "blend": {
+          "top1": 0.172,
+          "top5": 0.468,
+          "hardTop1": 0.083
         }
       },
       "byCategory": {
@@ -173,70 +196,80 @@
           "nearestC": 0.08,
           "add": 0.14,
           "mul": 0.13,
-          "avg": 0.15
+          "avg": 0.15,
+          "blend": 0.16
         },
         "animal-young": {
           "questions": 132,
           "nearestC": 0.16,
           "add": 0.18,
           "mul": 0.11,
-          "avg": 0.23
+          "avg": 0.23,
+          "blend": 0.23
         },
         "part-whole": {
           "questions": 150,
           "nearestC": 0.23,
           "add": 0.17,
           "mul": 0.13,
-          "avg": 0.28
+          "avg": 0.28,
+          "blend": 0.23
         },
         "worker-tool": {
           "questions": 132,
           "nearestC": 0,
           "add": 0.05,
           "mul": 0.05,
-          "avg": 0
+          "avg": 0,
+          "blend": 0.03
         },
         "worker-place": {
           "questions": 150,
           "nearestC": 0.15,
           "add": 0.3,
           "mul": 0.27,
-          "avg": 0.29
+          "avg": 0.29,
+          "blend": 0.29
         },
         "animal-sound": {
           "questions": 110,
           "nearestC": 0,
           "add": 0.01,
           "mul": 0.01,
-          "avg": 0
+          "avg": 0,
+          "blend": 0.01
         },
         "thing-color": {
           "questions": 102,
           "nearestC": 0,
           "add": 0.04,
           "mul": 0.02,
-          "avg": 0.09
+          "avg": 0.09,
+          "blend": 0.04
         },
         "thing-material": {
           "questions": 132,
           "nearestC": 0,
           "add": 0.08,
           "mul": 0.07,
-          "avg": 0.17
+          "avg": 0.17,
+          "blend": 0.14
         },
         "hypernym": {
           "questions": 150,
           "nearestC": 0.21,
           "add": 0.21,
           "mul": 0.24,
-          "avg": 0.27
+          "avg": 0.27,
+          "blend": 0.24
         },
         "synonym": {
           "questions": 132,
           "nearestC": 0.25,
           "add": 0.24,
           "mul": 0.21,
-          "avg": 0.25
+          "avg": 0.25,
+          "blend": 0.25
         }
       },
       "recognition": {

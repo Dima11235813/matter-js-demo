@@ -20,6 +20,17 @@ export const CATEGORY_DIFFICULTY: Readonly<Record<string, number>> = {
     "gram6-nationality-adjective": 1200,
     "capital-world": 1450,
     "city-in-state": 1500,
+    // Everyday relations (Feature 2.17, 2026-10-18): the same kind of guess (how familiar the relation is).
+    antonym: 800,
+    "thing-color": 800,
+    "animal-sound": 850,
+    "worker-place": 850,
+    hypernym: 900,
+    "part-whole": 900,
+    synonym: 950,
+    "worker-tool": 950,
+    "animal-young": 1000, // kitten is easy, foal / fawn / joey are not
+    "thing-material": 1000,
 };
 
 export const RATING_RULES = {

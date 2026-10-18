@@ -79,8 +79,9 @@ describe('skill rating (Feature 2.12)', () => {
   });
 
   it('deals easy relations to a novice and hard ones to an expert', () => {
-    const easy = new Set(['family', 'gram2-opposite', 'gram3-comparative', 'gram5-present-participle']);
-    const hard = new Set(['city-in-state', 'capital-world', 'gram6-nationality-adjective']);
+    // By prior, not by name: the everyday relations (Feature 2.17) joined the easy end of the scale.
+    const easy = new Set(categories.filter(c => CATEGORY_DIFFICULTY[c] <= 900));
+    const hard = new Set(categories.filter(c => CATEGORY_DIFFICULTY[c] >= 1200));
     const random = lcg(7);
     for (let i = 0; i < 50; i++) {
       expect(easy.has(pickCategory(800, categories, random))).toBe(true);

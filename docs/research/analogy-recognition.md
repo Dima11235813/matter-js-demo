@@ -1,6 +1,6 @@
 # Analogy Recognition on Real Analogies
 
-**Status**: research done 2026-10-18; owner decision pending (§5) · **Drives**: [Epic 2 · Feature 2.17](../../proj-mgmt/epic-2-gamification.md) · **Reproduce**: `npx vitest run --config docs/research/experiments/vitest.research.config.ts analogyRecognition` (~20 min; writes [`results/analogy-recognition.json`](experiments/results/analogy-recognition.json); `ANALOGY_QUESTIONS=10` for a pilot in the OS temp folder)
+**Status**: research done 2026-10-18; owner chose "relation bank first"; bank and Discovery answers built and measured (§6), Guess acceptance next · **Drives**: [Epic 2 · Feature 2.17](../../proj-mgmt/epic-2-gamification.md) · **Reproduce**: `npx vitest run --config docs/research/experiments/vitest.research.config.ts analogyRecognition` (~20 min; writes [`results/analogy-recognition.json`](experiments/results/analogy-recognition.json); `ANALOGY_QUESTIONS=10` for a pilot in the OS temp folder)
 
 ## 1. Question
 
@@ -20,7 +20,7 @@ How good is each on real analogies, and which change would help most?
 | **google** | 13 | 349 | The Google analogy test set's pairs (`questions-words.txt`, Mikolov et al. 2013, Apache 2.0): capitals, currency, city–state, family, and eight grammar categories |
 | **lexical** | 10 | 126 | Written for this project ([`lexical-analogy-pairs.txt`](experiments/data/lexical-analogy-pairs.txt)), the everyday relations the Google set leaves out: antonym, animal–young, part–whole, worker–tool, worker–place, animal–sound, thing–color, thing–material, hypernym (kind of), synonym |
 
-BATS (Gladkova et al. 2016) would add 40 relations, but its distribution is CC BY-NC 4.0, so it isn't in the repo (§6).
+BATS (Gladkova et al. 2016) would add 40 relations, but its distribution is CC BY-NC 4.0, so it isn't in the repo (§7).
 
 **Answer accuracy.** A question is two different pairs of one category (a → b, c → d), up to 150 per category: 3,090 in all. Any y paired with c in the category counts as right (lion → cub and bear → cub). Questions whose right answer is one of the inputs are dropped. Rank of the best right answer among allowed candidates, scored by:
 * **nearestC**: the word nearest c, no analogy at all. This is Linzen's (2016) baseline: it shows how much an "analogy" score owes to c's neighbourhood.
@@ -51,6 +51,7 @@ Reported: ROC AUC, and the share of real analogies accepted at a threshold that 
 | **3CosAdd (shipped)** | 66% | 44% | 87% | **15%** | 8% | 39% |
 | 3CosMul | 67% | 49% | 86% | 13% | 8% | 38% |
 | 3CosAvg (known relation) | **73%** | **52%** | **89%** | **18%** | **9%** | **49%** |
+| blend: ½ own offset + ½ relation average (added 2026-10-18, §6) | 71% | 49% | 89% | 17% | 8% | 47% |
 
 Top-1 accuracy per category:
 
@@ -112,7 +113,32 @@ Top-1 accuracy per category:
 3. **Guess accepts any bank analogy on the board**, not only dealt pairs: any two pairs of one bank category among the board's words, both forward or both reversed, same scoring. The anti-exploit rules stay: only real pairs count, so guessing still can't pay.
 4. **Measure again** with this experiment, plus a new question: answers on the questions where the bank covers c (should be about 100%) and where it doesn't (the honest-label case).
 
-## 6. Limitations
+## 6. Built (owner chose "relation bank first", 2026-10-18) and measured
+
+* **Bank.** `data/vocab/relation-pairs.txt` gains the 10 everyday categories (126 in-vocabulary pairs; up/down, gosling, cygnet, neigh, bleat, net, grapes are not in the vocabulary). Each new category has a difficulty prior (`CATEGORY_DIFFICULTY`, 800–1000) and a HUD name, so Guess deals them too.
+* **Discovery and typed analogies answer bank first** (`src/game/relationAnswers.ts`, `solveWithBank`):
+  1. the bank's word when a → b is a known pair and c has a pair in that relation;
+  2. or the swapped form, since a : b :: c : d holds exactly when a : c :: b : d (man : king :: woman → man → woman applied to king = queen);
+  3. 3CosAvg when only the relation is known;
+  4. 3CosAdd otherwise.
+* **Labels.** The HUD says where the answer came from: "✓ a known relation: young animals", "≈ by the colors relation", or "the model's guess". The play log records the source for research.
+* **Guess rounds keep the vector solver**: their typed-play scoring was simulated against it (analogy-scoring.md §7), and showing a bank answer as "the model would answer" after a wrong guess would give the round away.
+
+**Before and after on the known-good set** of [analogy-scoring.md](analogy-scoring.md) (32 analogies written 2026-09-24; 30 have all four words in the vocabulary; [`analogyBankAnswers.experiment.ts`](experiments/analogyBankAnswers.experiment.ts), [results](experiments/results/analogy-bank-answers.json)):
+
+| Answer source | Questions | Right before (3CosAdd) | Right after |
+|---|---|---|---|
+| bank (incl. the swapped form) | 19 | 12 | **18** |
+| relation (3CosAvg) | 3 | 2 | **1** |
+| model (unknown relation) | 8 | 2 | 2 |
+| **all** | 30 | **16** | **21** |
+
+* **Fixed:** son : daughter :: nephew → niece (was granddaughter); france : paris :: italy → rome (was florence); germany : berlin :: spain → madrid (was seville); cow : calf :: sheep → lamb (was calves); horse : foal :: cow → calf (was fowl); doctor : hospital :: teacher → school (was classroom).
+* **Broke:** hot : cold :: summer → *spring* (was winter). The antonym relation's average offset, applied to summer, lands on spring; for this question the vectors' own offset was right. On the 900-question benchmark, 3CosAvg is still better than 3CosAdd and than a half-and-half blend (full run: google top 1 72.9% vs 70.9% blend vs 66.2% add; lexical top 5 48.7% vs 46.8% vs 39.4%), so it stays. Adding hot → cold, summer → winter to the bank would fix this one exactly.
+* **Overlap disclosed:** 8 of the 18 bank answers come from pairs this work added (dog → puppy, finger → hand, …). For those, a right answer is by construction. The fair claim is that the bank answers exactly what it knows, and is honest about what it doesn't.
+* **Still wrong, labelled "the model's guess":** day : night :: sun (solar), pen : write :: knife (knives), bird : fly :: fish (flew), eye : see :: ear (hearing), car : road :: train (railway), winter : snow :: summer (spring). These relations (function, habitat, perception) are candidates for the bank.
+
+## 7. Limitations
 
 * **The lexical set is small** (126 pairs) and written by us: it shows the gap, but isn't a benchmark. BATS (40 relations, about 98k questions) would be the standard measure. It's CC BY-NC 4.0 (via [relbert/analogy_questions](https://huggingface.co/datasets/relbert/analogy_questions)), so if used, it would be downloaded at experiment time and never committed.
 * **The shipped vectors only.** A model better at word analogies (static word vectors such as GloVe or fastText) would also do better on Google, but the literature finds lexical relations hard for all of them (Drozd et al. 2016), and the app's live encoder for new words needs MiniLM.

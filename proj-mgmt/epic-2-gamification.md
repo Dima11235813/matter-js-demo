@@ -270,7 +270,14 @@ Turn the physics prototype into an engaging, addictive educational game. Players
   * **Knowing the relation (3CosAvg)** adds 7 points top 1 on Google, and 10 points top 5 on lexical (49%).
   * **Recognition by offset direction** is weak for lexical relations (AUC 0.72; it accepts only 35% of real analogies at 5% false accepts), so Guess must keep grading by known pairs.
 * [x] **Task 2.17.1** (2026-10-18): the measurement: Google and lexical datasets, four answer methods, recognition AUC (`analogyRecognition.experiment.ts`; the lexical set `data/lexical-analogy-pairs.txt` is our own, 10 categories, 126 pairs).
-* [ ] **Task 2.17.2** (recommended; owner decision): a relation bank with everyday relations. Add reviewed lexical categories to `data/vocab/relation-pairs.txt` (start: the research set). WordNet at scale is a later research step.
-* [ ] **Task 2.17.3** (recommended): Discovery answers from the bank first. If c has a pair in a → b's category, give the bank's word. If only a → b is known, use 3CosAvg of the category. Otherwise use 3CosAdd, labelled honestly as "the model's guess", with a confidence. Exit: lexical top 1 at least the bank's coverage of c, and no Google regression.
+* [x] **Task 2.17.2** (2026-10-18, owner chose "relation bank first"): the bank gains 10 everyday categories (antonyms, young animals, part → whole, tools of the trade, workplaces, animal sounds, colors, made of, kinds of things, synonyms; 126 in-vocabulary pairs). Each has a difficulty prior (800–1000) and a HUD name, so Guess deals them too. ⬜ Owner review of the pairs (`data/vocab/relation-pairs.txt`, after `gram7-past-tense`).
+* [x] **Task 2.17.3** (2026-10-18): Discovery and typed analogies answer bank first (`src/game/relationAnswers.ts`):
+  * the bank's word, including the swapped form (man : king :: woman → queen);
+  * else 3CosAvg of the known relation;
+  * else 3CosAdd, labelled "the model's guess".
+
+  The HUD shows the source ("✓ a known relation: young animals"), and the play log records it. Guess rounds keep the vector solver: their scoring was simulated against it, and a bank answer shown after a wrong guess would give the round away.
+  * **Measured on the known-good set** (30 analogies from 2026-09-24): **16 → 21 right**. Six fixed: niece, rome, madrid, lamb, calf, school. One broke: hot : cold :: summer → spring (antonym 3CosAvg). 3CosAvg stays the fallback: on the benchmark it is best (a half-and-half blend was tried, [research §6](../docs/research/analogy-recognition.md)).
+  * **Tests:** unit `tests/relationAnswers.test.ts` (7); e2e "Discovery answers everyday analogies from the relation bank…" (kitten and lamb from the bank, "the model's guess" for pen → write).
 * [ ] **Task 2.17.4** (recommended): Guess accepts any bank analogy on the board (two pairs of one category among the board's words, same direction), not only dealt pairs. The anti-exploit simulation (analogy-scoring.md §7) is re-run before shipping.
 * [ ] **Task 2.17.5** (roadmap): measure on BATS (40 relations; CC BY-NC 4.0, so downloaded at experiment time and never committed).

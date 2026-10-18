@@ -293,7 +293,7 @@ export async function playExpression(stores: RootStore, terms: readonly Expressi
             return;
         }
     }
-    let outcome = semanticEngine.evaluateExpression(terms);
+    let outcome = semanticEngine.evaluateExpression(terms, usesBank(menuStore));
     if (outcome.kind === "unknown") {
         for (const word of outcome.words) {
             menuStore.setWordInputMessage(`Embedding "${word}"...`);
@@ -304,7 +304,7 @@ export async function playExpression(stores: RootStore, terms: readonly Expressi
             }
         }
         await refreshStats(menuStore);
-        outcome = semanticEngine.evaluateExpression(terms);
+        outcome = semanticEngine.evaluateExpression(terms, usesBank(menuStore));
     }
     switch (outcome.kind) {
         case "analogy": {
@@ -367,9 +367,17 @@ export async function importKeywords(stores: RootStore, keywords: readonly Keywo
     if (added > 0) await refreshStats(menuStore);
 }
 
+/**
+ * Whether analogies are answered from the relation bank first (Feature 2.17): everywhere except Guess rounds,
+ * whose typed-play scoring was simulated against the vector solver (analogy-scoring.md §7).
+ */
+export function usesBank(menuStore: MenuStore): boolean {
+    return menuStore.view !== "game";
+}
+
 export async function playAnalogy(stores: RootStore, a: string, b: string, c: string, options: { spawnOperands?: boolean } = {}): Promise<void> {
     const { menuStore } = stores;
-    const play = await semanticEngine.playAnalogy(a, b, c);
+    const play = await semanticEngine.playAnalogy(a, b, c, usesBank(menuStore));
     if (!play) {
         menuStore.setLastAnalogy(`No answer for ${a} : ${b} :: ${c}`);
         return;
@@ -398,6 +406,9 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
         hint,
         verdict: round && !round.duplicate ? round.verdict : undefined,
         modelAnswer: answer !== result.answer ? result.answer : undefined,
+        // Discovery says where its answer came from (Feature 2.17); a timed round's answer is graded instead.
+        source: round ? undefined : result.source,
+        sourceRelation: !round && result.category ? categoryLabel(result.category) : undefined,
     };
     menuStore.setLastPlay(lastPlay);
     menuStore.addBoardAnalogy(lastPlay);
@@ -410,7 +421,7 @@ export async function playAnalogy(stores: RootStore, a: string, b: string, c: st
         input: options.spawnOperands ? "typed" : "click",
         stats, hint, verdict: lastPlay.verdict,
         designed: round ? designedAnswer(deal?.pairs ?? [], a, b, c) !== undefined : undefined,
-        points, duplicate: round?.duplicate,
+        points, duplicate: round?.duplicate, source: lastPlay.source,
     }));
     menuStore.setLastAnalogy(round ? `${a} is to ${b} as ${c} is to ${answer} (${points >= 0 ? "+" : ""}${points} pts)` : `${a} is to ${b} as ${c} is to ${answer}`);
     await refreshStats(menuStore);

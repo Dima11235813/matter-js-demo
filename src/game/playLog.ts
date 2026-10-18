@@ -34,6 +34,8 @@ export interface AnalogyPlayInput {
     rating?: number;
     /** Guess mode: the right pairs, one backwards (+25). */
     nearMiss?: boolean;
+    /** Discovery: where the answer came from (bank, relation, model; Feature 2.17), for research on real plays. */
+    source?: string;
 }
 
 const round3 = (value: number) => Math.round(value * 1000) / 1000;

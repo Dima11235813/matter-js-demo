@@ -78,7 +78,8 @@ for (const dimension of ['2d', '3d'] as const) {
       await expectFocused(page, ['king', 'man', 'woman', 'queen']);
       await expect(page.getByTestId('last-play')).toContainText('queen');
       // Sandbox: a learning hint, no timed-round verdict.
-      await expect(page.getByTestId('play-verdict')).toHaveText('✓ the relation man → king carried over');
+      // man → woman is a known family pair (the swapped form, Feature 2.17), and the vectors carried it too.
+      await expect(page.getByTestId('play-verdict')).toHaveText('✓ a known relation: family · ✓ the relation man → king carried over');
     });
 
     test('analogy notation and sums work; malformed input explains itself', async ({ page }) => {
@@ -804,6 +805,25 @@ test('Connect: removing your word costs a move; a solve lights up the board and 
   await expect(page.getByTestId('puzzle-solved')).toContainText(`Solved in ${again.par}`);
   await expect(page.getByTestId('puzzle-new-best')).toBeVisible();
   await expect(page.getByTestId('puzzle-best')).toHaveText(`best ${again.par}`);
+});
+
+test('Discovery answers everyday analogies from the relation bank and labels a vector guess as such (Feature 2.17)', async ({ page }) => {
+  await openSandbox(page, '2d');
+  const play = async (expression: string) => {
+    await wordBox(page).fill(expression);
+    await wordBox(page).press('Enter');
+  };
+  // dog → puppy is a known relation: cat's young is kitten (3CosAdd alone gets young animals right 18% of the time).
+  await play('puppy - dog + cat');
+  await expect(page.getByTestId('last-play')).toContainText('kitten');
+  await expect(page.getByTestId('answer-source')).toHaveText('✓ a known relation: young animals · ');
+  // cow → calf with sheep: lamb (the vectors alone answered "calves").
+  await play('calf - cow + sheep');
+  await expect(page.getByTestId('last-play')).toContainText('lamb');
+  // A relation the bank doesn't know: the answer is labelled as the model's guess.
+  await play('write - pen + knife');
+  await expect(page.getByTestId('answer-source')).toHaveText("the model's guess · ");
+  await expect.poll(() => boardWords(page)).toEqual(expect.arrayContaining(['kitten', 'lamb']));
 });
 
 test('a molecule built in 2D holds together in 3D and comes back to 2D (Task 5.15.1)', async ({ page }, testInfo) => {

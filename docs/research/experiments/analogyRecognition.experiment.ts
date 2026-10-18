@@ -83,7 +83,7 @@ function rankOfAnswers(q: { a: string; b: string; c: string }, answers: readonly
   return rank;
 }
 
-const methods = ['nearestC', 'add', 'mul', 'avg'] as const;
+const methods = ['nearestC', 'add', 'mul', 'avg', 'blend'] as const;
 type Method = typeof methods[number];
 const emptyRanks = () => Object.fromEntries(methods.map(m => [m, []])) as unknown as Record<Method, number[]>;
 
@@ -114,11 +114,16 @@ function runDataset(name: string, categories: Map<string, Pair[]>) {
     const offset = new Float32Array(DIM);
     for (const o of others) { const [x, y] = [vec(o.x), vec(o.y)]; for (let d = 0; d < DIM; d++) offset[d] += (y[d] - x[d]) / others.length; }
     const sAvg = simsTo(normalize(Float32Array.from(vec(q.c), (v, d) => v + offset[d])));
+    // Blend: half the question's own offset (b − a), half the relation's average (2026-10-18, after 3CosAvg alone
+    // overrode right vector answers on the known-good set: hot : cold :: summer → spring).
+    const [va, vb] = [vec(q.a), vec(q.b)];
+    const sBlend = simsTo(normalize(Float32Array.from(vec(q.c), (v, d) => v + 0.5 * (vb[d] - va[d]) + 0.5 * offset[d])));
     const score: Record<Method, (r: number) => number> = {
       nearestC: r => sc[r],
       add: r => sb[r] - sa[r] + sc[r],
       mul: r => (((sb[r] + 1) / 2) * ((sc[r] + 1) / 2)) / ((sa[r] + 1) / 2 + 0.001),
       avg: r => sAvg[r],
+      blend: r => sBlend[r],
     };
     if (!perCategory.has(q.category)) perCategory.set(q.category, emptyRanks());
     for (const m of methods) {
