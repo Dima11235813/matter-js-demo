@@ -87,6 +87,26 @@ graph TD
     D -->|Production Release| E
 ```
 
+### Status snapshot (2026-10-23) · paused: the owner is exploring the codebase offline
+* **Milestone (2026-10-10 → 10-23), all in `develop` (`main` untouched at `249cd65`)**:
+  * workspace harness adopted (ports 41940–41959 on loopback);
+  * next-up preview (2.16);
+  * molecules in 3D (5.15.1);
+  * Connect: beam par, a template per band, remove words, bests, burst (2.10); puzzles made in a worker for slow phones (2.10.6);
+  * rating and saved sessions sync (2.12.3, 2.15.4);
+  * analogy recognition for real analogies: relation bank with 13 everyday relations, bank-first answers with honest labels, Guess accepting any bank analogy on the board (Feature 2.17).
+* **Numbers that justify the milestone**:
+  * everyday analogies: the vectors alone get 15% right, and the bank makes known relations exact. The known-good set went 16 → 29 of 30, partly by construction;
+  * "Next puzzle" at 4× throttle: 174–987 ms → 12–56 ms;
+  * Connect bands 70 / 63 / 52;
+  * tests: 376 unit, 38 e2e.
+* **Owner items, in order**:
+  * human-todo 14: review the relation bank (pilot → airport or cockpit, synonyms, sun → moon);
+  * human-todo 11: workspace proposals 10–12, and the `node_modules` sweep question;
+  * human-todo 2 and 13 when hosting resumes (Firebase first).
+* **Where to resume**: a phone play-test of everything above (served build on 41942, `CLAUDE.md` § Session routine). Then the owner's review changes to the bank, Connect bests sync (2.10.7), and measuring other slow-phone work before changing it (the 3D view, 2D physics at 40 words, vocabulary load).
+* **On this machine**: dependencies on `C:\dev-deps` (junctions); preflight first; test in CI mode while other projects hold the `D:` watcher ceiling. Nothing is left running.
+
 ### Status snapshot (2026-10-18)
 * **Shipped**: sync of the Guess rating and saved sessions across a persona's devices (Epic 2 · Tasks 2.12.3, 2.15.4; Epic 3 · Task 3.8.5):
   * the rating syncs in the profile, newest wins;

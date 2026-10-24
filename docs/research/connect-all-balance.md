@@ -30,7 +30,7 @@ The owner's idea is a board of loose words where you add words until every word 
 
 **Random boards are the wrong puzzles.** In a 10-word pilot, par was about 12 on every board (all "hard"), and the hub, nearest and random bots never solved one in 15 moves. In this embedding, random words are almost all unrelated, so each one needs its own two bridges.
 
-**Templates fix it.** A board is now built from `pairs` related pairs (a word plus a close neighbour at p99 + 0.02 … 0.65, so both start dangling) and `loose` unrelated words. Five templates are used: 3+0, 3+1, 2+2, 3+2, 2+4.
+**Templates fix it.** *(The table below is the 2026-10-04 run: greedy par and these five templates. The harness now uses beam par and the six-template mix of §6, so a full rerun gives different numbers; §6 has the current ones.)* A board is now built from `pairs` related pairs (a word plus a close neighbour at p99 + 0.02 … 0.65, so both start dangling) and `loose` unrelated words. Five templates are used: 3+0, 3+1, 2+2, 3+2, 2+4.
 
 | Rule set | Solvable | Bands easy / medium / hard (par ≤ 3 / 4–6 / ≥ 7) | Mean par | Solver | Hub | Nearest | Random |
 |---|---|---|---|---|---|---|---|

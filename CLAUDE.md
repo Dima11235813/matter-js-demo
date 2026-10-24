@@ -1,6 +1,15 @@
 # Lexical Fountain (matter-js-demo)
 
 <!-- workspace-harness-pointer: see D:\GDrive\proj-mgmt\workspace-harness-adoption.md -->
+
+<!-- workspace-comms-pointer: see D:\GDrive\proj-mgmt\comms\README.md -->
+> **Workspace channel.** Anything that crosses a project boundary — a harness rule that does not
+> fit, a shared-machine or Google Drive problem, a git or storage finding other projects should
+> hear — goes to the workspace manager as one dated file in
+> [`D:\GDrive\proj-mgmt\comms\matter-js-demo\`](file:///D:/GDrive/proj-mgmt/comms/matter-js-demo/)
+> (format in the README; never edit a file the other side wrote). At the start of a session, read
+> what is addressed to you: `py -I D:\GDrive\proj-mgmt\comms\scripts\comms_index.py --for matter-js-demo`
+
 ## Shared machine — workspace harness
 
 This project shares one machine with ~40 others. The workspace harness at
@@ -32,6 +41,16 @@ Exit non-zero means **wait**, not "proceed carefully".
 > 41946–41959 spare. Everything binds `127.0.0.1` with `strictPort` (never fall back to another
 > port). LAN exposure is deliberate only for the owner's phone play-tests (`yarn dev --host 0.0.0.0`,
 > recorded in the registry's *Long-running by design* table) and stops when the session ends.
+
+## Session routine (what worked, 2026-10-10 → 10-23)
+
+1. **Dependencies**: `node_modules`, `server/node_modules`, and `packages/shared/node_modules` are junctions into `C:\dev-deps\matter-js-demo\` (lesson below). If they are missing, ask before reinstalling (a workspace sweep removed them once).
+2. **Preflight** before any server, build, test run, or experiment; read the rows (the antivirus row always breaches). Run it as **its own step** and decide before starting the job: chained in one command with the job, it only reports (on 2026-10-23 the final checks ran while it showed `D:` at 98.8% and RAM under the floor). For unattended waits, use a loop that exits only when the rows clear.
+3. **Test without a file watcher** when other projects hold the `D:` ceiling: `yarn test:unit`; `yarn build:e2e` then `CI=1 E2E_SERVER=preview npx playwright test` (about 2 min). Play-tests: the built game on 41942 (lesson below).
+4. **One heavy job at a time**: long experiments run in the background; pilots first (they write to the OS temp folder, never the committed results).
+5. **Own what you start**: after any TaskStop, list this repo's node processes and stop leftovers; before reporting done, check that nothing listens on 41940–41959 and that no `.git/index.lock` is left.
+6. **Claims**: before telling the owner something syncs, deploys, or is measured, check the code or the result file (the play log never syncs; a claim to the contrary had to be corrected).
+7. **This repository's `.git` is ours to manage** (owner, 2026-10-24; channel message `comms/matter-js-demo/2026-10-24-01`). `git config --get gc.auto` must print `0`: no automatic gc on a Drive-synced repo; pack deliberately, only while Drive for desktop is off or settled, never during a sync, plain `git gc` only (no `--aggressive`, no `--prune=now`), after a `robocopy` of `.git` and with replicas up to date. Replicas: `backup-f` / `backup-h` (`F:` and `H:\git-remotes\matter-js-demo.git`), pushed daily at 04:05 by the workspace task; check with `git-push-replicas.ps1 -Check -Repo "D:\GDrive\Dev\matter-js-demo"`. Never `--mirror` or `--force` to them; a `DIVERGED` replica is looked at, not overwritten.
 
 ---
 
@@ -104,14 +123,17 @@ Word-embedding playground: Matter.js + a Canvas2D sketch (2D) and three.js (3D) 
 - CI failures: the Playwright `github` reporter turns failures into check-run annotations; read them through the public API (`/check-runs/<id>/annotations`) when `gh` is not signed in.
 - 2D e2e clicks: the dashboard covers part of the canvas and swallows clicks. Choose targets whose `document.elementFromPoint` is the `CANVAS`, and confirm each click through the store instead of assuming it landed.
 - This machine runs low on memory: Claude Code can stop idle background servers, a production build took 10 minutes, and cold `page.goto` on the dev server sometimes exceeds 30 s. Stop scratch servers (`vite preview`) after use and rerun a `page.goto` timeout once before investigating.
-- The local API's PGlite store (OS temp dir) can be corrupted by a killed process: sync then fails with Postgres `58P01` ("could not open file") in the server log. Run the dev API with `PGLITE_DATA_DIR=memory://` (as Playwright does); when an e2e sync test fails, check whether a reused server on port 8787 is the cause.
+- The local API's PGlite store (OS temp dir) can be corrupted by a killed process: sync then fails with Postgres `58P01` ("could not open file") in the server log. Run the dev API with `PGLITE_DATA_DIR=memory://` (as Playwright does); when an e2e sync test fails, check whether a reused API on port 41941 (an earlier run, possibly with a corrupted store) is the cause.
 - Chain `git add`, `git commit`, and `git push` with `&&` in **one** command line. A push on the next line ran after `git add` failed on a Drive lock and moved `main` (which deploys) to the previous commit.
 - Matter.js: freeze (`setStatic(true)`) only the one body being dragged, never an already static one: `setStatic(true)` saves the current mass as the "original", so a second freeze restores infinite mass on release, and gravity then makes Infinity × 0 = NaN, which the semantic forces spread to every word (drawn at the top-left). The world heals non-finite bodies as a safety net (Epic 4 · Task 4.5.13).
 - Touch on the 2D canvas (`Sketch.ts` keeps p5 1.x's rules): a touchstart never calls `mousePressed`; implement `touchStarted/touchMoved/touchEnded` and return `false` on the canvas (cancels the browser's emulated mouse events, which would press twice, and its pan/zoom). Give fingers a hit margin, and keep dragged bodies inside the board (out-of-bounds boxes are deleted).
 - Phone e2e: `test.use` a device profile without `defaultBrowserType` inside a describe (`const { defaultBrowserType: _, ...pixel7 } = devices['Pixel 7']`); drive finger drags with CDP `Input.dispatchTouchEvent`, and find reproductions with a random-drag stress probe that checks every body for non-finite values.
 - `expect.poll` does not retry a callback that throws: test helpers that read the board must return a value (e.g. `[]`) while worlds swap, not throw.
 - 3D tests: the camera director keeps re-framing (and re-orienting) the board until the player navigates, so measure rotation as `controls.getAzimuthalAngle()` with `director.autoFrame = false`, not camera positions.
-- Research experiments with a size knob (`CONNECT_PUZZLES`) write their committed results file only on a full run; a pilot once overwrote the 100-puzzle results (restored with `git show HEAD:<file> > <file>`).
+- Research experiments with a size knob (`CONNECT_PUZZLES`, `ANALOGY_QUESTIONS`, `GUESS_BOARDS`) write their committed results file only on a full run; pilots write to the OS temp folder, and a run filtered to one variant (`CONNECT_RULES=base`) writes its own file. A pilot once overwrote the 100-puzzle results (restored with `git show HEAD:<file> > <file>`). Vitest hides experiments' `console.log`: read the results file instead.
+- Research measures include the trivial baseline: for analogies, "the word nearest c" already scores 43% on the Google set (Linzen 2016), so report accuracy on the questions it gets wrong too. When data is added because of failures in a test set, report the new score on that set as "by construction" and keep the benchmark itself frozen.
+- An e2e example meant to be "unknown" (a relation the bank doesn't know) must be checked against the bank when it changes: apple → red and pen → write each joined the bank and broke the "model's guess" test.
+- Never leave dependency junctions inside a scratch copy (a `git archive` build of an old commit): a recursive cleanup of the scratch folder would follow them and delete the real dependencies on `C:`. Unlink with `cmd /c rmdir` right after use.
 - Live play-tests come as phone screenshots: reproduce on an emulated phone (Pixel 7) and measure the thing in the screenshot (coverage, overflow, NaN bodies) before and after the fix.
 - A stale `.git/index.lock` (empty, old, no `git.exe` running; left by a killed process) blocks every git command. Move it to the scratchpad instead of deleting it (never-delete rule), after confirming no git process is running.
 - Browser probes outside the test suite: put a Playwright script in the scratchpad and import `file:///D:/GDrive/Dev/matter-js-demo/node_modules/playwright/index.mjs`; drive the app through `window.__lexical` and measure the user's scenario (fresh page, their kind of drop) before tuning a constant.

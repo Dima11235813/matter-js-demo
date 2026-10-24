@@ -19,7 +19,8 @@ Build a private checklist from the whole conversation (not just the last few tur
 - **User ideas and feedback**: every "roadmap this", "we should also…", "I imagine…", and play-test feedback, especially ones raised mid-turn while other work was running. These are the easiest to lose.
 - **Open items**: known limitations, deferred tasks, unanswered questions, anything promised but not done.
 - **Lessons**: mistakes, surprises, environment quirks, and workflows that worked, from both the user's corrections and your own errors.
-- **Working-tree state**: `git status`, uncommitted work, stashes, running background processes (dev servers).
+- **Claims made to the owner**: what you said syncs, ships, deploys, or was measured. Check each against the code or the results file; correct any that turned out wrong in the docs *and* tell the owner (2026-10-18: "Connect bests sync" was wrong, because the play log never syncs).
+- **Working-tree state**: `git status`, uncommitted work, stashes, and running processes. Stopped background tasks leave their Node children running, so list this repo's node processes, not only the task list (`Get-CimInstance Win32_Process` with a command line matching the repo). Also check for listeners in the project's port block, a stale `.git/index.lock`, and dependency junctions left in scratch copies.
 
 ## 2. Reconcile proj-mgmt
 
@@ -64,7 +65,8 @@ Follow the memory rules in the system prompt. In short:
 - Run the project's checks (for this repo: `npx tsc --noEmit -p .`, `yarn test:unit`, `yarn build`, and `yarn research:cross-dim` if research changed).
 - Commit in logical groups if the user has authorized commits for this session; otherwise list exactly what is uncommitted and ask.
 - **Git safety**: stage files explicitly and commit. Never use `git stash --include-untracked`, `git restore --source=<commit> -- .`, `git checkout -- .`, or other bulk working-tree rewrites to split or verify commits. To verify a commit in isolation, export it with `git archive <sha>` into a scratch folder outside the synced drive and run the checks there.
-- Stop background processes you started (for example a dev server) or tell the user they are still running.
+- Stop background processes you started (for example a dev server) or tell the user they are still running. Confirm by evidence (no listeners in the port block, no repo node processes), not by the task list alone.
+- If the project is being **paused**, leave a hand-off in the roadmap's status snapshot: what shipped since the last pause, what is open (owner items first), where to resume, and how to run things on this machine.
 
 ## 7. Report readiness
 
