@@ -20,6 +20,18 @@ This project shares one machine with ~40 others. The workspace harness at
   Bind `127.0.0.1` unless LAN exposure is deliberate and recorded in the registry.
 - **Resources** — ceilings and pacing in [`local-resources.md`](file:///D:/GDrive/proj-mgmt/inventory/local-resources.md).
   **Never drive a resource to 100%; a slower batch beats a burst.**
+- **What stays off Google Drive** ([`what-stays-off-google-drive.md`](file:///D:/GDrive/proj-mgmt/docs/what-stays-off-google-drive.md),
+  2026-10-31). `D:\GDrive` is a mirrored My Drive with no folder exclusions: every file is queued for upload, and agent
+  worktrees full of `node_modules` jammed Drive for three weeks. Never create inside `D:\GDrive`:
+  - **agent worktrees:** no `.claude/worktrees/`, and no `isolation: "worktree"` for agents in this project (this project's
+    settings and skills don't use worktree isolation; keep it that way, or point it at `C:`/`F:\ai\`);
+  - **`node_modules` or other package trees:** they stay junctions into `C:\dev-deps\matter-js-demo\`;
+  - **build output, caches, virtual environments** (`dist`, `dist-e2e`, `.next`, `.cache`, `.venv`, `__pycache__`, test
+    output): build and test into the scratchpad on `C:` (`--outDir`, Playwright `--output`);
+  - **logs and temp files.**
+
+  `.git` stays, packed with `gc.auto 0`. Anything that would put more than ~1,000 new files under `D:\GDrive` is a
+  workspace question: write to the comms folder first.
 
 Before any dev server, build, or job touching many files:
 
@@ -146,4 +158,11 @@ Word-embedding playground: Matter.js + a Canvas2D sketch (2D) and three.js (3D) 
 - Dependencies live on `C:` (owner, 2026-10-18, after a workspace sweep removed `node_modules`): `node_modules`, `server/node_modules`, and `packages/shared/node_modules` are junctions into `C:\dev-deps\matter-js-demo\`, which **mirrors the repo layout** (`...\node_modules`, `...\server\node_modules`, `...\packages\shared\node_modules`). Node resolves packages from their real path, walking up through folders named `node_modules`, so a target named anything else breaks resolution (TypeScript 7 couldn't find its platform package). Yarn writes `.bin` shims as paths relative to the real location: after moving the `C:` folders, run `yarn install --frozen-lockfile --ignore-scripts --force`. Remove a junction with `cmd /c rmdir <link>` (it never touches the target); never `Remove-Item -Recurse` on a link. If `node_modules` is missing, `npx tsc` silently downloads an unrelated `tsc` package from npm: check `node_modules` first.
 - Slow-phone checks: measure at 4× CPU throttle (CDP `Emulation.setCPUThrottlingRate`) and report what the player feels: the longest gap between `requestAnimationFrame` callbacks during the action, plus long tasks that **overlap** the action's window. A click dispatched from `page.evaluate` runs inside the task that started the clock, so filtering long tasks by "started after t0" reports 0 even for a 1 s freeze (the first Task 2.10.6 probe did). Compare against the previous commit built from `git archive` into the scratchpad and served on 41944/41945.
 - Web Workers: create them with `new Worker(new URL("../workers/x.worker.ts", import.meta.url), { type: "module" })` (Vite bundles each as its own asset); keep the logic in a pure module with a message handler that unit tests call directly; type the worker's `self` by hand (the DOM and WebWorker libs clash in one tsconfig). Always keep an in-thread fallback.
+- While Google Drive for desktop is syncing (the workspace asks for no builds in the tree), build and serve the e2e bundle on `C:`:
+  1. `npx vite build --mode e2e --outDir <scratchpad>/dist-e2e --emptyOutDir`;
+  2. start `npx vite preview --outDir <same>` (41942) and `PORT=41941 PGLITE_DATA_DIR=memory:// DEV_AUTH_SECRET=<any 30+ chars> yarn start:server` yourself;
+  3. run `E2E_SERVER=preview npx playwright test --output <scratchpad>/e2e-results` **without** `CI=1`, so Playwright reuses those servers;
+  4. stop both servers by PID afterwards (they count as watchers on `D:`).
+
+  This was done on 2026-10-31: 39/39 in 2 min.
 - Before writing a file with the Write tool, check whether it already exists (`git ls-files`, `ls`): Write replaces it whole. A tracked `.env.example` was overwritten once and had to be merged back from git.
