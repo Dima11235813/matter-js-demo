@@ -92,6 +92,15 @@ graph TD
 * **Tests:** 388 unit, 39 e2e (CI mode, built and served from the scratchpad on `C:` so the synced tree saw no build output).
 * **Git (2026-10-24):** this repository's `.git` was packed (1,806 → 81 files), replicas are on `F:` and `H:` (`backup-f`, `backup-h`), and the workspace validated it (comms 2026-10-24-04).
 * **Next:** the phone play-test, the owner's bank review (human-todo 14), and measuring slow-phone work (the 3D view, 2D physics at 40 words, vocabulary load).
+* **Dependencies moved (2026-10-31, comms 2026-10-31-01):** the owner renamed the store to `C:\dev-store\matter-js-demo`, and the three junctions were repointed.
+  * **Nothing lost:** the store counted 57,336 files before and after.
+  * **No reinstall needed:** unit tests 388 passed (1 skipped); `tsc` clean; production build in 6.4 s (into the scratchpad on `C:`).
+  * **Runs:** the dev server on 41940 with the API on 41941 loaded the vocabulary in 3.3 s, in 2D and 3D, with no failed requests or page errors.
+  * **Drive check:** this session wrote nothing into the tree. About 200 old git-ignored output files remain (`dist`, `dist-e2e`, `.vite`, `test-results`, `.playwright-mcp`); asked the workspace whether to move them (comms 2026-10-31-02).
+* **Where to resume:**
+  1. Read comms (`comms_index.py --for matter-js-demo`) for the answer about the leftovers.
+  2. Merge `feature/bank-everyday-relations` (3 commits ahead of `develop`, tests green) into `develop` after a CI-mode e2e run built on `C:` (`CLAUDE.md` § Lessons, the "Drive for desktop is syncing" recipe).
+  3. Then the phone play-test and the owner's bank review (human-todo 14).
 
 ### Status snapshot (2026-10-23) · paused: the owner is exploring the codebase offline
 * **Milestone (2026-10-10 → 10-23), all in `develop` (`main` untouched at `249cd65`)**:
