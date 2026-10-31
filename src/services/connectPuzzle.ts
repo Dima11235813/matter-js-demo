@@ -5,6 +5,7 @@ import type { Puzzle } from "../game/connectPuzzles";
 import { DealerReply, DealerRequest, inThreadBackend, packCandidates, PuzzleBackend, PuzzleDealer } from "../game/connectDealer";
 import { PuzzlePlayPayload, puzzleMoveCount } from "../game/puzzleResults";
 import { semanticEngine } from "./semanticEngine";
+import { syncSoon } from "./account";
 import { logger } from "../utils/logger";
 
 /**
@@ -117,7 +118,20 @@ export async function startPuzzle(stores: RootStore, seed: number = savedSeed())
     void loadPuzzleBest(stores);
 }
 
-/** The best earlier result on the current board (shown in the HUD), from the play log. */
+/**
+ * After a sync: the board's best may have come from another device (Task 2.10.7). "New best!" stays only
+ * while the best is still this solve's.
+ */
+export async function refreshPuzzleBest(stores: RootStore): Promise<void> {
+    const { puzzle, lastPuzzleWasBest } = stores.gameStore;
+    if (!puzzle) return;
+    const best = await semanticEngine.bestPuzzleResult(puzzle.words);
+    if (stores.gameStore.puzzle?.seed !== puzzle.seed) return;
+    const stillThisSolve = lastPuzzleWasBest && puzzle.solved === true && best?.moves === puzzleMoveCount(puzzle);
+    stores.gameStore.setPuzzleBest(best ?? null, stillThisSolve);
+}
+
+/** The best earlier result on the current board (shown in the HUD), on any of the account's devices. */
 async function loadPuzzleBest(stores: RootStore, lastWasBest = false): Promise<void> {
     const puzzle = stores.gameStore.puzzle;
     if (!puzzle) return;
@@ -178,7 +192,10 @@ export function removePuzzleWord(stores: RootStore, word: string): string | unde
     return undefined;
 }
 
-/** Solved: record the result in the play log, compare with the best, and light up the whole board. */
+/**
+ * Solved: record the result in the play log and as the board's best when it beats it (which syncs to the
+ * account's other devices, Task 2.10.7), then light up the whole board.
+ */
 async function finishPuzzle(stores: RootStore): Promise<void> {
     const puzzle = stores.gameStore.puzzle;
     if (!puzzle) return;
@@ -187,6 +204,11 @@ async function finishPuzzle(stores: RootStore): Promise<void> {
     const previous = stores.gameStore.puzzleBest;
     const payload: PuzzlePlayPayload = { seed: puzzle.seed, band: puzzle.band, par: puzzle.par, words: puzzle.words, moves: puzzle.moves, removed: puzzle.removed ?? [], moveCount };
     await semanticEngine.logPlay("puzzle", { view: "puzzle", dimension: stores.gameStore.dimension, hintMode: stores.gameStore.hintMode }, { ...payload });
+    try {
+        if (await semanticEngine.recordPuzzleSolve({ words: puzzle.words, moves: moveCount, par: puzzle.par, seed: puzzle.seed, solvedAt: Date.now() })) syncSoon();
+    } catch (error) {
+        logger.warn("Could not record the puzzle's best", error);
+    }
     await loadPuzzleBest(stores, !previous || moveCount < previous.moves);
     // Completion burst: every word on the board glows (3D) or pulses (2D), once the last word has landed.
     setTimeout(() => deps.activeWorld?.focusWords([...puzzle.words, ...puzzle.moves]), 400);

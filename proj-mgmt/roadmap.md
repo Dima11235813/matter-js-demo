@@ -87,6 +87,12 @@ graph TD
     D -->|Production Release| E
 ```
 
+### Status snapshot (2026-10-31) · Google Drive for desktop disconnected; the folder is readied for its reconnect
+* **Built and committed on `feature/bank-everyday-relations` (2026-10-31):** Connect-All bests sync across the account's devices (Epic 2 · Task 2.10.7; Epic 3 · Task 3.8.6). A sixth collection, `puzzles`, keeps one record per board, and the fewest moves wins. IndexedDB v7 copies the play log's bests on upgrade.
+* **Tests:** 388 unit, 39 e2e (CI mode, built and served from the scratchpad on `C:` so the synced tree saw no build output).
+* **Git (2026-10-24):** this repository's `.git` was packed (1,806 → 81 files), replicas are on `F:` and `H:` (`backup-f`, `backup-h`), and the workspace validated it (comms 2026-10-24-04).
+* **Next:** the phone play-test, the owner's bank review (human-todo 14), and measuring slow-phone work (the 3D view, 2D physics at 40 words, vocabulary load).
+
 ### Status snapshot (2026-10-23) · paused: the owner is exploring the codebase offline
 * **Milestone (2026-10-10 → 10-23), all in `develop` (`main` untouched at `249cd65`)**:
   * workspace harness adopted (ports 41940–41959 on loopback);

@@ -187,7 +187,7 @@ export const PuzzleHud = observer(({ gameStore }: { gameStore: GameStore }) => {
         <span title="Seeded: the same number is the same puzzle">Puzzle #{puzzle.seed} · {puzzle.band}</span>
         <span data-testid="puzzle-progress"><strong>{puzzleStats.connected} of {puzzleStats.total}</strong> connected ({percent}%)</span>
         <span data-testid="puzzle-moves" title="Each word you add or remove is a move; par is the fewest our solver found">moves {moves} · par {puzzle.par}</span>
-        {best && <span data-testid="puzzle-best" title="Your best on this puzzle (from your play log)">best {best.moves}</span>}
+        {best && <span data-testid="puzzle-best" title="Your best on this puzzle, on any of your signed-in devices">best {best.moves}</span>}
       </div>
       {puzzle.moves.length > 0 && !puzzle.solved && (
         <div className={styles.Verdict} data-testid="puzzle-own-words">

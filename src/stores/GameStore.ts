@@ -37,7 +37,7 @@ export class GameStore extends CommonStore {
      */
     puzzle: (Puzzle & { moves: string[]; removed?: string[]; solved?: boolean }) | null = null
     puzzleStats: { connected: number; total: number; ratio: number; loose: string[]; solved: boolean } | null = null
-    /** Best earlier result on this puzzle's board (from the play log), and whether the last solve beat it. */
+    /** Best earlier result on this puzzle's board (synced across the account's devices), and whether the last solve beat it. */
     puzzleBest: PuzzleResult | null = null
     lastPuzzleWasBest = false
     game: TimedGameState | null = null

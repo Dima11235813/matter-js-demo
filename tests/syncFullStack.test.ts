@@ -185,3 +185,51 @@ describe('sync: the Guess rating and saved sessions (Tasks 2.12.3, 2.15.4)', () 
     expect(record.payload.analogies[0].points).toBe(13);
   });
 });
+
+describe('Connect-All bests across devices (Task 2.10.7)', () => {
+  const words = ['sea', 'dog', 'king'];
+  const solve = (moves: number, solvedAt: number) => ({ words, moves, par: 4, seed: 7, solvedAt });
+
+  it('a best set on one device shows on the other, and only a better one replaces it', async () => {
+    const laptop = await device('hana');
+    const phone = await device('hana');
+    await laptop.repo.recordPuzzleSolve(solve(6, 1000));
+    await laptop.sync();
+    await phone.sync();
+    expect(await phone.repo.puzzleBest(words)).toEqual({ moves: 6, par: 4 });
+
+    // Offline on both: the phone does better, the laptop does worse (no new best there).
+    expect(await phone.repo.recordPuzzleSolve(solve(4, 2000))).toBe(true);
+    expect(await laptop.repo.recordPuzzleSolve(solve(7, 3000))).toBe(false);
+    await phone.sync();
+    await laptop.sync();
+    expect(await laptop.repo.puzzleBest(words)).toEqual({ moves: 4, par: 4 });
+    expect(await laptop.repo.pendingSyncRecords()).toEqual([]);
+    expect(await phone.repo.pendingSyncRecords()).toEqual([]);
+  });
+
+  it('two offline bests on the same board settle on the fewer moves on both devices', async () => {
+    const laptop = await device('ivan');
+    const phone = await device('ivan');
+    await laptop.repo.recordPuzzleSolve(solve(5, 1000));
+    await phone.repo.recordPuzzleSolve(solve(6, 500)); // earlier, but more moves
+    await laptop.sync();
+    await phone.sync(); // the server merges the phone's push: the laptop's 5 wins
+    await laptop.sync();
+    expect(await phone.repo.puzzleBest(words)).toEqual({ moves: 5, par: 4 });
+    expect(await laptop.repo.puzzleBest(words)).toEqual({ moves: 5, par: 4 });
+  });
+
+  it('the server refuses a best whose key is not its board', async () => {
+    const laptop = await device('jo');
+    await laptop.sync(); // claims the device
+    const token = (await (await app.request('/api/v1/dev/token', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ subject: 'jo' }) })).json()).token as string;
+    const record = { collection: 'puzzles', key: 'dog', schemaVersion: 1, clientUpdatedAt: 1, deviceId: laptop.repo.deviceId, payload: { words: ['dog', 'sea'], moves: 3, par: 3, solvedAt: 1 } };
+    const response = await app.request('/api/v1/sync/push', {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ deviceId: laptop.repo.deviceId, records: [record] }),
+    });
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.code).toBe('non-canonical-key');
+  });
+});

@@ -1,8 +1,9 @@
 import { DBSchema, IDBPDatabase, IDBPTransaction, openDB, StoreNames } from "idb";
 import { DeviceCounter } from "./counters";
-import { analogyKey } from "./keys";
+import { analogyKey, normalizeKey } from "./keys";
 import { Neighbor } from "../embeddings/VectorIndex";
 import type { SavedSession } from "../game/sessions";
+import { bestSolvesByBoard, type PuzzleSolve } from "../game/puzzleResults";
 
 /**
  * Local-first persistence. Every record carries sync metadata so a future server can pull
@@ -68,6 +69,19 @@ export interface ProfileRecord extends SyncStamp {
  * delete reaches the other devices. Tombstones keep only the id and the stamps' meaning; lists skip them.
  */
 export type SessionRecord = SavedSession & { updatedAt?: number; syncState?: SyncState; deviceId?: string; deleted?: boolean };
+
+/**
+ * A Connect-All board's best result (Epic 2 · Task 2.10.7), v7+: keyed by `puzzleKey(words)`, synced as the
+ * `puzzles` collection (the fewest moves wins). `words` are stored normalized and sorted, as the key is.
+ */
+export interface PuzzleBestRecord extends SyncStamp {
+    key: string;
+    words: string[];
+    moves: number;
+    par: number;
+    seed?: number;
+    solvedAt: number;
+}
 
 export interface GameRecord extends SyncStamp {
     id: string;
@@ -151,12 +165,14 @@ export interface LexicalSchema extends DBSchema {
     meta: { key: string; value: MetaRecord };
     /** Saved boards (owner, 2026-10-05); per account database, synced since v6 (Task 2.15.4). */
     sessions: { key: string; value: SessionRecord; indexes: { bySavedAt: number; bySyncState: SyncState } };
+    /** Connect-All bests, one per board (v7, Task 2.10.7); synced. */
+    puzzles: { key: string; value: PuzzleBestRecord; indexes: { bySyncState: SyncState } };
 }
 
 export type LexicalDb = IDBPDatabase<LexicalSchema>;
 
 export const DEFAULT_DB_NAME = "lexical-fountain";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 export function openLexicalDb(name: string = DEFAULT_DB_NAME): Promise<LexicalDb> {
     return openDB<LexicalSchema>(name, DB_VERSION, {
@@ -194,8 +210,32 @@ export function openLexicalDb(name: string = DEFAULT_DB_NAME): Promise<LexicalDb
                 // Sessions saved before sessions synced become pending, so the next sync uploads them.
                 if (oldVersion >= 5) void stampSessionsForSync(transaction);
             }
+            if (oldVersion < 7) {
+                const puzzles = db.createObjectStore("puzzles", { keyPath: "key" });
+                puzzles.createIndex("bySyncState", "syncState");
+                // Bests so far lived only in the play log: copy each board's best, pending, so the next sync shares it.
+                if (oldVersion >= 3) void collectPuzzleBests(transaction);
+            }
         },
     });
+}
+
+/** v7: each board's best `puzzle` play event becomes a puzzles record (this device's, last changed when solved). */
+async function collectPuzzleBests(transaction: UpgradeTransaction): Promise<void> {
+    const profile = await transaction.objectStore("profile").get("local");
+    if (!profile) return; // no profile yet: nothing was played
+    const puzzles = transaction.objectStore("puzzles");
+    for (const [key, solve] of bestSolvesByBoard(await transaction.objectStore("playEvents").getAll())) {
+        await puzzles.put(puzzleBestRecord(key, solve, { createdAt: solve.solvedAt, updatedAt: solve.solvedAt, syncState: "pending", deviceId: profile.deviceId }));
+    }
+}
+
+/** A board's best as stored: normalized, sorted words (they match the key), plus the sync stamp. */
+export function puzzleBestRecord(key: string, solve: PuzzleSolve, stamp: SyncStamp): PuzzleBestRecord {
+    return {
+        key, words: solve.words.map(normalizeKey).sort(), moves: solve.moves, par: solve.par,
+        ...(solve.seed !== undefined ? { seed: solve.seed } : {}), solvedAt: solve.solvedAt, ...stamp,
+    };
 }
 
 /** v6: existing sessions get sync stamps (pending, last changed when saved, this device's id). */

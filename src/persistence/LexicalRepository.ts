@@ -1,11 +1,16 @@
 import { AnalogyResult } from "../embeddings/analogy";
-import { AgeBand, AnalogyRecord, ConsentState, GameRecord, LexicalDb, MetaRecord, PLAY_EVENT_SCHEMA, PlayEventRecord, PlayerWordRecord, ProfileRecord, SessionRecord, SyncStamp } from "./db";
-import { counterTotal, incrementCounter } from "./counters";
-import { analogyKey } from "./keys";
-import { mergeRecords, sameRecord, type SyncRecord } from "@lexical/shared";
-import type { SavedSession, UploadedPlayEvent } from "../game/sessions";
 import {
-    analogyFromSync, analogyToSync, gameFromSync, gameToSync, profileFromSync, profileToSync, sessionFromSync, sessionToSync, wordFromSync, wordToSync,
+    AgeBand, AnalogyRecord, ConsentState, GameRecord, LexicalDb, MetaRecord, PLAY_EVENT_SCHEMA, PlayEventRecord, PlayerWordRecord, ProfileRecord,
+    PuzzleBestRecord, puzzleBestRecord, SessionRecord, SyncStamp,
+} from "./db";
+import { counterTotal, incrementCounter } from "./counters";
+import { analogyKey, puzzleKey } from "./keys";
+import { mergeRecords, sameRecord, SyncRecord } from "@lexical/shared";
+import type { SavedSession, UploadedPlayEvent } from "../game/sessions";
+import { beatsBest, bestSolvesByBoard, type PuzzleResult, type PuzzleSolve } from "../game/puzzleResults";
+import {
+    analogyFromSync, analogyToSync, gameFromSync, gameToSync, profileFromSync, profileToSync, puzzleFromSync, puzzleToSync, sessionFromSync, sessionToSync,
+    wordFromSync, wordToSync,
 } from "./syncRecords";
 
 export type GameResult = Omit<GameRecord, keyof SyncStamp | "id">;
@@ -16,6 +21,14 @@ export type GameResult = Omit<GameRecord, keyof SyncStamp | "id">;
  */
 function after(previous: number | undefined): number {
     return Math.max(Date.now(), (previous ?? 0) + 1);
+}
+
+/**
+ * Puzzle bests the contract accepts: one record the server would refuse (an over-long board key, say) must
+ * never make it refuse the whole push batch, which would stall sync for every record in it.
+ */
+function syncablePuzzles(records: readonly PuzzleBestRecord[]): SyncRecord[] {
+    return records.map(puzzleToSync).filter(record => SyncRecord.safeParse(record).success);
 }
 
 /** Just the board (the stored record also carries sync stamps). */
@@ -35,6 +48,8 @@ export interface LocalDataExport {
     games: GameRecord[];
     playEvents: PlayEventRecord[];
     sessions?: SavedSession[];
+    /** Connect-All bests, one per board (v7). */
+    puzzles?: PuzzleBestRecord[];
 }
 export type PlayEventInput = Omit<PlayEventRecord, keyof SyncStamp | "id" | "schema" | "at"> & { at?: number };
 
@@ -228,7 +243,32 @@ export class LexicalRepository {
             added++;
         }
         await tx.done;
+        // Solved puzzles in the file are the player's results: their bests count (and sync) like ones played here.
+        for (const solve of bestSolvesByBoard(events).values()) await this.recordPuzzleSolve(solve);
         return { added, skipped: events.length - added };
+    }
+
+    // --- Connect-All bests, one per board; synced since v7 (Task 2.10.7) ---------------------------------
+
+    /** Records a solved board. Returns true when it is the board's new best (then pending, so it syncs). */
+    async recordPuzzleSolve(solve: PuzzleSolve): Promise<boolean> {
+        const key = puzzleKey(solve.words);
+        const tx = this.db.transaction("puzzles", "readwrite");
+        const existing = await tx.store.get(key);
+        if (!beatsBest(solve, existing)) {
+            await tx.done;
+            return false;
+        }
+        const stamp = existing ? { ...this.touch(existing), updatedAt: after(existing.updatedAt) } : this.stamp();
+        await tx.store.put(puzzleBestRecord(key, solve, stamp));
+        await tx.done;
+        return true;
+    }
+
+    /** This board's best result (from any of the account's devices, once synced); undefined when never solved. */
+    async puzzleBest(words: readonly string[]): Promise<PuzzleResult | undefined> {
+        const record = await this.db.get("puzzles", puzzleKey(words));
+        return record ? { moves: record.moves, par: record.par } : undefined;
     }
 
     // --- saved sessions (boards), newest first; synced since v6 (Task 2.15.4) ---------------------------
@@ -281,11 +321,12 @@ export class LexicalRepository {
 
     /** Every record waiting to be pushed (the play log and device meta are never synced). */
     async pendingSyncRecords(): Promise<SyncRecord[]> {
-        const [words, analogies, games, sessions] = await Promise.all([
+        const [words, analogies, games, sessions, puzzles] = await Promise.all([
             this.db.getAllFromIndex("words", "bySyncState", "pending"),
             this.db.getAllFromIndex("analogies", "bySyncState", "pending"),
             this.db.getAllFromIndex("games", "bySyncState", "pending"),
             this.db.getAllFromIndex("sessions", "bySyncState", "pending"),
+            this.db.getAllFromIndex("puzzles", "bySyncState", "pending"),
         ]);
         return [
             ...(this.profile.syncState === "pending" ? [profileToSync(this.profile)] : []),
@@ -293,17 +334,18 @@ export class LexicalRepository {
             ...analogies.map(analogyToSync),
             ...games.map(gameToSync),
             ...sessions.map(s => sessionToSync(s, this.deviceId)),
+            ...syncablePuzzles(puzzles),
         ];
     }
 
     /** Every syncable record (pending or not): what another local profile adopts (Epic 6 · Feature 6.7). */
     async allSyncRecords(): Promise<SyncRecord[]> {
-        const [words, analogies, games, sessions] = await Promise.all([
-            this.db.getAll("words"), this.db.getAll("analogies"), this.db.getAll("games"), this.db.getAll("sessions"),
+        const [words, analogies, games, sessions, puzzles] = await Promise.all([
+            this.db.getAll("words"), this.db.getAll("analogies"), this.db.getAll("games"), this.db.getAll("sessions"), this.db.getAll("puzzles"),
         ]);
         return [
             profileToSync(this.profile), ...words.map(wordToSync), ...analogies.map(analogyToSync), ...games.map(gameToSync),
-            ...sessions.map(s => sessionToSync(s, this.deviceId)),
+            ...sessions.map(s => sessionToSync(s, this.deviceId)), ...syncablePuzzles(puzzles),
         ];
     }
 
@@ -356,6 +398,10 @@ export class LexicalRepository {
                 const local = await this.db.get("sessions", record.key);
                 return local ? sessionToSync(local, this.deviceId) : undefined;
             }
+            case "puzzles": {
+                const local = await this.db.get("puzzles", record.key);
+                return local ? puzzleToSync(local) : undefined;
+            }
         }
     }
 
@@ -380,6 +426,9 @@ export class LexicalRepository {
             case "sessions":
                 await this.db.put("sessions", sessionFromSync(record, syncState));
                 return;
+            case "puzzles":
+                await this.db.put("puzzles", puzzleFromSync(record, syncState));
+                return;
         }
     }
 
@@ -395,8 +444,9 @@ export class LexicalRepository {
      * future GDPR export (Epic 6 · Task 6.3.1). The device secret is left out: it is a credential.
      */
     async exportAll(): Promise<LocalDataExport> {
-        const [words, analogies, games, playEvents, sessions] = await Promise.all([
+        const [words, analogies, games, playEvents, sessions, puzzles] = await Promise.all([
             this.db.getAll("words"), this.db.getAll("analogies"), this.db.getAll("games"), this.db.getAll("playEvents"), this.db.getAll("sessions"),
+            this.db.getAll("puzzles"),
         ]);
         const { deviceSecret: _secret, ...meta } = this.meta;
         return {
@@ -410,12 +460,13 @@ export class LexicalRepository {
             games,
             playEvents,
             sessions: sessions.filter(s => !s.deleted), // tombstones are sync bookkeeping, not the player's data
+            puzzles,
         };
     }
 
     /** Clears every store on this device (Epic 6 · Task 6.3.2). The next open starts a fresh profile. */
     async eraseAll(): Promise<void> {
-        const names = ["words", "analogies", "profile", "games", "playEvents", "meta", "sessions"] as const;
+        const names = ["words", "analogies", "profile", "games", "playEvents", "meta", "sessions", "puzzles"] as const;
         const tx = this.db.transaction([...names], "readwrite");
         await Promise.all([...names.map(name => tx.objectStore(name).clear()), tx.done]);
     }

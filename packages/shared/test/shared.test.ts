@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  analogyKey, counterTotal, decodeVector, encodeVector, mergeRecords, PushRequest, sameRecord, SyncRecord, wordKey,
+  analogyKey, counterTotal, decodeVector, encodeVector, mergeRecords, PushRequest, puzzleKey, sameRecord, SyncRecord, wordKey,
 } from '../src';
 
 const DEVICE_A = '11111111-1111-4111-8111-111111111111';
@@ -134,5 +134,38 @@ describe('merge rules: the Guess rating and saved sessions (Tasks 2.12.3, 2.15.4
     expect(SyncRecord.safeParse(tooBig).success).toBe(false);
     const badColor = { ...session(DEVICE_A, 1, 'x'), payload: { ...(session(DEVICE_A, 1, 'x') as { payload: object }).payload, words: [{ word: 'dog', x: 1, y: 2, color: 'red' }] } };
     expect(SyncRecord.safeParse(badColor).success).toBe(false);
+  });
+});
+
+describe('merge rules: Connect-All bests (Task 2.10.7)', () => {
+  const words = ['dog', 'king', 'sea'];
+  const best = (deviceId: string, at: number, moves: number, solvedAt: number): SyncRecord => ({
+    collection: 'puzzles', key: puzzleKey(words), schemaVersion: 1, clientUpdatedAt: at, deviceId,
+    payload: { words, moves, par: 4, seed: 7, solvedAt },
+  });
+  const bests = [best(DEVICE_A, 100, 6, 100), best(DEVICE_B, 200, 5, 200), best(DEVICE_A, 300, 5, 150), best(DEVICE_B, 400, 9, 50)];
+
+  it('stays commutative, idempotent, and associative', () => {
+    for (const a of bests) for (const b of bests) {
+      expect(sameRecord(mergeRecords(a, b), mergeRecords(b, a))).toBe(true);
+      expect(sameRecord(mergeRecords(a, a), a)).toBe(true);
+    }
+    for (const a of bests) for (const b of bests) for (const c of bests) {
+      expect(sameRecord(mergeRecords(mergeRecords(a, b), c), mergeRecords(a, mergeRecords(b, c)))).toBe(true);
+    }
+  });
+
+  it('keeps the fewest moves however recent the other copy is, and the first to reach a tie', () => {
+    expect(mergeRecords(bests[0], bests[3])).toBe(bests[0]); // 6 beats a later 9
+    expect(mergeRecords(bests[1], bests[2])).toBe(bests[2]); // both 5: solved first wins
+  });
+
+  it('keys a board by its normalized, sorted words and validates the limits', () => {
+    expect(puzzleKey(['Sea', ' dog', 'king'])).toBe('dog king sea');
+    expect(SyncRecord.safeParse(bests[0]).success).toBe(true);
+    const tooMany = { ...bests[0], payload: { ...(bests[0] as { payload: object }).payload, words: Array.from({ length: 17 }, (_, i) => `w${i}`) } };
+    expect(SyncRecord.safeParse(tooMany).success).toBe(false);
+    const negative = { ...bests[0], payload: { ...(bests[0] as { payload: object }).payload, moves: -1 } };
+    expect(SyncRecord.safeParse(negative).success).toBe(false);
   });
 });

@@ -129,3 +129,66 @@ describe('LexicalRepository play log', () => {
     expect((await repo.pendingSyncCounts()).playEvents).toBe(2);
   });
 });
+
+describe('LexicalRepository Connect-All bests (Task 2.10.7)', () => {
+  const context = { view: 'puzzle', dimension: '2d' as const, hintMode: true };
+  const solve = (moves: number, solvedAt = 1000) => ({ words: ['sea', 'dog', 'king'], moves, par: 4, seed: 7, solvedAt });
+
+  it('keeps one best per board, pending so it syncs, and only replaces it with fewer moves', async () => {
+    const repo = await freshRepo();
+    expect(await repo.puzzleBest(['dog', 'king', 'sea'])).toBeUndefined();
+    expect(await repo.recordPuzzleSolve(solve(6))).toBe(true);
+    expect(await repo.recordPuzzleSolve(solve(6, 2000))).toBe(false); // a tie is not a new best
+    expect(await repo.recordPuzzleSolve(solve(8))).toBe(false);
+    expect(await repo.puzzleBest(['king', 'sea', 'dog'])).toEqual({ moves: 6, par: 4 });
+    expect(await repo.recordPuzzleSolve(solve(5, 3000))).toBe(true);
+    expect(await repo.puzzleBest(['dog', 'king', 'sea'])).toEqual({ moves: 5, par: 4 });
+
+    const pending = (await repo.pendingSyncRecords()).filter(r => r.collection === 'puzzles');
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({ key: 'dog king sea', deviceId: repo.deviceId, payload: { words: ['dog', 'king', 'sea'], moves: 5, par: 4, seed: 7, solvedAt: 3000 } });
+    expect((await repo.exportAll()).puzzles).toHaveLength(1);
+    await repo.eraseAll();
+    expect(await repo.puzzleBest(['dog', 'king', 'sea'])).toBeUndefined();
+  });
+
+  it('counts solves from an uploaded play log as bests', async () => {
+    const repo = await freshRepo();
+    await repo.importPlayEvents([{ id: 'e1', type: 'puzzle', schema: 1, at: 500, sessionId: 's', vocabVersion: 'v', context, payload: { seed: 7, par: 4, words: ['dog', 'sea'], moveCount: 4 } }]);
+    expect(await repo.puzzleBest(['sea', 'dog'])).toEqual({ moves: 4, par: 4 });
+  });
+
+  it('upgrades a v6 database: each board\'s best in the play log becomes a pending best', async () => {
+    const { openDB } = await import('idb');
+    const v6 = await openDB('upgrade-v6', 6, {
+      upgrade(db) {
+        db.createObjectStore('words', { keyPath: 'word' }).createIndex('bySyncState', 'syncState');
+        const analogies = db.createObjectStore('analogies', { keyPath: 'id' });
+        analogies.createIndex('bySyncState', 'syncState');
+        analogies.createIndex('byUpdatedAt', 'updatedAt');
+        db.createObjectStore('profile', { keyPath: 'id' });
+        const games = db.createObjectStore('games', { keyPath: 'id' });
+        games.createIndex('bySyncState', 'syncState');
+        games.createIndex('byScore', 'score');
+        const events = db.createObjectStore('playEvents', { keyPath: 'id' });
+        events.createIndex('bySyncState', 'syncState');
+        events.createIndex('byAt', 'at');
+        db.createObjectStore('meta', { keyPath: 'id' });
+        const sessions = db.createObjectStore('sessions', { keyPath: 'id' });
+        sessions.createIndex('bySavedAt', 'savedAt');
+        sessions.createIndex('bySyncState', 'syncState');
+      },
+    });
+    await v6.put('profile', { id: 'local', score: 0, scoreByDevice: {}, createdAt: 1, updatedAt: 1, syncState: 'synced', deviceId: '66666666-6666-4666-8666-000000000006' });
+    const stamp = { createdAt: 1, updatedAt: 1, syncState: 'pending', deviceId: '66666666-6666-4666-8666-000000000006', schema: 1, sessionId: 's', vocabVersion: 'v', context };
+    await v6.put('playEvents', { ...stamp, id: 'p1', type: 'puzzle', at: 100, payload: { seed: 7, par: 4, words: ['sea', 'dog'], moveCount: 7 } });
+    await v6.put('playEvents', { ...stamp, id: 'p2', type: 'puzzle', at: 200, payload: { seed: 7, par: 4, words: ['dog', 'sea'], moveCount: 5 } });
+    await v6.put('playEvents', { ...stamp, id: 'p3', type: 'word', at: 300, payload: { word: 'owl' } });
+    v6.close();
+
+    const repo = await LexicalRepository.open(await openLexicalDb('upgrade-v6'));
+    expect(await repo.puzzleBest(['dog', 'sea'])).toEqual({ moves: 5, par: 4 });
+    const pending = (await repo.pendingSyncRecords()).filter(r => r.collection === 'puzzles');
+    expect(pending).toEqual([expect.objectContaining({ key: 'dog sea', clientUpdatedAt: 200, deviceId: '66666666-6666-4666-8666-000000000006' })]);
+  });
+});

@@ -149,14 +149,26 @@ Turn the physics prototype into an engaging, addictive educational game. Players
 * [~] **Task 2.10.4** (✅ template generator with seeds in `src/game/connectPuzzles.ts`, shared by the game and the harness; `makePuzzle` skips unsolvable seeds and computes par and band. ✅ 2026-10-11 hard templates: six interleaved templates, a third per band (3+0 ×2, 3+1, 2+2, 2+5, 3+4); 200 puzzles give **70 / 63 / 52** easy/medium/hard (exit criterion ≥ 50 each met), 185 solvable; bots on beam par: greedy +0.58, nearest 85% +4.8, hub 1%, random 0%. Puzzle numbers deal new boards from this date. ⬜ permutation by similarity band): Generator: templates, permutation by similarity band, deterministic seeds, par/difficulty filter.
 * [~] **Task 2.10.5** (✅ MVP 2026-10-04: a **Connect** view (menu ⊶ `#puzzle-toggle`, 2D and 3D) deals puzzle #N (the number is kept per device), the HUD shows "4 of 8 connected (50%) · moves 1 · par 5", the loose words (click to focus) and skip; every typed word is a move, and words on the board, words sharing a stem with one, expressions, and pasted text are refused with a reason; loose words are outlined in 2D and glow in 3D; solving shows "Solved in N moves (par)" and Next puzzle; solved puzzles are logged (`puzzle` play event). Screenshot `docs/research/img/connect-all-puzzle.png`. e2e: puzzle #N solved at par by typing the solver's words, a refused move costs nothing, Next puzzle advances. ✅ 2026-10-11:
   * **Removing a word:** the HUD lists "Your words" with a ✕ each. A removal costs a move, and so did adding the word (`puzzleMoveCount` = words added + removals). Puzzle words can't be removed.
-  * **Results:** the best per board comes from the play log (`src/game/puzzleResults.ts`; the `puzzle` event now records the board's words, the removals, and the move count), so results persist, export, and erase with the log, without a new store. *Correction 2026-10-18: the play log never syncs (shared contract), so bests stay on the device; syncing them is Task 2.10.7.* Bests are keyed by the board's words, so a changed generator never mixes boards. The HUD shows "best N", and a solve that beats it says "New best!".
+  * **Results:** the best per board comes from the play log (`src/game/puzzleResults.ts`; the `puzzle` event now records the board's words, the removals, and the move count), so results persist, export, and erase with the log, without a new store. *Correction 2026-10-18: the play log never syncs (shared contract), so bests stay on the device; syncing them is Task 2.10.7.* *Since 2026-10-31 (2.10.7), bests have their own synced store, filled from the play log on upgrade.* Bests are keyed by the board's words, so a changed generator never mixes boards. The HUD shows "best N", and a solve that beats it says "New best!".
   * **Completion burst:** the solved line pops in with a glow, and every word on the board pulses (2D) or glows (3D).
   * **Tests:** unit `tests/puzzleResults.test.ts`; e2e removal (2 moves, the word leaves the board), solve at par + 2 → "New best!", all words lit, reload → "best par + 2", solve at par → "New best!", best = par.
 
   ⬜ owner play-test.
 
   Original plan: Puzzle mode UI: HUD ratio, loose-word highlighting (2D and 3D), move counter vs par, win state, next puzzle; results persisted like timed games.
-* [ ] **Task 2.10.7** (roadmap, 2026-10-18): sync Connect-All bests across devices. They come from the play log, which never syncs. Either a small synced `puzzles` collection (one record per board key, the fewest moves wins on merge, commutative), or fold bests into the profile like the rating. Exit: a best set on one device shows as "best N" on the other after a sync.
+* [x] **Task 2.10.7** (roadmap 2026-10-18; built and committed 2026-10-31, while Google Drive for desktop was disconnected): sync Connect-All bests across devices. The bests came from the play log, which never syncs.
+  * **Chosen:** a synced `puzzles` collection with one record per board (Epic 3 · Task 3.8.6). The profile wasn't used, because it would grow with every board played.
+  * **Recording:** a solve that beats the board's best (strictly fewer moves) is written to IndexedDB (v7, `puzzles` store) and synced soon after. The play log still records every solve.
+  * **Carried over:** the v7 upgrade copies each board's best from the play log, and an uploaded play log's solves count too.
+  * **After a sync:** the HUD's "best N" refreshes. "New best!" stays only while the best is still this solve's.
+  * **Tests:**
+    * unit: merge rules, the repository, the v6 → v7 upgrade, and the full stack across two devices (including a server refusal of a wrong key);
+    * e2e: two browsers, one persona; the laptop solves at par and the phone's HUD shows "best par" after its sync.
+  * **Exit met (2026-10-31):** a best set on one device shows as "best N" on the other after a sync (the e2e test).
+    * **Unit:** 388 passed, 1 skipped (was 376).
+    * **e2e:** 39 of 39 (was 38), CI mode, against an e2e bundle built into the scratchpad on `C:`, because Drive's first sync was running.
+    * **Type-checks:** web and server clean.
+  * ✅ committed 2026-10-31 (Drive disconnected); ⬜ owner play-test on two devices.
 * [x] **Task 2.10.6** (2026-10-18, owner: "important for this app to work well on low resource mobile devices"): deal without a stall on slow phones.
   * **Worker:** puzzles are made in a Web Worker (`src/workers/connectPuzzle.worker.ts`, 5.65 KB). Its logic is in `src/game/connectDealer.ts`: `createDealerHandler`, a unit-tested message handler.
   * **Prefetch:** `PuzzleDealer` keeps the next puzzle made ahead (at most 3 held), and doesn't cache failures.

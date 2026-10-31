@@ -21,7 +21,7 @@ import { SourcedAnalogy, solveWithBank } from "../game/relationAnswers";
 import { RelationStats } from "../game/relationHint";
 import { difficultyOf, NEW_RATING, Rating, RATING_RULES, rateGuess, relationDifficulty } from "../game/rating";
 import { BASE_RULES, ConnectNode, ConnectRules } from "../game/connectAll";
-import { bestPuzzleResult, PuzzleResult } from "../game/puzzleResults";
+import type { PuzzleResult, PuzzleSolve } from "../game/puzzleResults";
 import type { SavedSession, UploadedPlayEvent } from "../game/sessions";
 import { playLogExport, PlayLogExport, summarizePlayLog, PlayLogSummary } from "../game/playLog";
 import { logger } from "../utils/logger";
@@ -169,9 +169,14 @@ export class SemanticEngine {
         return this.require().repo.bestGameScore();
     }
 
-    /** Best earlier result on this Connect-All board, from the play log (Task 2.10.5). */
-    async bestPuzzleResult(words: readonly string[]): Promise<PuzzleResult | undefined> {
-        return bestPuzzleResult(await this.require().repo.listPlayEvents(), words);
+    /** Best earlier result on this Connect-All board, on any of the account's devices once synced (Tasks 2.10.5, 2.10.7). */
+    bestPuzzleResult(words: readonly string[]): Promise<PuzzleResult | undefined> {
+        return this.require().repo.puzzleBest(words);
+    }
+
+    /** Records a solved board; true when it is a new best (which then syncs). */
+    recordPuzzleSolve(solve: PuzzleSolve): Promise<boolean> {
+        return this.require().repo.recordPuzzleSolve(solve);
     }
 
     neighbors(word: string, k = 8): Neighbor[] {

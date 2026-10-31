@@ -176,6 +176,11 @@ Refactor the codebase from a single client-side project containing all vocabular
   * pushes and pull pages are bounded by size as well as count (`MAX_SYNC_BYTES`).
 
   The play log and device meta still never sync.
+* [x] **Task 3.8.6** (2026-10-31, for Epic 2 · Task 2.10.7): a sixth collection, `puzzles`, holds the Connect-All bests. It is additive, so there is no new schema version.
+  * **Key:** `puzzleKey(words)`, the board's normalized words sorted and joined by spaces. It is in `@lexical/shared`, and the server refuses a record whose key isn't its board.
+  * **Payload:** `{ words, moves, par, seed?, solvedAt }`, with at most 16 words.
+  * **Merge:** the fewest moves wins, then the earlier solve; complete ties fall back to last-writer order. The merge is commutative, idempotent, and associative.
+  * **Client:** IndexedDB v7 adds a `puzzles` store, filled from the play log's bests on upgrade. Records the contract would refuse are left out of a push, so one bad record can't stall a batch.
 * **Exit criteria**:
   * one schema definition per DTO (no duplicate types in `src/` or `server/`);
   * two devices converge with no lost points (property tests + e2e);

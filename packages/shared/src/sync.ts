@@ -98,6 +98,20 @@ export const SessionPayload = z.object({
     deleted: z.optional(z.boolean()),
 });
 
+/**
+ * A Connect-All best (Epic 2 · Task 2.10.7): one record per board, keyed by `puzzleKey(words)`. The fewest
+ * moves wins on merge, so a best set on any device becomes the best everywhere. `words` are the board's
+ * own words, normalized and sorted (boards have at most 10; the key must fit 256 characters).
+ */
+export const PuzzlePayload = z.object({
+    words: z.array(text(1, 40)).check(z.minLength(1), z.maxLength(16)),
+    moves: count(),
+    par: count(),
+    /** The puzzle number it was dealt as (informational: the words identify the board). */
+    seed: z.optional(count()),
+    solvedAt: epochMs,
+});
+
 const envelope = {
     key: text(1, 256),
     schemaVersion: z.int().check(z.gte(SYNC_SCHEMA_VERSION - 1), z.lte(SYNC_SCHEMA_VERSION)),
@@ -105,13 +119,14 @@ const envelope = {
     deviceId,
 };
 
-/** One synced record. The play log and device meta are never synced (so Connect-All bests stay on the device). */
+/** One synced record. The play log and device meta are never synced (Connect-All bests sync as `puzzles`). */
 export const SyncRecord = z.discriminatedUnion("collection", [
     z.object({ collection: z.literal("profile"), ...envelope, payload: ProfilePayload }),
     z.object({ collection: z.literal("words"), ...envelope, payload: WordPayload }),
     z.object({ collection: z.literal("analogies"), ...envelope, payload: AnalogyPayload }),
     z.object({ collection: z.literal("games"), ...envelope, payload: GamePayload }),
     z.object({ collection: z.literal("sessions"), ...envelope, payload: SessionPayload }),
+    z.object({ collection: z.literal("puzzles"), ...envelope, payload: PuzzlePayload }),
 ]);
 export type SyncRecord = z.infer<typeof SyncRecord>;
 export type SyncCollection = SyncRecord["collection"];
@@ -124,7 +139,7 @@ export const PushRequest = z.object({
 export type PushRequest = z.infer<typeof PushRequest>;
 
 export const PushResult = z.object({
-    collection: z.enum(["profile", "words", "analogies", "games", "sessions"]),
+    collection: z.enum(["profile", "words", "analogies", "games", "sessions", "puzzles"]),
     key: z.string(),
     /** applied: stored as sent; merged: combined with the server's copy (the merged record is returned). */
     status: z.enum(["applied", "merged"]),

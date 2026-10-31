@@ -16,3 +16,11 @@ export function analogyKey(a: string, b: string, c: string): string {
 export function wordKey(word: string, model: string, dtype: string): string {
     return `${normalizeKey(word)}|${model}|${dtype}`;
 }
+
+/**
+ * A Connect-All board's key (Epic 2 · Task 2.10.7): its words, normalized and sorted, so the same board
+ * from two devices (or from a different puzzle number after a generator change) is one record.
+ */
+export function puzzleKey(words: readonly string[]): string {
+    return words.map(normalizeKey).sort().join(" ");
+}

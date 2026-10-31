@@ -566,6 +566,47 @@ test('saved sessions and the Guess rating follow the account to another device; 
   await Promise.all(devices.map(context => context.close()));
 });
 
+test('a Connect best set on one device shows on the other after a sync (Task 2.10.7)', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const subject = `e2e-connect-${Date.now()}`;
+  const devices = await Promise.all([browser.newContext(), browser.newContext()]);
+  const [laptop, phone] = await Promise.all(devices.map(context => context.newPage()));
+  type PuzzleHandle = { puzzle: { state(): { seed: number; words: string[]; par: number; solution: string[] } | null } };
+  const puzzleOf = (page: Page) => page.evaluate(() => (window.__lexical as unknown as PuzzleHandle).puzzle.state());
+  const syncNow = (page: Page) => page.evaluate(() => (window.__lexical as unknown as AccountHandle).account.syncNow());
+  const openConnect = async (page: Page) => {
+    await page.bringToFront();
+    await page.locator('#puzzle-toggle').click();
+    await expect(page.getByTestId('puzzle-hud')).toBeVisible({ timeout: 20_000 });
+    await expect.poll(async () => (await puzzleOf(page))?.words.length ?? 0, { timeout: 20_000 }).toBeGreaterThan(0);
+    return (await puzzleOf(page))!;
+  };
+  for (const page of [laptop, phone]) {
+    await openSandbox(page, '2d');
+    await signInAs(page, subject);
+  }
+
+  // Both devices deal the same first puzzle; the phone has no best for it yet.
+  const onPhone = await openConnect(phone);
+  await expect(phone.getByTestId('puzzle-best')).toHaveCount(0);
+  const onLaptop = await openConnect(laptop);
+  expect([...onLaptop.words].sort()).toEqual([...onPhone.words].sort());
+
+  // The laptop solves it at par and syncs.
+  for (const word of onLaptop.solution) {
+    await wordBox(laptop).fill(word);
+    await wordBox(laptop).press('Enter');
+  }
+  await expect(laptop.getByTestId('puzzle-solved')).toContainText(`Solved in ${onLaptop.par}`);
+  await expect(laptop.getByTestId('puzzle-best')).toHaveText(`best ${onLaptop.par}`);
+  await syncNow(laptop);
+
+  // The phone's HUD shows that best after its next sync, without leaving the puzzle.
+  await syncNow(phone);
+  await expect(phone.getByTestId('puzzle-best')).toHaveText(`best ${onLaptop.par}`);
+  await Promise.all(devices.map(context => context.close()));
+});
+
 test('test personas are separate accounts on one device, each with its own progress', async ({ page }) => {
   test.setTimeout(120_000); // four account switches, each a reload
   const stamp = Date.now();

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { $ZodError } from "zod/v4/core";
 import {
     AccountExport, analogyKey, ClaimRequest, ClaimResponse, DeleteResponse, MAX_PULL_RECORDS, MAX_SYNC_BYTES, mergeRecords, PullResponse,
-    PushRequest, PushResponse, sameRecord, SyncRecord, wordKey,
+    PushRequest, PushResponse, puzzleKey, sameRecord, SyncRecord, wordKey,
 } from "@lexical/shared";
 import type { Db, Queryable } from "./db";
 import { AuthError, type Verifier } from "./auth";
@@ -182,7 +182,8 @@ function checkKey(record: SyncRecord): void {
         record.collection === "profile" ? "profile"
             : record.collection === "words" ? wordKey(record.payload.word, record.payload.model, record.payload.dtype)
                 : record.collection === "analogies" ? analogyKey(record.payload.a, record.payload.b, record.payload.c)
-                    : record.key; // games and sessions: a client-generated id
+                    : record.collection === "puzzles" ? puzzleKey(record.payload.words)
+                        : record.key; // games and sessions: a client-generated id
     if (record.key !== expected) throw new HttpError(400, "non-canonical-key", `Expected key "${expected}" for ${record.collection}, got "${record.key}"`);
     if (record.collection === "sessions" && !UUID.test(record.key)) throw new HttpError(400, "non-canonical-key", "A session's key is its id (a UUID)");
 }

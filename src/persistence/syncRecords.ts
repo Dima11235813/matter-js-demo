@@ -1,5 +1,5 @@
 import { decodeVector, encodeVector, SYNC_SCHEMA_VERSION, wordKey, type RecordOf, type SyncRecord } from "@lexical/shared";
-import type { AnalogyRecord, GameRecord, PlayerWordRecord, ProfileRecord, SessionRecord, SyncState } from "./db";
+import type { AnalogyRecord, GameRecord, PlayerWordRecord, ProfileRecord, PuzzleBestRecord, SessionRecord, SyncState } from "./db";
 
 /**
  * Local IndexedDB records ⇄ the shared sync contract (Epic 3 · Feature 3.8). Pure, so the mapping is
@@ -68,6 +68,29 @@ export function sessionFromSync(record: RecordOf<"sessions">, syncState: SyncSta
     return {
         id: record.key, ...board, ...(letters ? { letters } : {}), ...(deleted ? { deleted: true } : {}),
         updatedAt: record.clientUpdatedAt, syncState, deviceId: record.deviceId,
+    };
+}
+
+/** A Connect-All best (Task 2.10.7). */
+export function puzzleToSync(record: PuzzleBestRecord): RecordOf<"puzzles"> {
+    return {
+        collection: "puzzles",
+        key: record.key,
+        schemaVersion: SYNC_SCHEMA_VERSION,
+        clientUpdatedAt: record.updatedAt,
+        deviceId: record.deviceId,
+        payload: {
+            words: record.words, moves: record.moves, par: record.par,
+            ...(record.seed !== undefined ? { seed: record.seed } : {}), solvedAt: record.solvedAt,
+        },
+    };
+}
+
+export function puzzleFromSync(record: RecordOf<"puzzles">, syncState: SyncState): PuzzleBestRecord {
+    const { seed, ...best } = record.payload;
+    return {
+        key: record.key, ...best, ...(seed !== undefined ? { seed } : {}),
+        createdAt: record.payload.solvedAt, updatedAt: record.clientUpdatedAt, syncState, deviceId: record.deviceId,
     };
 }
 

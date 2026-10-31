@@ -7,6 +7,7 @@ import { activeAccount, applySwitch, knownAccounts, planSwitch, touchAccount, ty
 import { canHaveAccount } from "../game/privacyRules";
 import { logger } from "../utils/logger";
 import { refreshSessions } from "./sessions";
+import { refreshPuzzleBest } from "./connectPuzzle";
 
 /**
  * Accounts and sync use cases (Epic 3 · Feature 3.8, Epic 6 · Features 6.4, 6.7).
@@ -158,6 +159,7 @@ export function syncNow(): Promise<void> {
             // The rating and saved sessions sync too (Tasks 2.12.3, 2.15.4): show what the other devices did.
             gameStore.setRating(semanticEngine.rating.value);
             await refreshSessions(stores);
+            await refreshPuzzleBest(stores); // Connect bests sync too (Task 2.10.7)
             accountStore.setStatus("synced", report.pulled || report.merged ? `Updated from your other devices (${report.pulled + report.merged})` : "");
         } catch (error) {
             const message = error instanceof SyncConflictError ? error.message

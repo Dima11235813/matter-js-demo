@@ -12,6 +12,7 @@ import type { RecordOf, SyncRecord } from "./sync";
  *   games:     immutable, the first copy stays (both copies are identical)
  *   sessions:  last-writer-wins on the whole board; a delete is a tombstone (`deleted`), so it wins when newer
  *   rating:    (inside profile) the newer `at` wins, independently of which copy's settings win
+ *   puzzles:   the best result wins: fewest moves, then the earlier solve (full ties: last-writer order)
  */
 export function mergeRecords(a: SyncRecord, b: SyncRecord): SyncRecord {
     if (a.collection !== b.collection || a.key !== b.key) {
@@ -28,7 +29,16 @@ export function mergeRecords(a: SyncRecord, b: SyncRecord): SyncRecord {
             return newer(a, b) === a ? a : b; // identical by construction; pick deterministically
         case "sessions":
             return newer(a, b as RecordOf<"sessions">);
+        case "puzzles":
+            return betterPuzzle(a, b as RecordOf<"puzzles">);
     }
+}
+
+/** A Connect-All best: fewer moves wins; a tie keeps whoever reached it first (deterministic for ties). */
+function betterPuzzle(a: RecordOf<"puzzles">, b: RecordOf<"puzzles">): RecordOf<"puzzles"> {
+    if (a.payload.moves !== b.payload.moves) return a.payload.moves < b.payload.moves ? a : b;
+    if (a.payload.solvedAt !== b.payload.solvedAt) return a.payload.solvedAt < b.payload.solvedAt ? a : b;
+    return newer(a, b);
 }
 
 /** Last-writer-wins order: the later clientUpdatedAt, ties broken by the larger deviceId. */

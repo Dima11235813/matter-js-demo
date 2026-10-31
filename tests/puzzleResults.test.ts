@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bestPuzzleResult, puzzleKey, puzzleMoveCount } from '../src/game/puzzleResults';
+import { beatsBest, bestPuzzleResult, bestSolvesByBoard, puzzleKey, puzzleMoveCount } from '../src/game/puzzleResults';
 
 const event = (payload: Record<string, unknown>, type = 'puzzle') => ({ type, payload });
 
@@ -31,5 +31,31 @@ describe('Connect-All results (Task 2.10.5)', () => {
 
   it('falls back to the moves list when the move count is missing', () => {
     expect(bestPuzzleResult([event({ par: 3, words: ['a', 'b'], moves: ['x', 'y', 'z'] })], ['a', 'b'])).toEqual({ moves: 3, par: 3 });
+  });
+});
+
+describe('Connect-All bests per board (Task 2.10.7)', () => {
+  it('normalizes the board key, as the shared contract does', () => {
+    expect(puzzleKey([' Sea', 'DOG', 'king'])).toBe('dog king sea');
+  });
+
+  it('collects the best solve per board from play events, with its time and number', () => {
+    const at = (payload: Record<string, unknown>, when: number) => ({ type: 'puzzle', at: when, payload });
+    const bests = bestSolvesByBoard([
+      at({ seed: 3, par: 4, words: ['sea', 'dog'], moveCount: 6 }, 100),
+      at({ seed: 3, par: 4, words: ['dog', 'sea'], moveCount: 4 }, 200),
+      at({ seed: 3, par: 4, words: ['dog', 'sea'], moveCount: 4 }, 300), // a tie keeps the first
+      at({ seed: 9, par: 2, words: ['owl', 'cat'], moveCount: 2 }, 400),
+      at({ par: 2, words: [1, 2], moveCount: 2 }, 500), // malformed: skipped
+      { type: 'analogy', at: 600, payload: { a: 'x' } },
+    ]);
+    expect([...bests.keys()].sort()).toEqual(['cat owl', 'dog sea']);
+    expect(bests.get('dog sea')).toEqual({ words: ['dog', 'sea'], moves: 4, par: 4, seed: 3, solvedAt: 200 });
+  });
+
+  it('counts only strictly fewer moves as a new best', () => {
+    expect(beatsBest({ moves: 4, par: 3 }, undefined)).toBe(true);
+    expect(beatsBest({ moves: 4, par: 3 }, { moves: 5, par: 3 })).toBe(true);
+    expect(beatsBest({ moves: 4, par: 3 }, { moves: 4, par: 3 })).toBe(false);
   });
 });
