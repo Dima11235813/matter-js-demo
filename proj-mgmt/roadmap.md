@@ -99,7 +99,7 @@ graph TD
   * **Drive check:** this session wrote nothing into the tree. About 200 old git-ignored output files remain (`dist`, `dist-e2e`, `.vite`, `test-results`, `.playwright-mcp`); asked the workspace whether to move them (comms 2026-10-31-02).
 * **Where to resume:**
   1. Read comms (`comms_index.py --for matter-js-demo`) for the answer about the leftovers.
-  2. Merge `feature/bank-everyday-relations` (3 commits ahead of `develop`, tests green) into `develop` after a CI-mode e2e run built on `C:` (`CLAUDE.md` § Lessons, the "Drive for desktop is syncing" recipe).
+  2. Merge `feature/bank-everyday-relations` (5 commits ahead of `develop` with this note, unit tests green) into `develop` after a CI-mode e2e run built on `C:` (`CLAUDE.md` § Lessons, the "Drive for desktop is syncing" recipe).
   3. Then the phone play-test and the owner's bank review (human-todo 14).
 
 ### Status snapshot (2026-10-23) · paused: the owner is exploring the codebase offline
