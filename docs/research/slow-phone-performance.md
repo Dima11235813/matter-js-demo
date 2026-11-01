@@ -72,6 +72,35 @@ A real low-end phone sits between the two.
 
 **Recommended order:** F1 first (small, clear win, easy to verify), then F2, the biggest stall but one that needs attribution first.
 
+## F1 shipped: an instant 2D → 3D switch (2026-11-01)
+
+**Owner's report:** "it looked like the words didn't transfer over when I switched to 3D". During the switch the 2D world was destroyed before the 3D code had loaded, so the board went blank, and then the words trickled in four per frame.
+
+**Changes** (branch `feature/instant-3d-switch`):
+1. **Preload:** the 3D view's code loads in an idle callback once the vocabulary is ready and hint mode is on (`load3d` in `src/WordWorld.tsx`, cached).
+2. **One WebGL renderer for every 3D world** (`src/space/sharedRenderer.ts`): the context and the compiled shader programs survive switches. A second idle callback warms it up, compiling the view's shaders on a two-word sample scene built by the same `SpaceScene`, with `compileAsync`.
+   - A profile of the first switch had shown about 150 ms of JavaScript in program compiles, plus 431 ms of native time.
+   - The warm scene is kept alive, because three.js frees a program once no material uses it.
+3. **No blank board:** a 2D ↔ 3D switch keeps the current world on screen until the next one's code is loaded, then swaps them in one task. A view change (letters, Discovery, Guess) still tears down at once.
+4. **The whole board in the first frame:** a handed-over board is placed in one go, with molecules restored at once, instead of four words per frame.
+
+**Measured** (same probe, GPU mode, emulated Pixel 7, 40 words; baseline `883e049` and the change alternated run by run, 3 runs each; [results](experiments/results/slow-phone-instant-3d.json)):
+
+| | Before, 1× | After, 1× | Before, 4× | After, 4× |
+|---|---|---|---|---|
+| First switch to 3D | 0.24–0.26 s | **0.05–0.12 s** | 0.36–0.38 s (worst frame 117–133 ms) | **0.18–0.20 s** (one frame of 133–150 ms) |
+| Later switches | 0.21–0.22 s | **0.03–0.04 s** | 0.23–0.25 s | **0.07–0.11 s** |
+| 5 s after start-up (the preload lands here) | 60 fps, worst 17 ms | 60 fps, worst 17 ms | worst 17–100 ms | worst 33–50 ms, one ~55–70 ms task |
+| 2D play, 3D view | unchanged, 60 fps | unchanged | unchanged | unchanged |
+
+**What remains in the first switch at 4×** is one frame of about 130–150 ms: building the 40 label textures, the first simulation step, and texture upload.
+
+**Measurement correction:** the first comparison ended the switch window when the words existed. Once the board appeared in one go, that was before the first 3D frame was drawn, which hid the freeze. Switch windows now end two animation frames after the new world exists with an empty spawn queue, and the comparison above used that rule.
+
+**Test:** e2e "switching to 3D shows the whole board in the first 3D frame, and the 3D view was preloaded" (real toggle; reads the board in the frame the 3D world appears). It fails on the old build, at the preload check; passes on the change; the full suite is 40 of 40.
+
+**Found along the way:** a word can be lost when the board comes back from 3D to 2D on a crowded phone board (40 → 39 in 2 of 24 measured runs, once on each build, so it's not caused by this change). Logged as Epic 4 · Task 4.5.16.
+
 ## Limitations
 
 - **Emulation, not a phone:** CPU throttling scales the main thread only. A real phone's GPU, memory, and thermal limits are not modelled, and the machine's RTX 3090 is far faster than any phone GPU.

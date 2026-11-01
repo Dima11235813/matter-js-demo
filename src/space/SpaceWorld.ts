@@ -14,6 +14,7 @@ import { colorHintPainter } from "../services/colorHints";
 import { CameraDirector, FOV } from "./CameraDirector";
 import { canvasToSpace, moleculesToRestore, ndcToCanvas, pixelMatchedDistance, Size } from "./handoff";
 import { SpaceScene } from "./SpaceScene";
+import { acquireRenderer, releaseRenderer } from "./sharedRenderer";
 import { LABEL_HEIGHT } from "./labelTexture";
 import { labelScale, minLabelPx } from "./viewFit";
 
@@ -46,8 +47,8 @@ export class SpaceWorld implements WordWorld {
     constructor(private readonly container: HTMLElement) {
         this.size = [container.clientWidth || window.innerWidth, window.innerHeight];
         this.sim = new SpaceSimulation(semanticEngine.calibration, this.layoutConfig());
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        // One renderer across worlds: its context and compiled shaders survive 2D <-> 3D switches (sharedRenderer.ts).
+        this.renderer = acquireRenderer();
         this.renderer.setSize(...this.size);
         container.appendChild(this.renderer.domElement);
 
@@ -140,8 +141,8 @@ export class SpaceWorld implements WordWorld {
         this.director.dispose();
         this.controls.dispose();
         this.view.dispose();
-        this.renderer.dispose();
-        canvas.remove();
+        // The shared renderer stays alive (context and shaders); only its canvas leaves the page.
+        releaseRenderer(this.renderer);
         if (deps.activeWorld === this) deps.activeWorld = undefined;
     }
 
@@ -151,6 +152,10 @@ export class SpaceWorld implements WordWorld {
         if (transfer?.kind === "continue") {
             transfer.queue.forEach(request => deps.pendingWordSpawns.push(request));
             this.pendingMolecules = transfer.molecules ?? [];
+            // A 2D <-> 3D switch: the whole board appears in the first frame (owner, 2026-11-01: words trickling
+            // in four per frame looked as if they hadn't transferred). Soft 3D contact handles any overlap.
+            this.spawnQueuedWords(deps.pendingWordSpawns.length);
+            this.restoreMolecules();
         } else {
             startWordBoard(stores, transfer?.words ?? [], INITIAL_WORDS);
         }
@@ -195,9 +200,10 @@ export class SpaceWorld implements WordWorld {
         this.renderer.render(this.view.scene, this.camera);
     };
 
-    private spawnQueuedWords(): void {
+    /** Spawns up to `limit` queued words (new words trickle in a few per frame; a handed-over board all at once). */
+    private spawnQueuedWords(limit = 4): void {
         const onBoard = new Set(this.sim.bodies.map(b => b.word));
-        const batch = deps.pendingWordSpawns.splice(0, 4);
+        const batch = deps.pendingWordSpawns.splice(0, limit);
         for (const { word, x, y, color } of batch) {
             const vector = semanticEngine.lookup(word);
             if (!vector || onBoard.has(word)) continue;

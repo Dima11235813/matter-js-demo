@@ -43,6 +43,12 @@ function stats([t0, t1]) {
     };
 }
 
+/**
+ * Waits until the new world has drawn: two animation frames after the words exist. A switch window that
+ * ended when the words existed missed the freeze once the board was built in one go (2026-11-01).
+ */
+const drawn = page => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+
 async function phase(page, run) {
     const t0 = await page.evaluate(() => performance.now());
     await run();
@@ -79,6 +85,10 @@ async function measureIn(browser, throttle) {
     const readyAt = await page.evaluate(() => performance.now());
     out.load = { readyMs: Math.round(readyAt), ...(await page.evaluate(stats, [0, readyAt])) };
 
+    // 1b. The 5 s after the vocabulary is ready, with the starting board: where the idle-time preload of the 3D view
+    // (code, then shader warm-up, Task 4.5.15) lands, so its cost to 2D play is measured too.
+    out.afterReady = await phase(page, () => page.waitForTimeout(5000));
+
     // 2. 2D physics at 40 words (Discovery, hint mode on, the default 2D world). Wait for the world and its first
     // board: a world clears the spawn queue when it starts, so words queued before it exists are dropped.
     await page.waitForFunction(() => window.__lexical.deps.activeWorld?.dimension === '2d' && window.__lexical.deps.activeWorld.wordTexts().length >= 8, null, { timeout: 60_000 });
@@ -89,29 +99,37 @@ async function measureIn(browser, throttle) {
         const onBoard = new Set(deps.activeWorld?.wordTexts() ?? []);
         semanticEngine.randomWords(60).filter(w => !onBoard.has(w)).slice(0, 40 - onBoard.size).forEach(word => deps.pendingWordSpawns.push({ word }));
     });
-    await page.waitForFunction(() => (window.__lexical.deps.activeWorld?.wordTexts().length ?? 0) >= 40, null, { timeout: 60_000 });
+    // Done when the spawn queue is empty (a crowded phone board can lose a word on the way; counted below).
+    await page.waitForFunction(() => window.__lexical.deps.pendingWordSpawns.length === 0, null, { timeout: 60_000 });
     await page.waitForTimeout(2000); // spawns settle
+    // Words on the board after each step: a crowded phone board can lose words (2026-11-01, measured, not assumed).
+    const count = () => page.evaluate(() => window.__lexical.deps.activeWorld?.wordTexts().length ?? 0);
+    out.counts = { afterFill: await count() };
     out.physics2d = await phase(page, () => page.waitForTimeout(WINDOW_MS));
+    out.counts.after2dPlay = await count();
 
-    // 3. Switch to 3D (the switch itself), then the 3D view at rest-ish with the same 40 words.
-    out.switchTo3d = await phase(page, async () => {
-        await page.evaluate(() => window.__lexical.stores.gameStore.setDimension('3d'));
-        await page.waitForFunction(() => window.__lexical.deps.activeWorld?.dimension === '3d' && window.__lexical.deps.activeWorld.wordTexts().length >= 40, null, { timeout: 60_000 });
+    // A switch is done when the new world exists, its spawn queue is empty, and it has drawn.
+    const switchTo = dimension => phase(page, async () => {
+        await page.evaluate(d => window.__lexical.stores.gameStore.setDimension(d), dimension);
+        await page.waitForFunction(d => window.__lexical.deps.activeWorld?.dimension === d && window.__lexical.deps.pendingWordSpawns.length === 0, dimension, { timeout: 60_000 });
+        await drawn(page);
     });
+
+    // 3. Switch to 3D, then the 3D view with the same words. Records whether the 3D chunk was already fetched
+    // (preloaded in idle time since Task 4.5.15 F1).
+    out.spaceChunkBeforeSwitch = await page.evaluate(() => performance.getEntriesByType('resource').some(e => /SpaceWorld-[\w-]+\.js/.test(e.name)));
+    out.switchTo3d = await switchTo('3d');
+    out.counts.in3d = await count();
     await page.waitForTimeout(2000);
     out.view3d = await phase(page, () => page.waitForTimeout(WINDOW_MS));
-    out.words = await page.evaluate(() => window.__lexical.deps.activeWorld.wordTexts().length);
+    out.words = await count();
 
-    // 4. Back to 2D, then 3D again: the three.js code is loaded now, so the second switch is only the scene build.
-    out.switchTo2d = await phase(page, async () => {
-        await page.evaluate(() => window.__lexical.stores.gameStore.setDimension('2d'));
-        await page.waitForFunction(() => window.__lexical.deps.activeWorld?.dimension === '2d' && window.__lexical.deps.activeWorld.wordTexts().length >= 40, null, { timeout: 60_000 });
-    });
+    // 4. Back to 2D, then 3D again: the 3D code is loaded now, so the second switch is only the scene build.
+    out.switchTo2d = await switchTo('2d');
     await page.waitForTimeout(2000);
-    out.switchTo3dAgain = await phase(page, async () => {
-        await page.evaluate(() => window.__lexical.stores.gameStore.setDimension('3d'));
-        await page.waitForFunction(() => window.__lexical.deps.activeWorld?.dimension === '3d' && window.__lexical.deps.activeWorld.wordTexts().length >= 40, null, { timeout: 60_000 });
-    });
+    out.counts.back2d = await count();
+    out.switchTo3dAgain = await switchTo('3d');
+    out.counts.in3dAgain = await count();
 
     return out;
 }

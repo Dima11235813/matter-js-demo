@@ -97,8 +97,16 @@ graph TD
     * the stalls are start-up (1.2–2.8 s, single freezes up to 800 ms) and the first 2D → 3D switch (0.6–1.1 s; a repeat switch takes 0.3 s, so it's code loading);
     * headless Chromium renders in software unless given GPU flags. The first numbers were software-rendered and pointed the wrong way, so both modes are now measured.
   * Replicas: the push script labelled `H:` `REJECTED` again, for a plain fast-forward plus a new branch. Verified with `ls-remote` and `merge-base --is-ancestor`, pushed without force, and both replicas are up to date (25/25). Reported to the workspace with the output (comms 2026-11-01-01).
-* **In progress:** nothing half-done (Task 4.5.15 has its baseline; the fixes are next).
-* **Exact next step:** F1 in the report. Prefetch the 3D chunk (`import("./space/SpaceWorld")`) in `requestIdleCallback` once the vocabulary is ready and hint mode is on. Then rerun `GPU=1 RUNS=3 node docs/research/experiments/browser/slowPhone.probe.mjs` against a build of the change on `C:` (port 41944) and compare `switchTo3d` at 4× with the baseline: 0.6–1.1 s, worst gap 250–350 ms. After that, F2: a source-mapped start-up profile.
+  * **Instant 3D switch** (owner's play-test report: "it looked like the words didn't transfer over when I switched to 3D"; Epic 4 · Task 4.5.15 F1):
+    * the 3D code preloads in idle time, and one shared WebGL renderer is warmed in idle time;
+    * the 2D board stays on screen until the 3D world replaces it, and the whole board appears in the first 3D frame.
+    * **First switch:** 0.24–0.26 → 0.05–0.12 s at 1×; 0.36–0.38 → 0.18–0.20 s at 4×. **Later switches:** 0.03–0.04 s at 1×.
+    * **Tests:** e2e 40 of 40 (new test included), unit 388.
+* **In progress:** nothing half-done.
+* **Exact next step:**
+  1. The owner tries the 3D switch on a phone (served build on 41942, `CLAUDE.md` § Lessons).
+  2. Then Task 4.5.16: a word lost on 3D → 2D, 2 of 24 runs. Reproduce with the probe's `counts` at 40 words, emulated Pixel 7.
+  3. Then F2: a source-mapped start-up profile (build with `--sourcemap hidden` into the scratchpad), measured against the baseline's `load` row.
 * **Owner items:** the phone play-test (two devices for Connect bests); human-todo 14 (bank review); human-todo 11; human-todo 2 and 13 when hosting resumes.
 
 ### Status snapshot (2026-10-31) · Google Drive for desktop disconnected; the folder is readied for its reconnect

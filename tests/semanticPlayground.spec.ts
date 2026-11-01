@@ -932,6 +932,27 @@ test('Discovery answers everyday analogies from the relation bank and labels a v
   await expect.poll(() => boardWords(page)).toEqual(expect.arrayContaining(['kitten', 'lamb']));
 });
 
+test('switching to 3D shows the whole board in the first 3D frame, and the 3D view was preloaded (Task 4.5.15)', async ({ page }) => {
+  // Owner, 2026-11-01: during the switch the words looked as if they hadn't transferred (the board went blank
+  // while the 3D code loaded, then words trickled in four per frame).
+  await openSandbox(page, '2d');
+  await page.bringToFront();
+  const before = (await boardWords(page)).sort();
+  // The 3D view's code is loaded in idle time once the vocabulary is in (hint mode is on).
+  await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource').some(e => /SpaceWorld-[\w-]+\.js/.test(e.name))), { timeout: 15_000 }).toBe(true);
+  // The real dimension toggle; read the board in the same task the 3D world appears in.
+  await page.getByRole('button', { name: '2D', exact: true }).click();
+  const first = await page.evaluate(() => new Promise<string[]>(resolve => {
+    const check = () => {
+      const world = window.__lexical.deps.activeWorld;
+      if (world?.dimension === '3d') resolve(world.wordTexts());
+      else requestAnimationFrame(check);
+    };
+    check();
+  }));
+  expect(first.sort()).toEqual(before);
+});
+
 test('a molecule built in 2D holds together in 3D and comes back to 2D (Task 5.15.1)', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await openSandbox(page, '2d');
