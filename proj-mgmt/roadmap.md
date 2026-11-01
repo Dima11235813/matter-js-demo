@@ -96,6 +96,7 @@ graph TD
     * steady 2D and 3D play holds about 60 fps with 40 words;
     * the stalls are start-up (1.2–2.8 s, single freezes up to 800 ms) and the first 2D → 3D switch (0.6–1.1 s; a repeat switch takes 0.3 s, so it's code loading);
     * headless Chromium renders in software unless given GPU flags. The first numbers were software-rendered and pointed the wrong way, so both modes are now measured.
+  * Replicas: the push script labelled `H:` `REJECTED` again, for a plain fast-forward plus a new branch. Verified with `ls-remote` and `merge-base --is-ancestor`, pushed without force, and both replicas are up to date (25/25). Reported to the workspace with the output (comms 2026-11-01-01).
 * **In progress:** nothing half-done (Task 4.5.15 has its baseline; the fixes are next).
 * **Exact next step:** F1 in the report. Prefetch the 3D chunk (`import("./space/SpaceWorld")`) in `requestIdleCallback` once the vocabulary is ready and hint mode is on. Then rerun `GPU=1 RUNS=3 node docs/research/experiments/browser/slowPhone.probe.mjs` against a build of the change on `C:` (port 41944) and compare `switchTo3d` at 4× with the baseline: 0.6–1.1 s, worst gap 250–350 ms. After that, F2: a source-mapped start-up profile.
 * **Owner items:** the phone play-test (two devices for Connect bests); human-todo 14 (bank review); human-todo 11; human-todo 2 and 13 when hosting resumes.
