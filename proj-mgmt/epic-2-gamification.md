@@ -168,7 +168,7 @@ Turn the physics prototype into an engaging, addictive educational game. Players
     * **Unit:** 388 passed, 1 skipped (was 376).
     * **e2e:** 39 of 39 (was 38), CI mode, against an e2e bundle built into the scratchpad on `C:`, because Drive's first sync was running.
     * **Type-checks:** web and server clean.
-  * ✅ committed 2026-10-31 (Drive disconnected); ⬜ owner play-test on two devices.
+  * ✅ committed 2026-10-31 (Drive disconnected); ✅ merged into `develop` 2026-11-01 (`3aedefd`, fast-forward) after a repeat run: unit 388 passed, e2e 39 of 39 (2.1 min, bundle built and served from `C:`); ⬜ owner play-test on two devices.
 * [x] **Task 2.10.6** (2026-10-18, owner: "important for this app to work well on low resource mobile devices"): deal without a stall on slow phones.
   * **Worker:** puzzles are made in a Web Worker (`src/workers/connectPuzzle.worker.ts`, 5.65 KB). Its logic is in `src/game/connectDealer.ts`: `createDealerHandler`, a unit-tested message handler.
   * **Prefetch:** `PuzzleDealer` keeps the next puzzle made ahead (at most 3 held), and doesn't cache failures.

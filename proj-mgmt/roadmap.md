@@ -87,6 +87,15 @@ graph TD
     D -->|Production Release| E
 ```
 
+### Status snapshot (2026-11-01) · handoff · Drive sync still off: git (GitHub + `F:`/`H:` replicas) is the protection
+* **Done this session:**
+  * comms: one open message (2026-10-24-04, `needs: none`, the workspace's validation), nothing to act on. The question about the ~200 old output files (2026-10-31-02) has no answer yet.
+  * `feature/bank-everyday-relations` merged into `develop` (fast-forward, `3aedefd`). Repeat run: unit 388 passed, e2e 39 of 39 in 2.1 min, built and served from `C:`. Pushed to GitHub and both replicas.
+  * Machine state: the preflight waited out a `D:` saturation from other projects (99.8% busy, cleared at 12:27). Servers started for the run were stopped by PID, nothing listens on 41940–41959, and there's no `index.lock`.
+* **In progress:** nothing half-done.
+* **Exact next step:** measure slow-phone main-thread work before changing anything (roadmap item since 2026-10-18): the 3D view, 2D physics at 40 words, and the vocabulary load, at 4× CPU throttle. Report the longest `requestAnimationFrame` gap and the long tasks overlapping each action (`CLAUDE.md` § Lessons, "Slow-phone checks"). Build on `C:`, serve on 41944/41945, and record a research report plus an Epic 4 task.
+* **Owner items:** the phone play-test (two devices for Connect bests); human-todo 14 (bank review); human-todo 11; human-todo 2 and 13 when hosting resumes.
+
 ### Status snapshot (2026-10-31) · Google Drive for desktop disconnected; the folder is readied for its reconnect
 * **Built and committed on `feature/bank-everyday-relations` (2026-10-31):** Connect-All bests sync across the account's devices (Epic 2 · Task 2.10.7; Epic 3 · Task 3.8.6). A sixth collection, `puzzles`, keeps one record per board, and the fewest moves wins. IndexedDB v7 copies the play log's bests on upgrade.
 * **Tests:** 388 unit, 39 e2e (CI mode, built and served from the scratchpad on `C:` so the synced tree saw no build output).
