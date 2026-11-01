@@ -1,0 +1,668 @@
+{
+  "date": "2026-11-01",
+  "commit": "883e049",
+  "note": "Emulated Pixel 7, 40 words, 3 runs each at 1x and 4x CPU throttle; served from C: on 41944. gpu = headless Chromium on the machine GPU (RTX 3090, optimistic for a phone GPU); software = SwiftShader (pessimistic for 3D).",
+  "gpu": {
+    "base": "http://127.0.0.1:41944/",
+    "device": "Pixel 7 (emulated)",
+    "gl": "gpu",
+    "windowMs": 6000,
+    "runs": [
+      {
+        "run": 0,
+        "throttle": 1,
+        "load": {
+          "readyMs": 460,
+          "seconds": 0.46,
+          "fps": 6.5,
+          "gapP95": 211,
+          "gapMax": 211,
+          "longTaskMsPerSecond": 196,
+          "longTasks": 1
+        },
+        "physics2d": {
+          "seconds": 6.02,
+          "fps": 60,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3d": {
+          "seconds": 0.25,
+          "fps": 52.1,
+          "gapP95": 50,
+          "gapMax": 50,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "view3d": {
+          "seconds": 6.01,
+          "fps": 60,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.36,
+          "fps": 61.5,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.23,
+          "fps": 56.9,
+          "gapP95": 33,
+          "gapMax": 33,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        }
+      },
+      {
+        "run": 0,
+        "throttle": 4,
+        "load": {
+          "readyMs": 1224,
+          "seconds": 1.22,
+          "fps": 10.6,
+          "gapP95": 283,
+          "gapMax": 283,
+          "longTaskMsPerSecond": 488,
+          "longTasks": 4
+        },
+        "physics2d": {
+          "seconds": 6.01,
+          "fps": 56,
+          "gapP95": 17,
+          "gapMax": 183,
+          "longTaskMsPerSecond": 18,
+          "longTasks": 1
+        },
+        "switchTo3d": {
+          "seconds": 1.1,
+          "fps": 15.5,
+          "gapP95": 350,
+          "gapMax": 350,
+          "longTaskMsPerSecond": 679,
+          "longTasks": 6
+        },
+        "view3d": {
+          "seconds": 6.01,
+          "fps": 55.8,
+          "gapP95": 17,
+          "gapMax": 217,
+          "longTaskMsPerSecond": 12,
+          "longTasks": 1
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.65,
+          "fps": 37.1,
+          "gapP95": 67,
+          "gapMax": 183,
+          "longTaskMsPerSecond": 380,
+          "longTasks": 2
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.34,
+          "fps": 41.8,
+          "gapP95": 67,
+          "gapMax": 67,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        }
+      },
+      {
+        "run": 1,
+        "throttle": 1,
+        "load": {
+          "readyMs": 907,
+          "seconds": 0.91,
+          "fps": 17.6,
+          "gapP95": 267,
+          "gapMax": 267,
+          "longTaskMsPerSecond": 300,
+          "longTasks": 2
+        },
+        "physics2d": {
+          "seconds": 6.02,
+          "fps": 57.5,
+          "gapP95": 17,
+          "gapMax": 183,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3d": {
+          "seconds": 0.37,
+          "fps": 40.8,
+          "gapP95": 133,
+          "gapMax": 133,
+          "longTaskMsPerSecond": 362,
+          "longTasks": 2
+        },
+        "view3d": {
+          "seconds": 6.01,
+          "fps": 58.5,
+          "gapP95": 17,
+          "gapMax": 100,
+          "longTaskMsPerSecond": 10,
+          "longTasks": 1
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.36,
+          "fps": 61.9,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.22,
+          "fps": 44.8,
+          "gapP95": 267,
+          "gapMax": 267,
+          "longTaskMsPerSecond": 255,
+          "longTasks": 1
+        }
+      },
+      {
+        "run": 1,
+        "throttle": 4,
+        "load": {
+          "readyMs": 2785,
+          "seconds": 2.79,
+          "fps": 4.7,
+          "gapP95": 800,
+          "gapMax": 800,
+          "longTaskMsPerSecond": 586,
+          "longTasks": 7
+        },
+        "physics2d": {
+          "seconds": 6.01,
+          "fps": 60.1,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3d": {
+          "seconds": 0.61,
+          "fps": 27.7,
+          "gapP95": 250,
+          "gapMax": 250,
+          "longTaskMsPerSecond": 396,
+          "longTasks": 2
+        },
+        "view3d": {
+          "seconds": 6.01,
+          "fps": 60,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.5,
+          "fps": 47.7,
+          "gapP95": 17,
+          "gapMax": 117,
+          "longTaskMsPerSecond": 242,
+          "longTasks": 1
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.26,
+          "fps": 46.9,
+          "gapP95": 67,
+          "gapMax": 67,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        }
+      },
+      {
+        "run": 2,
+        "throttle": 1,
+        "load": {
+          "readyMs": 411,
+          "seconds": 0.41,
+          "fps": 14.6,
+          "gapP95": 150,
+          "gapMax": 150,
+          "longTaskMsPerSecond": 139,
+          "longTasks": 1
+        },
+        "physics2d": {
+          "seconds": 6.05,
+          "fps": 60,
+          "gapP95": 17,
+          "gapMax": 33,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3d": {
+          "seconds": 0.31,
+          "fps": 47.7,
+          "gapP95": 67,
+          "gapMax": 67,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "view3d": {
+          "seconds": 6.02,
+          "fps": 57.8,
+          "gapP95": 17,
+          "gapMax": 117,
+          "longTaskMsPerSecond": 45,
+          "longTasks": 3
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.35,
+          "fps": 59.7,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.18,
+          "fps": 61.7,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        }
+      },
+      {
+        "run": 2,
+        "throttle": 4,
+        "load": {
+          "readyMs": 2116,
+          "seconds": 2.12,
+          "fps": 6.1,
+          "gapP95": 600,
+          "gapMax": 600,
+          "longTaskMsPerSecond": 712,
+          "longTasks": 6
+        },
+        "physics2d": {
+          "seconds": 6.01,
+          "fps": 60.1,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3d": {
+          "seconds": 0.61,
+          "fps": 27.8,
+          "gapP95": 267,
+          "gapMax": 267,
+          "longTaskMsPerSecond": 429,
+          "longTasks": 2
+        },
+        "view3d": {
+          "seconds": 6,
+          "fps": 60,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.5,
+          "fps": 48.1,
+          "gapP95": 17,
+          "gapMax": 117,
+          "longTaskMsPerSecond": 234,
+          "longTasks": 1
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.3,
+          "fps": 46.4,
+          "gapP95": 50,
+          "gapMax": 50,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        }
+      }
+    ]
+  },
+  "software": {
+    "base": "http://127.0.0.1:41944/",
+    "device": "Pixel 7 (emulated)",
+    "windowMs": 6000,
+    "runs": [
+      {
+        "run": 0,
+        "throttle": 1,
+        "load": {
+          "readyMs": 10546,
+          "seconds": 10.55,
+          "fps": 57.7,
+          "gapP95": 17,
+          "gapMax": 230,
+          "longTaskMsPerSecond": 10,
+          "longTasks": 1
+        },
+        "physics2d": {
+          "seconds": 6.06,
+          "fps": 58.4,
+          "gapP95": 17,
+          "gapMax": 83,
+          "longTaskMsPerSecond": 10,
+          "longTasks": 1
+        },
+        "switchTo3d": {
+          "seconds": 0.63,
+          "fps": 39.6,
+          "gapP95": 50,
+          "gapMax": 117,
+          "longTaskMsPerSecond": 226,
+          "longTasks": 2
+        },
+        "view3d": {
+          "seconds": 6.03,
+          "fps": 58.7,
+          "gapP95": 17,
+          "gapMax": 67,
+          "longTaskMsPerSecond": 10,
+          "longTasks": 1
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.37,
+          "fps": 59.3,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.65,
+          "fps": 24.7,
+          "gapP95": 217,
+          "gapMax": 217,
+          "longTaskMsPerSecond": 546,
+          "longTasks": 5
+        }
+      },
+      {
+        "run": 0,
+        "throttle": 4,
+        "load": {
+          "readyMs": 12623,
+          "seconds": 12.62,
+          "fps": 40.4,
+          "gapP95": 33,
+          "gapMax": 650,
+          "longTaskMsPerSecond": 129,
+          "longTasks": 10
+        },
+        "physics2d": {
+          "seconds": 6.04,
+          "fps": 29.6,
+          "gapP95": 50,
+          "gapMax": 283,
+          "longTaskMsPerSecond": 160,
+          "longTasks": 9
+        },
+        "switchTo3d": {
+          "seconds": 1.27,
+          "fps": 15,
+          "gapP95": 300,
+          "gapMax": 300,
+          "longTaskMsPerSecond": 777,
+          "longTasks": 10
+        },
+        "view3d": {
+          "seconds": 6.05,
+          "fps": 25.6,
+          "gapP95": 100,
+          "gapMax": 167,
+          "longTaskMsPerSecond": 304,
+          "longTasks": 22
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 1.06,
+          "fps": 23.5,
+          "gapP95": 117,
+          "gapMax": 217,
+          "longTaskMsPerSecond": 462,
+          "longTasks": 4
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.86,
+          "fps": 17.3,
+          "gapP95": 133,
+          "gapMax": 133,
+          "longTaskMsPerSecond": 725,
+          "longTasks": 9
+        }
+      },
+      {
+        "run": 1,
+        "throttle": 1,
+        "load": {
+          "readyMs": 838,
+          "seconds": 0.84,
+          "fps": 40.6,
+          "gapP95": 100,
+          "gapMax": 140,
+          "longTaskMsPerSecond": 129,
+          "longTasks": 1
+        },
+        "physics2d": {
+          "seconds": 6.01,
+          "fps": 60.1,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3d": {
+          "seconds": 0.45,
+          "fps": 33.2,
+          "gapP95": 117,
+          "gapMax": 117,
+          "longTaskMsPerSecond": 193,
+          "longTasks": 1
+        },
+        "view3d": {
+          "seconds": 6.01,
+          "fps": 57.2,
+          "gapP95": 17,
+          "gapMax": 33,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.36,
+          "fps": 60.7,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.35,
+          "fps": 33.9,
+          "gapP95": 67,
+          "gapMax": 67,
+          "longTaskMsPerSecond": 325,
+          "longTasks": 2
+        }
+      },
+      {
+        "run": 1,
+        "throttle": 4,
+        "load": {
+          "readyMs": 1456,
+          "seconds": 1.46,
+          "fps": 12.4,
+          "gapP95": 317,
+          "gapMax": 317,
+          "longTaskMsPerSecond": 471,
+          "longTasks": 4
+        },
+        "physics2d": {
+          "seconds": 6.02,
+          "fps": 55.7,
+          "gapP95": 33,
+          "gapMax": 33,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3d": {
+          "seconds": 0.8,
+          "fps": 22.5,
+          "gapP95": 200,
+          "gapMax": 200,
+          "longTaskMsPerSecond": 539,
+          "longTasks": 6
+        },
+        "view3d": {
+          "seconds": 6.02,
+          "fps": 37.4,
+          "gapP95": 33,
+          "gapMax": 33,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.89,
+          "fps": 28.2,
+          "gapP95": 50,
+          "gapMax": 150,
+          "longTaskMsPerSecond": 164,
+          "longTasks": 1
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.86,
+          "fps": 17.4,
+          "gapP95": 117,
+          "gapMax": 117,
+          "longTaskMsPerSecond": 583,
+          "longTasks": 7
+        }
+      },
+      {
+        "run": 2,
+        "throttle": 1,
+        "load": {
+          "readyMs": 424,
+          "seconds": 0.42,
+          "fps": 28.3,
+          "gapP95": 139,
+          "gapMax": 139,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "physics2d": {
+          "seconds": 6.01,
+          "fps": 60,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3d": {
+          "seconds": 0.41,
+          "fps": 34.3,
+          "gapP95": 100,
+          "gapMax": 100,
+          "longTaskMsPerSecond": 189,
+          "longTasks": 1
+        },
+        "view3d": {
+          "seconds": 6.01,
+          "fps": 57.7,
+          "gapP95": 17,
+          "gapMax": 33,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 0.38,
+          "fps": 58.7,
+          "gapP95": 17,
+          "gapMax": 17,
+          "longTaskMsPerSecond": 0,
+          "longTasks": 0
+        },
+        "switchTo3dAgain": {
+          "seconds": 0.35,
+          "fps": 37.6,
+          "gapP95": 67,
+          "gapMax": 67,
+          "longTaskMsPerSecond": 330,
+          "longTasks": 2
+        }
+      },
+      {
+        "run": 2,
+        "throttle": 4,
+        "load": {
+          "readyMs": 1558,
+          "seconds": 1.56,
+          "fps": 12.2,
+          "gapP95": 367,
+          "gapMax": 367,
+          "longTaskMsPerSecond": 544,
+          "longTasks": 6
+        },
+        "physics2d": {
+          "seconds": 6.02,
+          "fps": 33.6,
+          "gapP95": 50,
+          "gapMax": 250,
+          "longTaskMsPerSecond": 80,
+          "longTasks": 4
+        },
+        "switchTo3d": {
+          "seconds": 1.09,
+          "fps": 15.5,
+          "gapP95": 300,
+          "gapMax": 300,
+          "longTaskMsPerSecond": 742,
+          "longTasks": 10
+        },
+        "view3d": {
+          "seconds": 6.04,
+          "fps": 22.5,
+          "gapP95": 83,
+          "gapMax": 383,
+          "longTaskMsPerSecond": 351,
+          "longTasks": 17
+        },
+        "words": 40,
+        "switchTo2d": {
+          "seconds": 1,
+          "fps": 20.9,
+          "gapP95": 50,
+          "gapMax": 350,
+          "longTaskMsPerSecond": 398,
+          "longTasks": 2
+        },
+        "switchTo3dAgain": {
+          "seconds": 1.31,
+          "fps": 12.2,
+          "gapP95": 383,
+          "gapMax": 383,
+          "longTaskMsPerSecond": 804,
+          "longTasks": 10
+        }
+      }
+    ]
+  }
+}

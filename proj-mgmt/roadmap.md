@@ -92,8 +92,12 @@ graph TD
   * comms: one open message (2026-10-24-04, `needs: none`, the workspace's validation), nothing to act on. The question about the ~200 old output files (2026-10-31-02) has no answer yet.
   * `feature/bank-everyday-relations` merged into `develop` (fast-forward, `3aedefd`). Repeat run: unit 388 passed, e2e 39 of 39 in 2.1 min, built and served from `C:`. Pushed to GitHub and both replicas.
   * Machine state: the preflight waited out a `D:` saturation from other projects (99.8% busy, cleared at 12:27). Servers started for the run were stopped by PID, nothing listens on 41940–41959, and there's no `index.lock`.
-* **In progress:** nothing half-done.
-* **Exact next step:** measure slow-phone main-thread work before changing anything (roadmap item since 2026-10-18): the 3D view, 2D physics at 40 words, and the vocabulary load, at 4× CPU throttle. Report the longest `requestAnimationFrame` gap and the long tasks overlapping each action (`CLAUDE.md` § Lessons, "Slow-phone checks"). Build on `C:`, serve on 41944/41945, and record a research report plus an Epic 4 task.
+  * Slow-phone baseline (Epic 4 · Task 4.5.15, [report](../docs/research/slow-phone-performance.md)). Emulated Pixel 7 at 4× CPU with the GPU:
+    * steady 2D and 3D play holds about 60 fps with 40 words;
+    * the stalls are start-up (1.2–2.8 s, single freezes up to 800 ms) and the first 2D → 3D switch (0.6–1.1 s; a repeat switch takes 0.3 s, so it's code loading);
+    * headless Chromium renders in software unless given GPU flags. The first numbers were software-rendered and pointed the wrong way, so both modes are now measured.
+* **In progress:** nothing half-done (Task 4.5.15 has its baseline; the fixes are next).
+* **Exact next step:** F1 in the report. Prefetch the 3D chunk (`import("./space/SpaceWorld")`) in `requestIdleCallback` once the vocabulary is ready and hint mode is on. Then rerun `GPU=1 RUNS=3 node docs/research/experiments/browser/slowPhone.probe.mjs` against a build of the change on `C:` (port 41944) and compare `switchTo3d` at 4× with the baseline: 0.6–1.1 s, worst gap 250–350 ms. After that, F2: a source-mapped start-up profile.
 * **Owner items:** the phone play-test (two devices for Connect bests); human-todo 14 (bank review); human-todo 11; human-todo 2 and 13 when hosting resumes.
 
 ### Status snapshot (2026-10-31) · Google Drive for desktop disconnected; the folder is readied for its reconnect
