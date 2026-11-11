@@ -87,6 +87,15 @@ graph TD
     D -->|Production Release| E
 ```
 
+### Status snapshot (2026-11-10) · handoff · Drive sync still off; the repository move to `D:\repos` is planned, not started
+* **Comms:** two open messages, both `needs: none`: the replica push fix (one pack per push, `WRITE FAILED` instead of false `REJECTED`), and the 10-24 validation. Sent **2026-11-10-02**: what would make this repository's move harder. The plan misses the store's links back into the repository (`C:\dev-store\matter-js-demo\node_modules\@lexical\{shared,server}` → `D:\GDrive\Dev\matter-js-demo\…`); they would dangle after a `Move-Item`. Also: no worktrees, no scheduled tasks; two config files name the old path (`.claude/tools/patchlib.py` docstring, `hosting-cpu-bench.mts` import).
+* **Taking Task 4.5.16** (a word lost on 3D → 2D, 2 of 24 probe runs): a correctness bug players would see, and the phone play-test needs the owner. New suspect from reading the code: the letters game's merge rule runs in the word views (see the task).
+* **In progress (uncommitted until it runs):**
+  * e2e test "Discovery: two words that land on each other stay two words" in `tests/semanticPlayground.spec.ts`;
+  * the probe `<scratchpad>/lostWord.probe.mjs`: merges and vanished words over 3D ↔ 2D round trips.
+* **Blocked since 21:40:** `D:` at 100% active time. The load is system services (Killer Analytics, Norton), not projects. Nothing was built or run.
+* **Exact next step:** when the preflight clears, build the e2e bundle into the scratchpad on `C:` and serve it on 41944. Run the probe and the new test **before** any fix, then fix, rerun both, then the full suite (the `CLAUDE.md` "Drive for desktop is syncing" recipe).
+
 ### Status snapshot (2026-11-01) · handoff · Drive sync still off: git (GitHub + `F:`/`H:` replicas) is the protection
 * **Done this session:**
   * comms: one open message (2026-10-24-04, `needs: none`, the workspace's validation), nothing to act on. The question about the ~200 old output files (2026-10-31-02) has no answer yet.
